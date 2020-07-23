@@ -1,0 +1,212 @@
+\chapter{Guiding agents with temporal logics}
+
+% Intro to Bolt
+As pointed out in the introduction, the hardest games cannot be solved with a
+pure application of Deep Reinforcement Learning alone. Some complex tasks can
+only be completed with long sequences of correct actions, without any
+observable advancement in the environment to be tracked. An agent based on the
+Markov assumption, which purely associates observations to actions and lacks
+any form of memory, cannot accomplish such tasks.  In this chapter, we will
+review an elegant method to add this capability to any RL
+agent~\cite{bib:nmrdp-logic-first}\cite{bib:degiacomo-logic-nmrdp}.
+
+% Moving to logics
+Before explaining how to guide the agent in its task, it's necessary to
+first understand how to \emph{declare} the desired behaviour. As we will see,
+the logic description of such behaviour is the first step that allows to
+automatically define an agent that is able to reach it.
+% TODO
+Temporal logics
+are a class of formal systems that allow to talk about properties that change
+over time. These are the perfect formalisms to state the desired agent
+So, we will review them first. Since the construction presented
+here transforms such logic description, this part is an important step toward
+the desired solution.
+
+% Behaviours of the env, not agent
+When thinking about desired behaviours, we can't talk about actions, as
+this is a too specific level of description, and the optimal sequence of
+actions is always unknown. A very convenient level of abstraction is given by
+the evolution of some interesting fluents we have defined. Fluents are Boolean
+atomic propositions that reflect the current state of the environment. So,
+we're effectively talking about trajectories of the environment, not the
+agent's.  Together, they also compose an excellent abstraction, because they
+can be selected to represent the conditions we consider as relevant. Examples
+for games are: ``the enemy is dead'', ``I have 4 lives remaining'', ``I am in
+the first room'', etc.
+
+% Traces
+What has been called ``behaviour'' or ``high-level plan'' is simply the set of
+desired evolutions of such symbols. Temporal logics are the perfect formalism
+to select such sequences among all the possible ones.
+
+
+\section{Temporal logics and Linear Dynamic Logic}
+
+\subsection{Temporal logics on finite traces}
+
+% Intro to temporal logics
+Temporal logics are a class of formal languages, more precisely modal logics,
+that allow to talk about time~\cite{bib:temporal-logics-stanford}. Among all
+formalisms, we care about logics that assume a linear time, as opposed to
+branching, and a discrete sequence of instants, instead of continuous time.
+In computer science, the most famous logic in this group is the Pnueli's
+Linear Temporal Logic (LTL)~\cite{bib:pnueli-ltl}.
+
+% Structures
+The assumptions about the nature of time directly reflect to the type of
+structures these logics are interpreted on: their models are $\modelsym =
+\langle T, \prec, V \rangle$, where the set $T$ is a discrete set of time
+instants, such as $\N$, and $\prec$ is a complete ordering relation on $T$,
+like~$<$. If a logic defines a set $\fluents$ of atomic propositions, the
+evaluation function $V: T \times \fluents \to \{\true, \false\}$, for each
+instant of time, assigns a truth value to each fluent. An equivalent and
+compact way of defining such structures is with \emph{traces}. A trace
+$\trace$ is a sequence of propositional interpretations $2^\fluents$ of the 
+fluents~$\fluents$. Each element of the trace, $\trace(i)$, is the set of true
+symbols at time~$i$. $\trace(i, j)$ represents the trace between instants $i$
+and~$j$.
+% TODO: evaluation or valuation?
+
+% Structures in LTL
+LTL is a logic that only allows to talk about the future. The semantic of its
+temporal operators, neXt~$\next$, Until~$\until$, and of those derived,
+eventually~$\eventually$, always~$\always$, can only access future instants on
+the sequence. Interpretations for this logic are infinite traces with a first
+instant, which are equivalent to valuations on the temporal frame $\langle \N,
+< \rangle$.
+
+% Finite traces
+As it has been pointed out~\cite{bib:ltlf-ldlf}, most practical uses of LTL
+interpret the formulae on \emph{finite} traces, not infinite. The pure
+existence of a last instant of time has strong consequences on the meaning of
+the operators, because they need to handle such instant differently. The
+Always operator~$\always$, translates to ``until the last instant'', quite
+naturally. However, writing $\always\eventually \formula$ does not require
+that $\formula$ becomes true an infinite number of times, that is the
+``response'' property; instead, it is satisfied exactly by those traces in
+which $\formula$ is true at $\const{Last}$ ($\const{Last}$ is an abbreviation
+for $\lnot \next \true$ and it evaluates to true at last instant only).
+Furthermore $\always\eventually \formula$ and $\eventually\always \formula$
+are both equivalent to $\eventually (\const{Last} \land \formula)$, something
+that doesn't happen in standard LTL. From last example, it should be clear
+that the expressive power of the language has changed and LTL interpreted over
+finite traces should be regarded as a different logic, that we denote with
+\ltl{}. More precisely, over infinite linearly-ordered interpretations, LTL
+has the same expressive power of Monadic Second Order Logic (MSO), while
+\ltl{} is equivalent to First-Order Logic (FOL) and star-free regular
+expressions, which are strictly less expressive.
+
+% Every finite is fine
+In the next section, we will define a temporal logic, called \ldl{}, that is
+purposefully devised for finite traces. This is the formalism that we use in
+the implemented construction for RL agents. However, many plans and behaviours
+to be rewarded can be also expressed with~\ltl{}. So, for this construction,
+any temporal logic over finite traces which can be translated to equivalent
+finite-state automata can be used as an alternative to~\ldl{}; even temporal
+logics of the past~\cite{bib:nmrdp-logic-first}.
+
+
+\subsection{Linear Dynamic Logic}
+
+In this section, we will define Linear Dynamic Logic of finite traces
+(\ldl{})~\cite{bib:ltlf-ldlf}. Its syntax combines regular expressions and
+propositional logic, just like Propositional Dynamic Logic (PDL)
+does~\cite{bib:pdl}\cite{bib:pdl-stanford}. So, we will review regular
+expressions first.
+
+
+\subsubsection{Regular Temporal Specifications}
+
+Regular languages are the class of languages exactly recognized by finite
+state automata and regular expressions~\cite{bib:languages-book}. So, we will
+use regular expressions as a compact formalism to specify them. Regular
+expressions are usually said to accept strings. Traces are in fact strings,
+whose symbols $s \in 2^{\fluents}$ are propositional interpretations of the
+fluents~$\fluents$. Such regular expressions would be:
+\begin{equation}
+	\resym ::= \emptyset \mid s \mid
+	\resym_1 + \resym_2 \mid \resym_1 ; \resym_2 \mid \resym^*
+	\label{eq:re-no}
+\end{equation}
+where $\emptyset$ denotes the empty language, $s \in 2^\fluents$ is a symbol,
+$+$ is the disjunction of two constraints, $;$ separates concatenated
+expressions, and $\resym^*$ requires an arbitrary repetition on $\resym$.
+Parentheses can be used to group expressions with any precedence.
+
+We call the regular expressions of equation~\eqref{eq:re-no} Regular Temporal
+Specifications \re{}, because they are interpreted on finite linear temporal
+structures. However, writing specifications in terms of single interpretations
+is very cumbersome. So, we substitute the symbols $s \in 2^\fluents$ with
+formulae of Propositional Logic. A propositional formula $\propformula$
+represents all interpretations that satisfy it: $\text{Sat}(\propformula) = \{s
+\in 2^\fluents \mid s \models \propformula\}$.
+
+The new definition for the syntax of Regular Temporal Specifications \re{}:
+\begin{equation}
+	\resym ::= \propformula \mid
+	\resym_1 + \resym_2 \mid \resym_1 ; \resym_2 \mid \resym^*
+	\label{eq:re}
+\end{equation}
+where $\propformula$ is a propositional formula on the set of atomic
+symbols~$\fluents$. The language generated by a \re{}~$\resym$, denoted
+$\langsym(\resym)$, is the set of traces that match the temporal
+specification. The only difference with regular expressions' standard
+semantics is that a symbol $s \in 2^\fluents$ matches a propositional formula
+$\propformula$ if and only if $s \in \text{Sat}(\propformula)$. A trace that
+match the regular expression $\trace \in \langsym(\resym)$ is said to be
+generated or accepted by the specification~$\resym$.
+
+\begin{example}
+	As an example, let's define a \re{} expression $\resym \coloneqq \true;
+	(\lnot B)^*; (A \land B)$ and the following traces:
+	\begin{align*}
+		\trace_1 &\coloneqq \langle \set{}; \set{A}; \set{A}; \set{A,B} \rangle \\
+		\trace_2 &\coloneqq \langle \set{B}; \set{A,B} \rangle \\
+		\trace_3 &\coloneqq \langle \set{A, B}; \set{B}; \set{B} \rangle \\
+	\end{align*}
+	The first two traces are accepted by the expression, $\trace_1, \trace_2 \in
+	\langsym(\resym)$, but the third is not, $\trace_3 \not\in
+	\langsym(\resym)$. Of course, the symbols $A$ and $B$ could represent any
+	meaningful property of the environment to be ensured.
+\end{example}
+
+
+\subsubsection{Linear Dynamic Logic}
+
+Linear Dynamic Logic is a temporal logic for finite traces that was first
+defined in~\cite{bib:ltlf-ldlf}. The definition we see here, also adopted by
+the implementation we'll use, is a small variant that can also be interpreted
+over the empty trace, $\trace_\epsilon = \langle \rangle$, unlike most logics
+that assume a non-empty temporal domain~$T$.
+
+\begin{definition}
+	A \ldl{} formula $\formula$ is built as follows:
+	\begin{equation}
+	\begin{aligned}
+		\formula \quad &::= \quad \ltt \mid \lnot \formula \mid \formula_1 \land
+			\formula_2 \mid \langle \resym \rangle \formula \\
+		\resym \quad &::= \quad \propformula \mid \formula? \mid \resym_1 +
+			\resym_2 \mid \resym_1; \resym_2 \mid \resym^* \\
+	\end{aligned}
+	\label{eq:ldl-syntax}
+	\end{equation}
+	where $\ltt$ is a constant that stands for logical true and $\propformula$
+	is a propositional formula over a set of symbols~$\fluents$.
+\end{definition}
+
+The syntax just defined is really similar to PDL~\cite{bib:pdl}, a well known
+and successful formalism in Computer Science for describing states and events
+of programs. However, \ldl{} formulae are interpreted over finite traces
+instead of Labelled Transition Systems.
+
+Before moving to the semantics, we can intuitively understand the meaning of
+the constructs. The second line of definition~\eqref{eq:ldl-syntax} is a
+Regular Temporal Specification \re{}, with the addition of the test
+operator~$?$, typical of PDL. In $\langle \resym \rangle \formula$, the \re{}
+expression $\resym$ is used as a modal operator to move to future states: it
+states that there exists at least one 
+
+\section{Reinforcement learning with restraining specifications}
+Restraining Bolt method~\cite{bib:bolt}\cite{bib:rb-imitation-l}.
+

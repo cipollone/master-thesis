@@ -1,0 +1,98 @@
+
+\documentclass[LaM]{sapthesis}
+
+\usepackage[utf8]{inputenc}
+\usepackage{microtype}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{mathtools}
+\usepackage{wasysym}
+\usepackage{comment}
+\usepackage{tikz}
+\usepackage{subfig}
+\usepackage[hidelinks]{hyperref}
+\usepackage{biblatex}
+
+% Bibliography
+\addbibresource{bibliography.bib}
+
+% Math aliases
+\newcommand{\setSym}[1]{\mathcal{#1}}
+\newcommand{\ltl}{$\text{LTL}_f$}
+\newcommand{\ldl}{$\text{LDL}_f$}
+\newcommand{\re}{$\text{RE}_f$}
+\newcommand{\until}{\mathcal{U}}
+\newcommand{\eventually}{\lozenge}
+\newcommand{\always}{\square}
+\newcommand{\next}{\Circle}
+\renewcommand{\lnot}{\neg}
+\newcommand{\const}[1]{\text{\textit{#1}}}
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\true}{\const{true}}
+\newcommand{\false}{\const{false}}
+\newcommand{\set}[1]{\{#1\}}
+
+\newcommand{\fluents}{\setSym{F}}
+\newcommand{\formula}{\varphi}
+\newcommand{\propformula}{\phi}
+\newcommand{\trace}{\pi}
+\newcommand{\resym}{\rho}
+\newcommand{\modelsym}{\setSym{M}}
+\newcommand{\langsym}{\setSym{L}}
+\newcommand{\ltt}{\const{tt}}
+\newcommand{\lff}{\const{ff}}
+
+
+% Teoremi?
+\theoremstyle{definition}
+\newtheorem*{example}{Example}
+\newtheorem*{definition}{Definition}
+
+% TODO: exam date and examiner infos
+
+% Pdf info
+\hypersetup{pdftitle={Tesi Magistrale Roberto Cipollone},pdfauthor={Roberto
+Cipollone}}
+
+% Thesis info
+\title{Fluents valuation in Deep Reinforcement Learning and logic for temporal
+goals}% TODO: final title?
+\author{Roberto Cipollone}
+\IDnumber{1528014}
+\course{Artificial Intelligence and Robotics}
+\courseorganizer{Facoltà di Ingegneria dell’Informazione, Informatica e
+Statistica}
+\submitdate{2019/2020}
+\copyyear{2020}
+\advisor{Prof. Giuseppe De Giacomo}
+\authoremail{cipollone.rt@gmail.com}
+
+
+\begin{document}
+
+% TODO: abstract
+% TODO: dedication?
+
+% Title pages
+\frontmatter
+\maketitle
+\tableofcontents
+
+% Chapters
+\mainmatter
+
+
+\include{chapters/chapter1}
+\include{chapters/chapter2}
+\include{chapters/chapter3}
+\include{chapters/chapter4}
+\include{chapters/chapter5}
+\include{chapters/chapter6}
+
+% Backmatter
+\backmatter
+\printbibliography
+
+\end{document}

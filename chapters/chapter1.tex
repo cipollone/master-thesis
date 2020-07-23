@@ -1,0 +1,188 @@
+\chapter{Introduction}
+
+% Intro: planning and reinforcement learning
+In Artificial Intelligence (AI), among the many approaches for building
+intelligent agents, we can distinguish those mainly focused on knowledge and
+planning, and those that mainly try out different actions to discover the
+goodness of their outcomes. With the former, we refer to those developed from
+\emph{classical planning}, while the latter is the recently-successful field
+of \emph{reinforcement learning}. While they can be integrated, they use quite
+different techniques. However, they share a common basic need: the agent must
+be able to perceive meaningful events happening in the outside world.
+
+% What is an observation in planning
+In planning, in almost every practical case, there is some form of partial
+observability or nondeterminism. So, agent's observations become
+essential~\cite{bib:aima}. Observing, however, does not simply refers to
+reading a raw input from the sensor. Instead, it means ``grounding'' all
+symbols that compose the abstraction the agent adopts: essentially, all
+symbols representing conditions which happen to be true in the environment,
+should become true for the agent. We refer to these symbols with the term
+\emph{fluents}.  Fluents are atomic propositions can change in time, whose
+valuation should always reflect the current state of the world.
+
+% Observations in RL
+We could argue that reinforcement learning does not require such valuations.
+Still, rewards and punishments must be somehow supplied in response to
+desirable and undesirable events. We could think of providing these feedbacks
+with programmed ad-hoc conditions, but this can be done just for the
+simulations we create. As we will see, when the agent needs a component that
+is based on logic and reasoning, we still need to valuate the truth of fluents,
+even in the context of reinforcement learning.  In fact, the most successful
+approaches mix these components somehow.
+% TODO: cite
+
+% Main topic and assumptions
+This thesis addresses the problem of valuating fluents from complex
+observations of the environment. However, this is a general topic and we'll
+only work with specific classes of fluents and observations. Every choice
+or assumption that restricts the applicability of this method will be pointed
+out along the text. The first distinction to do is that we'll only work with
+games.
+
+
+\section{Reinforcement Learning in games}
+
+% Intro to games
+Games in AI are a class static environments with discrete actions. They have
+always been a classic benchmark for AI, because they provide various levels of
+complexity, they have few and strict rules and are easy to implement and
+simulate.
+% TODO: cite
+
+% RL
+Reinforcement learning (RL) is a field of AI that has shown to be successful
+for many games. % TODO: cite
+This is the learning method adopted here. In RL, the agent tries out
+different actions and observes the reward received.  Its goal is to learn the
+optimal policy, the one maximizing the cumulative reward over the whole
+episode.  Most RL algorithms assume that observations and rewards can be
+modelled with a Markov Decision Process (MDP). This means that: the sequence
+of states create a Markov chain (the next state only depends on the previous
+state and action); the rewards only depend on the current state; the
+observations are an exact representation of the current state. Many learning
+algorithms exist for this setting~\cite{bib:rl-book}.
+
+% Deep RL
+Neural Networks (NN) have brought new possibilities for RL: in Deep
+Reinforcement Learning, the agent employs a neural network as a very
+expressive approximation to the quantities it is trying to
+learn~\cite{bib:deep-rl}.  The Q-value, for example, is a classic quantity in
+RL that estimates the expected cumulative reward from each pair of observation
+and action.  A Deep Q-Network (DQN) is able to learn this estimate for a
+complex observation such as the frame of a video game, which is a
+high-dimensional input~\cite{bib:atari-deeprl} that would be hard to manage
+without neural networks.
+
+% Atari games
+All models and experiments in this thesis use games from the Atari~2600
+collection. The framework adopted is an interface for the Atari
+simulator~\cite{bib:atari-games} that maps actions to controller inputs and
+returns images of the game as observations. This is almost the same
+condition a human player faces when playing the same games. Other successful
+works also read the current number of lives the player has. Other than that,
+no internals are employed to simplify the task of the agent.
+
+% Algorithms
+The reinforcement learning algorithm adopted in this thesis is a deep variant
+of Double DQN that solves few issues with simple DQN~\cite{bib:double-q}.
+The motivation of this choice is that this is a relatively simple algorithm,
+based on DQN, which has also proven to be successful for the specific
+environments that we'll use in our experiments~\cite{bib:atari-deepq-nature}.
+In fact, among Q-Network algorithms, the only ones that clearly achieve
+superior performances in most games adopt a combination of all
+variants~\cite{bib:rainbow}.
+
+% There are hard games
+Not all games inside the Atari~2600 collection are equally hard to solve.
+Reinforcement learning agents can be trained to achieve higher performances
+with respect to an average human player, mostly for environments with static
+map and background, and simple strategies. Many other games, instead, require
+the agent to remember previous steps and observations, for example, in
+exploration tasks. One notable example is \emph{Montezuma's Revenge}, in which
+agents could not improve in any way~\cite{bib:atari-deepq-nature}.
+Other approaches could succeed in this game with additional information able
+to guide the agent. For example, with carefully chosen initializations and
+examples from human experts~\cite{bib:mz-openai-demonstrations}.
+
+% Hard games
+One issue with games like Montezuma's Revenge, is that they require long
+sequences of correct actions before rewarding the agent. This is called a
+\emph{sparse reward}. However, there is a more fundamental problem to be
+considered first: observations and rewards, together, can't define a Markov
+Decision Process, because it is essential for the agent to remember some
+informations collected during the game. For example, the Montezuma's agent may
+walk to the right only if it \emph{remembers} that the door in the right room
+has been previously opened. This additional ability is required because of 
+partial observations: a view of the current room can can't be considered a
+complete state of the game, sufficient to predict future rewards.
+
+% NMRDP
+The setting just described can be modelled with a Non-Markovian Reward
+Decision Process (NMRDP). Fortunately, it is possible to cast any NMRDP as a
+MDP, if enough information about the history is included in each observation.
+In order to render this transformation feasible, we must include as few
+additional data as possible, still with an exhaustive state with respect to
+the reward. As humans, we understand which sequences lead to rewards. So, an
+elegant way to do this, is to declare such sequences with \emph{temporal
+logics}~\cite{bib:nmrdp-logic-first}. As we will see, by tracking the
+satisfaction of such temporal formula, we can provide enough information to
+the agent so to employ standard algorithms developed for
+MDPs~\cite{bib:degiacomo-logic-nmrdp}\cite{bib:favorito-thesis}.
+
+% Back to fluents
+This type of construction can be considered as a ``logic component'' inside
+the agent, as we've previously called it. While an abstraction like this is
+powerful, it is essential to correctly valuate the symbols it uses, in order
+to reason about the current situation. This is a complex task for environments
+with rich observations, as those allowed by Deep Reinforcement Learning.
+
+
+\section{Objective of this work}
+
+% Goal 1: computing fluents
+The main purpose of this work is to devise and test a mechanism able to learn
+functions which valuates the fluents we define.  Specifically, learn a
+function that computes the truth value for a set of boolean conditions, given
+a frame of an Atari game. Among the many different ways to accomplish this,
+the most interesting techniques are those which pose the least number of
+assumptions on the specific environment. In this respect, the following are
+important achievements of this work to be highlighted:
+\begin{itemize}
+	\item Fluents are selected first. Then, the function to evaluate them is
+		trained from a description of each fluent. This is harder to do than
+		just training a features extractor and manually trying to associate a
+		meaning to each feature.
+	\item To describe the fluents we use temporal logic over finite traces such
+		as \ltl{} and \ldl{}. These are employed as tools to formalize any type of
+		temporal constraints the fluents are always expected to satisfy. The use
+		of such logics for this purpose can be a really generic approach. This
+		thesis is an initial investigation about this possibility. As a
+		description of a fluent, we must consider everything that guides the
+		training process. So, we will certainly consider other types of hints that
+		is useful to include, such as visual hints.
+	\item The training algorithm won't require any manual annotation, nor
+		labelled datasets at all. The main idea is that, inside the agent, two
+		components should coexist: the player and the observer. While the player 
+		explores the environment, the observer can be trained from the images
+		received, without further intervention.
+\end{itemize}
+
+% Goal 2: restraining bolt.
+The second goal of this thesis is to demonstrate how such trained features can
+be exploited by a Reinforcement Learning agent to solve hard games. Tests will
+be conducted on Montezuma's Revenge, a game known to be difficult in this
+class~\cite{bib:atari-deepq-nature}. In this thesis:
+\begin{itemize}
+		\item We provide a flexible implementation of the construction described
+			in~\cite{bib:degiacomo-logic-nmrdp}\cite{bib:favorito-thesis}, for
+			temporal goals.
+		\item A deep agent architecture is proposed to merge the technique above
+			for the Deep Reinforcement Learning case.
+		\item This implementation is then used to specify a temporal goal in
+			\ldl{}, sufficient to guide the agent through hard environments.
+\end{itemize}
+
+\section{Structure of the thesis}
+
+% TODO

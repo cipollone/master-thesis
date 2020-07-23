@@ -1,0 +1,29 @@
+## Latex
+*.aux
+*.lof
+*.log
+*.lot
+*.fls
+*.out
+*.toc
+*.fmt
+*.fot
+*.cb
+*.cb2
+
+*.bbl
+*.bcf
+*.blg
+*-blx.aux
+*-blx.bib
+*.run.xml
+
+## Linux
+*~
+.fuse_hidden*
+.Trash-*
+.nfs*
+
+## Vim
+.*.sw[po]
+Session.vim
