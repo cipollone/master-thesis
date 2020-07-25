@@ -28,11 +28,14 @@
 \newcommand{\next}{\Circle}
 \renewcommand{\lnot}{\neg}
 \newcommand{\const}[1]{\text{\textit{#1}}}
+\newcommand{\R}{\mathbb{R}}
 \newcommand{\N}{\mathbb{N}}
 \newcommand{\Z}{\mathbb{Z}}
+\newcommand{\E}{\mathbb{E}}
 \newcommand{\true}{\const{true}}
 \newcommand{\false}{\const{false}}
 \newcommand{\set}[1]{\{#1\}}
+\newcommand{\given}{\mid}
 
 \newcommand{\fluents}{\setSym{F}}
 \newcommand{\formula}{\varphi}
@@ -43,7 +46,46 @@
 \newcommand{\langsym}{\setSym{L}}
 \newcommand{\ltt}{\const{tt}}
 \newcommand{\lff}{\const{ff}}
+\newcommand{\discount}{\gamma}
+\newcommand{\policy}{\pi}
 
+% TikZ
+\usetikzlibrary{arrows}
+\usetikzlibrary{arrows.spaced}
+\usetikzlibrary{fit}
+\usetikzlibrary{positioning}
+\usetikzlibrary{calc}
+\usetikzlibrary{graphs}
+\usetikzlibrary{graphs.standard}
+\usetikzlibrary{matrix}
+\usetikzlibrary{intersections}
+\usetikzlibrary{shapes.geometric}
+\usetikzlibrary{decorations.pathreplacing}
+
+\pgfdeclarelayer{below}
+\pgfdeclarelayer{beloww}
+\pgfsetlayers{beloww,below,main}
+
+\tikzset{
+	>=stealth',
+	ampersand replacement=\&,
+	every node/.style={align=center},
+	%
+	block/.style={
+		rounded corners=4pt, draw, fill=white, inner sep=6pt, outer sep=1pt},
+	image/.style={inner sep=0pt, outer sep=3pt},
+	region box/.style={orange, draw},
+	dot/.style={fill, circle, inner sep=0.7pt},
+	node/.style={draw, circle, semithick, inner sep=0pt, minimum size=1.7ex},
+	%
+	flow/.style={->, thick, >=spaced stealth'},
+	pin line/.style={very thin, draw, gray},
+}
+
+% Colors
+\newcommand{\encodingColor}{orange!70!white}
+\newcommand{\boolsColor}{blue!70!white}
+\newcommand{\fluentsColor}{gray}
 
 % Teoremi?
 \theoremstyle{definition}
@@ -58,7 +100,7 @@ Cipollone}}
 
 % Thesis info
 \title{Fluents valuation in Deep Reinforcement Learning and logic for temporal
-goals}% TODO: final title?
+goals}% TODO: title
 \author{Roberto Cipollone}
 \IDnumber{1528014}
 \course{Artificial Intelligence and Robotics}

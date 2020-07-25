@@ -1,44 +1,160 @@
-\chapter{Guiding agents with temporal logics}
+\chapter{Deep Reinforcement Learning for non-Markovian goals}
 
-% Intro to Bolt
-As pointed out in the introduction, the hardest games cannot be solved with a
-pure application of Deep Reinforcement Learning alone. Some complex tasks can
-only be completed with long sequences of correct actions, without any
-observable advancement in the environment to be tracked. An agent based on the
-Markov assumption, which purely associates observations to actions and lacks
-any form of memory, cannot accomplish such tasks.  In this chapter, we will
-review an elegant method to add this capability to any RL
-agent~\cite{bib:nmrdp-logic-first}\cite{bib:degiacomo-logic-nmrdp}.
+\section{Reinforcement Learning}
 
-% Moving to logics
-Before explaining how to guide the agent in its task, it's necessary to
-first understand how to \emph{declare} the desired behaviour. As we will see,
-the logic description of such behaviour is the first step that allows to
-automatically define an agent that is able to reach it.
-% TODO
-Temporal logics
-are a class of formal systems that allow to talk about properties that change
-over time. These are the perfect formalisms to state the desired agent
-So, we will review them first. Since the construction presented
-here transforms such logic description, this part is an important step toward
-the desired solution.
+% Motivation
+In this section we will briefly review the most important aspects of classic
+\emph{Reinforcement Learning} (RL). These concepts are relevant because they
+are also found in Deep Reinforcement Learning (Deep RL), which is a central
+component of the agent we will design. Excellent references for these topics
+are \cite{bib:rl-book}, \cite{bib:probabilistic-rl}, and
+\cite{bib:ml-book-murphy} for graphical models.
 
-% Behaviours of the env, not agent
-When thinking about desired behaviours, we can't talk about actions, as
-this is a too specific level of description, and the optimal sequence of
-actions is always unknown. A very convenient level of abstraction is given by
-the evolution of some interesting fluents we have defined. Fluents are Boolean
-atomic propositions that reflect the current state of the environment. So,
-we're effectively talking about trajectories of the environment, not the
-agent's.  Together, they also compose an excellent abstraction, because they
-can be selected to represent the conditions we consider as relevant. Examples
-for games are: ``the enemy is dead'', ``I have 4 lives remaining'', ``I am in
-the first room'', etc.
+% Agent-env interface
+In AI, we commonly isolate two entities, the agent and the environment, which
+continuously interact. At each instant, the agent receives observations from
+the environment and it executes actions in response. In RL specifically, the
+agent observes the current state of the environment and a numerical reward.
+The environment produces high rewards in response to desirable events. The
+agent's goal is to maximize the rewards received. The basic setup is
+illustrated in Figure~\ref{fig:rl}.
 
-% Traces
-What has been called ``behaviour'' or ``high-level plan'' is simply the set of
-desired evolutions of such symbols. Temporal logics are the perfect formalism
-to select such sequences among all the possible ones.
+\begin{figure}
+	\centering
+	\begin{tikzpicture}
+		\node [block] (agent) {Agent};
+		\node [block, below=of agent] (env) {Environment};
+		\draw [flow] ([yshift=2mm]env.west) -- ++(-1.2,0) |-
+			([yshift=-2mm]agent.west) node [pos=0.3,right] {reward\\$r$};
+		\draw [flow] ([yshift=-2mm]env.west) -- ++(-1.5,0) |-
+			([yshift=2mm]agent.west) node [pos=0.3,left] {state\\$s$};
+		\draw [flow] (agent.east) -| node [pos=0.7,right] {action\\a}
+		($(env.east)+(1.2,0)$) -- (env.east);
+	\end{tikzpicture}
+	\caption{How agent and environment interact in RL.}
+	\label{fig:rl}
+\end{figure}
+
+% MDP
+Most RL algorithms assume that the environment dynamics can be modelled with a
+\emph{Markov Decision Process} (MDP). They do so, because under the
+independence assumptions taken by MDP, it's possible to efficiently find
+the optimal agent's policy. A Markov Decision Process is a tuple $\langle S,
+A, T, R, \discount \rangle$, where: $S$ is the set of states of the
+environment; $A$ is the action space; $T: S \times A \times S \to \R$ is the
+transition function, which, for ${T(s_{t}, a_{t}, s_{t+1})}$,
+returns the probability $p(s_{t+1} \given s_{t}, a_{t})$ of
+the transition ${s_{t} \xrightarrow{a_{t}} s_{t+1}}$; $R: S
+\times A \times S \to \R$ is the reward function; and $\discount \in [0, 1]$
+is called ``discount factor''\footnote{In this chapter, subscripts with whole
+numbers or $t$ indicate the value of the variable at the discrete time
+indicated.}.
+
+% Markov assumptions
+In a RL problem, the functions $T$ and $R$ are unknown. The agent can only
+learn them by observing the samples it receives from the environment.
+However, by assuming that they can be modelled with functions ${S \times A
+\times S \to \R}$, we introduce some Markov assumptions. In particular, we
+assume that the next state of the environment is conditionally independent on
+the whole history, given the previous state and action: $s_{t+1} \perp
+s_{0}, \dots, s_{t-1} \given s_{t}, a_{t}$. Similarly,
+the reward only depends on the last transition of the environment.  Although
+it's not required by the model, it is common that rewards are computed just
+from desirable configurations of the environment~$s_{t}$, not from
+specific transitions $(s_{t}, a_{t}, s_{t+1})$. All of these
+assumptions are summarized in the directed graphical model of
+Figure~\ref{fig:mdp}. The lack of any arrow between $s_{t-1}$ and
+$s_{t+1}$ indicates that future states, hence the rewards, do not depend
+on the past history. This is the essence of a Markov assumption.
+
+\begin{figure}
+	\centering
+	\begin{tikzpicture}
+		\matrix [
+			column sep={1cm,between origins}, row sep={1cm,between origins},
+		] {
+			\&
+			\node (am1) [node, label=above:$a_{t-1}$] {};
+			\& \&
+			\node (a) [node, label=above:$a_{t}$] {}; \& \\
+			\node (stm1) [node, label=above:$s_{t-1}$] {};
+			\& \&
+			\node (st) [node, label=above:$s_{t}$] {}; \& \&
+			\node (st1) [node, label=above:$s_{t+1}$] {}; \\
+			\& \&
+			\node (r) [node, label=below:$r_{t}$] {}; \& \&
+			\node (r1) [node, label=below:$r_{t+1}$] {}; \\
+		};
+		\draw (st1) edge [<-] (st) edge [<-] (a);
+		\draw [->, dotted] (st) -- (a);
+		\draw [->] (st) -- (r);
+		\draw [->] (st1) -- (r1);
+		\draw (st) edge [<-] (stm1) edge [<-] (am1);
+		\draw [->, dotted] (stm1) -- (am1);
+
+		\draw [dashed, gray] (st1) -- +(0.8,0);
+		\draw [dashed, gray] (stm1) -- +(-0.8,0);
+	\end{tikzpicture}
+	\caption{The directed graphical model of a MDP.}
+	\label{fig:mdp}
+\end{figure}
+
+The \emph{policy} is the criterion the agent uses to select the actions to
+perform. If the environment dynamics can be modelled with a MDP, the
+optimal action at time~$t$ only depends on~$s_{t}$. So, there must exist
+an optimal policy as $\policy^*: S \to A$. Due to common estimation errors, it
+is always better to prefer nondeterministic policies, which return a
+probability distribution over the actions. The action at time $t$ will be
+sampled according to $a_t \sim \policy(s_t)$. This dependency is represented
+by the dotted arrow of Figure~\ref{fig:mdp}.
+
+We will now introduce few basic quantities of RL that serve to define what it
+means for an action or a policy to be optimal. The \emph{discounted
+return}~$G$ is the combination of all rewards collected:
+\begin{equation}
+	G \coloneqq r_{0} + \discount\, r_1 + \discount^2 r_2 + \dots =
+	\sum_{t=0}^{T} \discount^{t} r_{t}
+	\label{eq:return}
+\end{equation}
+The discount factor, $0 \le \discount \le 1$, decides the relative importance
+of immediate and future rewards. Usually, this factor is strictly less than 1
+because this stimulates the agent to achieve rewards as soon as possible.
+It also produces a finite discounted reward, even for an infinite run $T \to
+\infty$.  Since our environments are video games, each play is an episode and
+the total number of steps in each episode is finite.
+
+It is now clear, that the optimal policy should always maximize the expected
+discounted return. The \emph{value function} of a policy $\policy$ computes
+this quantity for each state $s$:
+\begin{equation}
+	v_{\policy}(s) \coloneqq \E_{\policy}[G \given s_0 = s]
+\end{equation}
+which computes the expected value of $G$, when the agent starts from state $s$
+and it follows the policy~$\policy$. The notation $\E_{\policy}$ indicates
+that the estimation assumes that the actions are sampled according
+to~$\policy$. Finally, we can define the optimal policy $\policy^*$ as the one
+maximizing the value function at all states:
+\begin{equation}
+	\policy^*: \quad v_{\policy^*}(s) \ge v_{\policy}(s) \qquad \forall s \in S,
+	\quad \text{for all $\policy$}
+\end{equation}
+The typical Reinforcement Learning problem is to find the optimal policy for
+an MDP with unknown $T$ and~$R$.
+
+The \emph{action-value function} of a policy $\policy$ is a similar measure to
+the value function:
+\begin{equation}
+	q_{\policy}(s, a) \coloneqq \E_{\policy}[G \given s_0 = s, a_0 = a]
+\end{equation}
+which forces the first action to be~$a$. Since the only evidence the agent can
+collect are outcomes of single actions, this is usually a much more convenient
+form for updating the estimate of the expected discounted return.
+
+If we could know the 
+
+% TODO We'll only deal with discrete action spaces, where the policy
+% is a categorical distribution (a vector of probabilities).
+
 
 
 \section{Temporal logics and Linear Dynamic Logic}
