@@ -38,34 +38,35 @@ illustrated in Figure~\ref{fig:rl}.
 % MDP
 Most RL algorithms assume that the environment dynamics can be modelled with a
 \emph{Markov Decision Process} (MDP). They do so, because under the
-independence assumptions taken by MDP, it's possible to efficiently find
-the optimal agent's policy. A Markov Decision Process is a tuple $\langle S,
-A, T, R, \discount \rangle$, where: $S$ is the set of states of the
-environment; $A$ is the action space; $T: S \times A \times S \to \R$ is the
-transition function, which, for ${T(s_{t}, a_{t}, s_{t+1})}$,
-returns the probability $p(s_{t+1} \given s_{t}, a_{t})$ of
-the transition ${s_{t} \xrightarrow{a_{t}} s_{t+1}}$; $R: S
-\times A \times S \to \R$ is the reward function; and $\discount \in [0, 1]$
-is called ``discount factor''\footnote{In this chapter, subscripts with whole
-numbers or $t$ indicate the value of the variable at the discrete time
-indicated.}.
+independence assumptions taken by MDP, it's possible to efficiently find the
+optimal agent's policy. A Markov Decision Process is a tuple $\langle \stateS,
+A, T, R, \discount \rangle$, where: $\stateS$ is the set of states of the
+environment; $A$ is the action space; $T: \stateS \times A \times \stateS \to
+\R$ is the transition function, which, for ${T(s_{t}, a_{t}, s_{t+1})}$,
+returns the probability $p(s_{t+1} \given s_{t}, a_{t})$ of the transition
+${s_{t} \xrightarrow{a_{t}} s_{t+1}}$; $R: \stateS \times A \times \stateS \to
+\R$ is the reward function; and $\discount \in [0, 1]$ is called ``discount
+factor''\footnote{In this chapter, a variable with a subscript refers to the
+value of the variable at the discrete time indicated.}.
 
 % Markov assumptions
 In a RL problem, the functions $T$ and $R$ are unknown. The agent can only
 learn them by observing the samples it receives from the environment.
-However, by assuming that they can be modelled with functions ${S \times A
-\times S \to \R}$, we introduce some Markov assumptions. In particular, we
-assume that the next state of the environment is conditionally independent on
-the whole history, given the previous state and action: $s_{t+1} \perp
-s_{0}, \dots, s_{t-1} \given s_{t}, a_{t}$. Similarly,
-the reward only depends on the last transition of the environment.  Although
-it's not required by the model, it is common that rewards are computed just
-from desirable configurations of the environment~$s_{t}$, not from
-specific transitions $(s_{t}, a_{t}, s_{t+1})$. All of these
-assumptions are summarized in the directed graphical model of
-Figure~\ref{fig:mdp}. The lack of any arrow between $s_{t-1}$ and
-$s_{t+1}$ indicates that future states, hence the rewards, do not depend
-on the past history. This is the essence of a Markov assumption.
+However, by assuming that they can be modelled with functions ${\stateS \times
+A \times \stateS \to \R}$, we introduce some Markov assumptions. In
+particular, we assume that the next state of the environment is conditionally
+independent on the whole history, given the previous state and action:
+$s_{t+1} \perp s_{0}, \dots, s_{t-1} \given s_{t}, a_{t}$. Similarly, the
+reward only depends on the last transition of the environment.  Although it's
+not required by the model, it is common that rewards are computed just from
+desirable configurations of the environment~$s_{t}$, not from specific
+transitions $(s_{t}, a_{t}, s_{t+1})$. All of these assumptions are summarized
+in the Directed Graphical Model (DGM) of Figure~\ref{fig:mdp}. In a DGM,
+directed edges indicate direct conditional probabilities, while missing arcs
+indicate conditionally independent variables.  In Figure~\ref{fig:mdp}, the
+lack of any arrow between $s_{t-1}$ and $s_{t+1}$ means that future states,
+hence the rewards, do not depend on the past history, given the current
+state~$s_t$.  This is the essence of a Markov assumption.
 
 \begin{figure}
 	\centering
@@ -99,14 +100,36 @@ on the past history. This is the essence of a Markov assumption.
 	\label{fig:mdp}
 \end{figure}
 
+\begin{example}
+	\label{ex:board-games}
+	Tic-Tac-Toe, Chess and many other board games can be modelled with an MDP.
+	Even games with dice, such as Backgammon. To do so, we define as state
+	space~$\stateS$ the set of configurations of the board; as reward
+	function~$R(s)$ = 1, if the configuration $s$ is a win, $-1$ for a lose, 0
+	otherwise. Even though most games are deterministic, the presence of an
+	opponent makes the transition function~$T$ of the MDP nondeterministic.
+	What these games have in common, is that the player gets to see the complete
+	state of the game, which is the current configuration of the board. Future
+	states of the game and rewards only depend on the current situation, not on
+	the whole play. In Chess, for example, we can determine whether a
+	configuration is a win or loss just by looking for a checkmate, there is no
+	need to ask the players how the game has carried out.
+
+	Proving that Markovian $T$ and $R$ exist is easy for board games, because
+	the rules of the game define them. As we will see in
+	Section~\ref{sec:non-markov}, when $T$ is unknown, as always happens in the
+	real-world, it's much more difficult to prove that we're in fact facing a
+	MDP.
+\end{example}
+
 The \emph{policy} is the criterion the agent uses to select the actions to
 perform. If the environment dynamics can be modelled with a MDP, the
 optimal action at time~$t$ only depends on~$s_{t}$. So, there must exist
-an optimal policy as $\policy^*: S \to A$. Due to common estimation errors, it
-is always better to prefer nondeterministic policies, which return a
-probability distribution over the actions. The action at time $t$ will be
+an optimal policy as $\policy^*: \stateS \to A$. Due to common estimation
+errors, it is always better to prefer nondeterministic policies, which return
+a probability distribution over the actions. The action at time $t$ will be
 sampled according to $a_t \sim \policy(s_t)$. This dependency is represented
-by the dotted arrow of Figure~\ref{fig:mdp}.
+by the dotted arrows of Figure~\ref{fig:mdp}.
 
 We will now introduce few basic quantities of RL that serve to define what it
 means for an action or a policy to be optimal. The \emph{discounted
@@ -132,11 +155,11 @@ this quantity for each state $s$:
 which computes the expected value of $G$, when the agent starts from state $s$
 and it follows the policy~$\policy$. The notation $\E_{\policy}$ indicates
 that the estimation assumes that the actions are sampled according
-to~$\policy$. Finally, we can define the optimal policy $\policy^*$ as the one
-maximizing the value function at all states:
+to~$\policy$. Finally, we can define the \emph{optimal policy} $\policy^*$ as
+the one maximizing the value function at all states:
 \begin{equation}
-	\policy^*: \quad v_{\policy^*}(s) \ge v_{\policy}(s) \qquad \forall s \in S,
-	\quad \text{for all $\policy$}
+	\policy^*: \quad v_{\policy^*}(s) \ge v_{\policy}(s) \qquad \forall s \in
+	\stateS, \quad \text{for all $\policy$}
 \end{equation}
 The typical Reinforcement Learning problem is to find the optimal policy for
 an MDP with unknown $T$ and~$R$.
@@ -146,17 +169,337 @@ the value function:
 \begin{equation}
 	q_{\policy}(s, a) \coloneqq \E_{\policy}[G \given s_0 = s, a_0 = a]
 \end{equation}
-which forces the first action to be~$a$. Since the only evidence the agent can
-collect are outcomes of single actions, this is usually a much more convenient
-form for updating the estimate of the expected discounted return.
+that forces the first action to be~$a$. Since the agent only observes outcomes
+of single actions, this is usually a much more convenient form for updating
+the estimate of the expected discounted return. Also, the optimal policy can
+be simply expressed as:
+\begin{equation}
+	\policy^*(s) = \argmax_{a \in A} q_{\policy^*}(s, a)
+\end{equation}
+So, instead of learning the optimal policy directly, we can learn the optimal
+state-value function,~$q_{\policy^*}$ (also denoted with $q^*$). Fortunately,
+we don't need $\policy^*$ to valuate $q^*$ because, assuming optimality, we
+know it satisfies the Bellman optimality equation:
+\begin{align}
+	q^*(s, a) &= \E\, \bigl[ r_{t+1} + \discount \max_{a'} q^*(s_{t+1}, a')
+	\given s_t = s, a_t = a \bigr] \\
+	&= \sum_{s', r'} p(s', r' \given s, a) \,
+	\bigl( r' + \discount \max_{a'} q^*(s', a') \bigr)
+\end{align}
+for any~$t$.
 
-If we could know the 
+Many learning algorithms exist for estimating $q^*$. Briefly, on-policy
+algorithms, estimate $q_\policy$ of the policy currently in use $\policy \to
+\policy^*$; off-policy algorithms, instead, act according to any exploration
+policy $\policy'$ and directly estimate $q^*$. Two famous algorithms in these
+classes are SARSA and Q-learning, respectively. The one used in this thesis is
+derived from the latter.
+
+
+\section{Non-Markovian goals}
+\label{sec:non-markov}
+
+The goal of a RL agent is to maximize the rewards received.  A goal, or a
+task, is said \emph{non-Markovian} if the rewards do not satisfy the Markov
+assumption on rewards, i.e:
+\begin{equation}
+	r_{t+1} \not\perp s_i, a_i, r_i \quad 0 \le i < t \qquad \text{for some $t$}
+	\label{eq:markov-rewards}
+\end{equation}
+% TODO: the above equation should have o_i not s_i, notation?
+Of course, this can happen only if the environment cannot be modelled with an
+MDP. Excellent algorithms exists for MDPs; instead, non-Markovian goals are
+much more difficult to learn.  There are two main causes for non-Markovian
+rewards: partial observations and temporally-extended tasks. We'll thoroughly
+analyze both scenarios.
+
+
+\subsection{Partial observations}
+
+Up to this point, we didn't need to distinguish between observations and
+states. In fact, we assumed that the agent can directly observe the
+environment states and act accordingly (we defined the policy as a function of
+the state). Unfortunately, this is often not the case: we only get to see
+something that depends on the current state, but it's not. These systems can
+be modelled with a \emph{Partially Observable Markov Decision Process}
+(POMDP).  POMDPs are a generalization of MDPs for partial observations. From
+now on, we will denote with $\stateS$ the environment state space and with
+$\obsS$ the observation space. Formally, a discrete-time POMDP is a 7-tuple
+${\langle \stateS, A, T, R, \obsS, O, \discount \rangle}$, where $\stateS, A,
+T, R$ are defined as usual, $\obsS$ is the observation space, and $O$ is the
+observation function ${O: S \to \obsS}$.
+
+The graphical model of a POMDP is shown in Figure~\ref{fig:pomdp}.
+\begin{figure}
+	\centering
+	\begin{tikzpicture}
+		\matrix [
+			column sep={1.5cm,between origins}, row sep={1cm,between origins},
+			hidden node/.style={node, fill=gray},
+		] {
+			\node (om1) [node, label=above:$o_{t-1}$] {}; \&
+			\node (am1) [node, label=above:$a_{t-1}$] {}; \&
+			\node (o) [node, label=above:$o_{t}$] {}; \&
+			\node (a) [node, label=above:$a_{t}$] {}; \\
+			\node (stm1) [hidden node, label=below left:$s_{t-1}$] {};
+			\& \&
+			\node (st) [hidden node, label=below left:$s_{t}$] {}; \& \&
+			\node (st1) [hidden node, label=below left:$s_{t+1}$] {}; \\
+			\& \&
+			\node (r) [node, label=below:$r_{t}$] {}; \& \&
+			\node (r1) [node, label=below:$r_{t+1}$] {}; \\
+		};
+		\draw [->] (stm1) -- (om1);
+		\draw [->] (st) -- (o);
+		%
+		\draw [->] (st) -- (r);
+		\draw [->] (st1) -- (r1);
+		%
+		\draw [->, dotted] (om1) -- node [midway] {?} (am1);
+		\draw [->, dotted] (o) -- node [midway] {?} (a);
+		%
+		\draw (st) edge [<-] (stm1) edge [<-] (am1);
+		\draw (st1) edge [<-] (st) edge [<-] (a);
+
+		\draw [dashed, gray] (st1) -- +(0.8,0);
+		\draw [dashed, gray] (stm1) -- +(-0.8,0);
+	\end{tikzpicture}
+	\caption{The Directed Graphical Model of a POMDP. Gray nodes are
+	unobservable. For simplicity, the rewards in this graph depend just on the
+	current state $s_t$, not on transitions ${(s_t, a_t, s_{t+1})}$.}
+	\label{fig:pomdp}
+\end{figure}
+The sequence of states ${\langle s_0, s_1, \dots \rangle}$, which is the
+environment dynamics, still satisfies the Markov assumption (it forms a Markov
+chain). In a POMDP, this dynamics exists but is unobservable. What we can
+see, instead, is a sequence of observations ${ \langle o_0, o_1, \dots
+\rangle}$. Each of them is generated from the corresponding state, through the
+(possibly nondeterministic) observation function. Actions and policies can
+only act in response to observations, not states.
+
+The dotted arrows in Figure~\ref{fig:pomdp} have a question mark on them,
+because that dependency is our choice. As designers, we're free to select
+the informations that the agent should take into account when selecting an
+action. Is the last observation enough to decide? Or, more precisely, among
+all possible policies, do non-Markovian goals always admit an optimal policy
+of the form $\policy^*: \obsS \to A$? Unfortunately, the answer is no. As we
+will see, other informations are needed.
+
+If the transition and observation functions are known, a common solution is to
+estimate the states and decide the action from this belief. With deterministic
+functions, the agent can iteratively restrict the set of possible states by
+eliminating those inconsistent with the observations received. More commonly,
+these functions are nondeterministic. In this case, a probabilistic methods
+can be effective estimation algorithms. The iterative probabilistic filter
+applied to the sequence of observations would produce the belief distribution
+on the current state.
+We can represent the general procedure, at any instant~$t$, with the
+following computation:
+\begin{center}
+	\begin{tikzpicture}
+		\matrix [column sep=2em] {
+			\node (o) {$\langle o_0, o_1, \dots, o_t \rangle$}; \\
+			\&
+			\node (s) {$b(s_t)$}; \& \node (an) {$a_t$}; \\
+			\node (a) {$\langle a_0, a_1, \dots, a_{t-1} \rangle$}; \\
+		};
+		\draw [->] (o.east) -- (s);
+		\draw [->] (a.east) -- (s);
+		\draw [->] (s) -- (an);
+	\end{tikzpicture}
+\end{center}
+where $b(s)$ denotes the belief of $s$, being either a set of states or a
+probability distribution. Since each state estimate depends on the whole
+sequence of observations, also the next action is implicitly based on the
+whole history.
+
+Standard RL algorithms cannot be applied to POMDPs, because the state space is
+not observable. Also, since we commonly assume the transition and observation
+functions to be unknown, no estimation could be carried out anyway.  There is
+a clear difference between MDPs and POMDPs. Still, RL algorithms are
+frequently applied to POMDPs. Not surprisingly, they perform very poorly on
+these environments. See, for example, the games with worst performances
+in~\cite{bib:atari-deepq-nature}. This is a subtle mistake, because
+determining whether we're observing the state space is the same as answering
+the following question: does the observation space capture the whole dynamics
+of the system being observed? Or, more precisely, does an equivalent MDP
+$\langle \obsS, A, T_\obsS, R_\obsS, \discount' \rangle$ that produces the
+same rewards exist? If both $T_\obsS: \obsS \times A \times \obsS \to \R$ and
+$R_\obsS: \obsS \times A \times \obsS \to \R$ exist and produce the same
+rewards, the environment can be successfully modelled and solved with an MDP.
+Figure~\ref{fig:pomdp-as-mpd} represents this situation.
+
+\begin{figure}
+	\centering
+	\begin{tikzpicture}[
+			hidden node/.style={node, fill=gray},
+			hidden arc/.style={->, densely dotted},
+			box/.style={rounded corners=5pt, inner sep=1.8ex, draw=#1!50,
+				fill=#1!20},
+		]
+		\matrix [
+			column sep={1.6cm,between origins}, row sep={1.3cm,between origins},
+		] {
+			\node (stm1) [hidden node, label=above:$s_{t-1}$] {}; \& \&
+			\node (st) [hidden node, label=above:$s_{t}$] {}; \& \&
+			\node (st1) [hidden node, label=above:$s_{t+1}$] {}; \\
+			\&
+			\node (am1) [node, label=above:$a_{t-1}$] {}; \&
+			\node (r) [node, label=left:$r_{t}$] {}; \&
+			\node (a) [node, label=above:$a_{t}$] {}; \&
+			\node (r1) [node, label=left:$r_{t+1}$] {}; \\
+			\node (om1) [node, label=below:$o_{t-1}$] {}; \& \&
+			\node (o) [node, label=below:$o_{t}$] {}; \& \&
+			\node (o1) [node, label=below:$o_{t+1}$] {}; \\
+		};
+		\draw [hidden arc, bend left] (stm1) to (om1);
+		\draw [hidden arc, bend left] (st) to (o);
+		\draw [hidden arc, bend left] (st1) to (o1);
+		%
+		\draw [hidden arc] (st) -- (r);
+		\draw [hidden arc] (st1) -- (r1);
+		%
+		\draw [hidden arc] (stm1) -- (st);
+		\draw [hidden arc] (st) -- (st1);
+		\draw [hidden arc] (am1) -- (st);
+		\draw [hidden arc] (a) -- (st1);
+		%
+		\draw [dashed, gray] (st1) -- +(0.8,0);
+		\draw [dashed, gray] (stm1) -- +(-0.8,0);
+		%
+		\draw [->] (o) -- (r);
+		\draw [->] (o1) -- (r1);
+		%
+		\draw [->] (om1) -- (o);
+		\draw [->] (o) -- (o1);
+		\draw [->] (am1) -- (o);
+		\draw [->] (a) -- (o1);
+		%
+		\draw [dashed, gray] (st1) -- +(0.8,0);
+		\draw [dashed, gray] (stm1) -- +(-0.8,0);
+		\draw [dashed, gray] (o1) -- +(0.8,0);
+		\draw [dashed, gray] (om1) -- +(-0.8,0);
+		% boxes
+		\begin{pgfonlayer}{below}
+			\path coordinate (st-up) at ($(st)+(0,1em)$);
+			\node [fit={(stm1) (st1) (st-up)}, box=gray,
+				pin=right:{\footnotesize hidden dynamics}
+			] {};
+			\node [fit={(om1) (o1) ($(a.north)+(0,1ex)$) ($(o.south)+(0,-1ex)$)},
+				box=orange, pin=right:{\footnotesize MDP assumption}] {};
+		\end{pgfonlayer}
+	\end{tikzpicture}
+	\caption{The dotted arrows \protect\tikz [baseline=-0.5ex] \protect\draw
+	[densely dotted, ->] (0,0) to +(1.5em,0); represent the dependencies in a
+	POMDP model. Solid arrows \protect\tikz [baseline=-0.5ex] \protect\draw
+	[->] (0,0) to +(1.5em,0); show the MDP model over the same quantities.}
+	\label{fig:pomdp-as-mpd}
+\end{figure}
+
+\begin{example}
+	As we've seen from Example~\vref{ex:board-games}, the game of Chess can
+	be modelled with an MDP if we consider as states the vectors of positions of
+	all pieces on the board. Let's suppose, instead, the observations available
+	are images of the board after each move (if the pieces can be distinguished,
+	these could even come from a real play). Each image completely captures the
+	state of the game because, for each move of the agent and the opponent,
+	we're able to accurately predict image that will follow. This is a
+	transition $T_\obsS$ over images. Similarly, a reward function $R_\obsS$ can
+	simply return $+1$ or $-1$ for images with checkmates and 0 otherwise. These
+	functions can be unknown and don't need to be defined.
+
+	Suppose, instead, that the agent can only observe the left-hand side of the
+	board (columns a-d, for example). In this case, each image provides an
+	incomplete view over the state of the game. In fact, in order to determine
+	the best action we must consider whether there are some attacking pieces on
+	the hidden region. In this case, classic RL algorithms would perform poorly,
+	because an image it's not sufficient to predict the next image and reward.
+\end{example}
+
+\begin{example}
+	Let's consider a classic control problem: the swing-up of an inverted
+	pendulum. A pendulum can freely rotate by 360° around a hinge. The agent, at
+	each discrete time step, can apply torques to this active joint.  The goal
+	is to stabilize the pendulum in the upward position, which is the
+	configuration of unstable equilibrium. In order to solve this problem with
+	Reinforcement Learning, we need to define the spaces $S$ and $A$ of the MDP.
+	In this domain, actions are continuous torques. So, assuming a normalized
+	range, $A \coloneqq [-1, +1] \subseteq \R$. The angle of the pendulum
+	$\theta$ with respect to some fixed reference completely determines the
+	position of the masses. Is the reward Markovian with respect to $S =
+	\{\theta \in [-\pi, +\pi]\}$? No, because the agent is rewarded when the
+	pendulum stops in the upward position. So, the appropriate state space
+	consists of both $\theta$ and $\dot\theta$ (or, rather its discrete-time
+	approximation).
+
+	Including the momentum is very common for mechanical systems. However, this
+	can be also necessary for games. In fact, just looking at a single frame,
+	the agent has no clue about how all the elements in the picture are moving.
+	For example, an optimal policy would take into account the direction of an
+	approaching ball in order to hit it.
+\end{example}
+
+
+\subsection{Temporally-extended goals}
+
+The previous section has shown how partial observations may falsify the Markov
+assumption on rewards. A second possibility is to have a complete observation
+of the state ($\obsS = \stateS$) but a task that is intrinsically
+non-Markovian. In this case, each reward is computed from the whole history
+of past events:
+\begin{equation}
+	r_t = R(\langle s_0, a_0, \dots, s_{t-1}, a_{t-1} \rangle) \qquad
+	\forall t \in \Z
+\end{equation}
+with $R: \stateS^* \to \R$.
+
+
+
+% TODO: NMRDP
+% TODO: example with light bulb
+
+
+\section{Deep Reinforcement Learning}
+
+Classic RL algorithms, such as SARSA and Q-learning, are tabular methods
+because they store and update the estimate for each pair $(s, a)$
+independently. Unfortunately, this requires discrete and small states and
+actions spaces. To overcome this very limiting assumption, we need
+parametrized value functions and policies.  \emph{Deep Reinforcement Learning}
+(Deep RL) is a recent field of RL in which Neural Networks (NN) are used as
+powerful function approximators for policies or value functions.
+
+The main advantage of NN, and parametric models in general, is that they can
+be trained in high-dimensional and continuous input spaces. In fact, a good
+fit does not require a complete exploration of the input space, which may be
+unfeasible or impossible. Instead, they are trained with some form of
+Stochastic Gradient Descent (SGD) on the set of parameters from input-output
+samples. Then, the model will be able to generalize to inputs that have been
+never observed.
+
+Deep RL algorithms allow very little guarantees about convergence and
+optimality.  Even if the input space would be explored completely, due to
+parametrization, updates for recent samples also affect the regions previously
+visited. In fact, any Deep RL algorithm introduces some techniques in order to
+generate a stable training.
+
+The Deep Q-Network (DQN)~\cite{bib:atari-deeprl} is an important algorithm
+because it successfully combined previous techniques for a stable training,
+and an interesting model based on deep NN for the state-value function.
+The outcome is very satisfactory: the same neto
+This resulted in an 
+They demonstrated that the same network can be trained in different games and
+achieve These promising
+results sparked a lively interest in Deep RL.
+
+
 
 % TODO We'll only deal with discrete action spaces, where the policy
 % is a categorical distribution (a vector of probabilities).
 
 
 
+\clearpage
 \section{Temporal logics and Linear Dynamic Logic}
 
 \subsection{Temporal logics on finite traces}

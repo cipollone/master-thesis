@@ -1,8 +1,9 @@
 
-\documentclass[LaM]{sapthesis}
+\documentclass[LaM, binding=1.5cm]{sapthesis}
 
 \usepackage[utf8]{inputenc}
 \usepackage{microtype}
+\usepackage[nodisplayskipstretch]{setspace}
 \usepackage{amsfonts}
 \usepackage{amssymb}
 \usepackage{amsthm}
@@ -11,13 +12,22 @@
 \usepackage{comment}
 \usepackage{tikz}
 \usepackage{subfig}
+\usepackage{titlesec}
+\usepackage{varioref}
 \usepackage[hidelinks]{hyperref}
 \usepackage{biblatex}
 
 % Bibliography
 \addbibresource{bibliography.bib}
 
+% Sections in new pages
+\newcommand{\sectionbreak}{\clearpage}
+
 % Math aliases
+\DeclarePairedDelimiter{\abs}{\lvert}{\rvert}
+\DeclarePairedDelimiter{\norm}{\lVert}{\rVert}
+\DeclareMathOperator*{\argmax}{arg\,max}
+\DeclareMathOperator*{\argmin}{arg\,min}
 \newcommand{\setSym}[1]{\mathcal{#1}}
 \newcommand{\ltl}{$\text{LTL}_f$}
 \newcommand{\ldl}{$\text{LDL}_f$}
@@ -48,6 +58,8 @@
 \newcommand{\lff}{\const{ff}}
 \newcommand{\discount}{\gamma}
 \newcommand{\policy}{\pi}
+\newcommand{\stateS}{S}  % Don't change, because s_i won't be updated
+\newcommand{\obsS}{\Omega}
 
 % TikZ
 \usetikzlibrary{arrows}
@@ -61,6 +73,7 @@
 \usetikzlibrary{intersections}
 \usetikzlibrary{shapes.geometric}
 \usetikzlibrary{decorations.pathreplacing}
+\usetikzlibrary{patterns}
 
 \pgfdeclarelayer{below}
 \pgfdeclarelayer{beloww}
@@ -76,7 +89,8 @@
 	image/.style={inner sep=0pt, outer sep=3pt},
 	region box/.style={orange, draw},
 	dot/.style={fill, circle, inner sep=0.7pt},
-	node/.style={draw, circle, semithick, inner sep=0pt, minimum size=1.7ex},
+	node/.style={draw, fill=white, circle, semithick, inner sep=0pt, minimum
+		size=1.7ex},
 	%
 	flow/.style={->, thick, >=spaced stealth'},
 	pin line/.style={very thin, draw, gray},
@@ -89,10 +103,13 @@
 
 % Teoremi?
 \theoremstyle{definition}
-\newtheorem*{example}{Example}
-\newtheorem*{definition}{Definition}
+\newtheorem{example}{Example}
+\newtheorem{definition}{Definition}
 
 % TODO: exam date and examiner infos
+
+% Line space
+\onehalfspacing
 
 % Pdf info
 \hypersetup{pdftitle={Tesi Magistrale Roberto Cipollone},pdfauthor={Roberto
