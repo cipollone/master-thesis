@@ -3,7 +3,7 @@
 \section{Reinforcement Learning}
 
 % Motivation
-In this section we will briefly review the most important aspects of classic
+In this section, we will briefly review the most important aspects of classic
 \emph{Reinforcement Learning} (RL). These concepts are relevant because they
 are also found in Deep Reinforcement Learning (Deep RL), which is a central
 component of the agent we will design. Excellent references for these topics
@@ -35,6 +35,9 @@ illustrated in Figure~\ref{fig:rl}.
 	\label{fig:rl}
 \end{figure}
 
+
+\subsection{Markov Decision Processes}
+
 % MDP
 Most RL algorithms assume that the environment dynamics can be modelled with a
 \emph{Markov Decision Process} (MDP). They do so, because under the
@@ -46,13 +49,13 @@ environment; $A$ is the action space; $T: \stateS \times A \times \stateS \to
 returns the probability $p(s_{t+1} \given s_{t}, a_{t})$ of the transition
 ${s_{t} \xrightarrow{a_{t}} s_{t+1}}$; $R: \stateS \times A \times \stateS \to
 \R$ is the reward function; and $\discount \in [0, 1]$ is called ``discount
-factor''\footnote{In this chapter, a variable with a subscript refers to the
-value of the variable at the discrete time indicated.}.
+factor''\footnote{In this chapter, variables with an integer subscript or
+index refer to the value at the discrete time indicated.}.
 
 % Markov assumptions
 In a RL problem, the functions $T$ and $R$ are unknown. The agent can only
-learn them by observing the samples it receives from the environment.
-However, by assuming that they can be modelled with functions ${\stateS \times
+learn them by taking each action and observing the outcomes. Even if they are
+unknown, by assuming that they can be modelled with functions ${\stateS \times
 A \times \stateS \to \R}$, we introduce some Markov assumptions. In
 particular, we assume that the next state of the environment is conditionally
 independent on the whole history, given the previous state and action:
@@ -60,7 +63,7 @@ $s_{t+1} \perp s_{0}, \dots, s_{t-1} \given s_{t}, a_{t}$. Similarly, the
 reward only depends on the last transition of the environment.  Although it's
 not required by the model, it is common that rewards are computed just from
 desirable configurations of the environment~$s_{t}$, not from specific
-transitions $(s_{t}, a_{t}, s_{t+1})$. All of these assumptions are summarized
+transitions $(s_{t-1}, a_{t-1}, s_{t})$. All these assumptions are summarized
 in the Directed Graphical Model (DGM) of Figure~\ref{fig:mdp}. In a DGM,
 directed edges indicate direct conditional probabilities, while missing arcs
 indicate conditionally independent variables.  In Figure~\ref{fig:mdp}, the
@@ -104,16 +107,16 @@ state~$s_t$.  This is the essence of a Markov assumption.
 	\label{ex:board-games}
 	Tic-Tac-Toe, Chess and many other board games can be modelled with an MDP.
 	Even games with dice, such as Backgammon. To do so, we define as state
-	space~$\stateS$ the set of configurations of the board; as reward
-	function~$R(s)$ = 1, if the configuration $s$ is a win, $-1$ for a lose, 0
-	otherwise. Even though most games are deterministic, the presence of an
-	opponent makes the transition function~$T$ of the MDP nondeterministic.
-	What these games have in common, is that the player gets to see the complete
-	state of the game, which is the current configuration of the board. Future
-	states of the game and rewards only depend on the current situation, not on
-	the whole play. In Chess, for example, we can determine whether a
-	configuration is a win or loss just by looking for a checkmate, there is no
-	need to ask the players how the game has carried out.
+	space~$\stateS$ the set of configurations of the board, and a reward
+	function $R(s)$ that returns $1$, if the configuration $s$ is a win, $-1$
+	for a loss, and 0 otherwise. Even though most games are deterministic, the
+	presence of an opponent makes the transition function~$T$ of the MDP
+	nondeterministic.  What these games have in common, is that the player gets
+	to see the complete state of the game, which is the current configuration of
+	the board. Future states of the game and rewards only depend on the current
+	situation, not on the whole play. In Chess, for example, we can determine
+	whether a configuration is a win or loss just by looking for a checkmate;
+	there is no need to ask the players how the game has carried out.
 
 	Proving that Markovian $T$ and $R$ exist is easy for board games, because
 	the rules of the game define them. As we will see in
@@ -121,6 +124,9 @@ state~$s_t$.  This is the essence of a Markov assumption.
 	real-world, it's much more difficult to prove that we're in fact facing a
 	MDP.
 \end{example}
+
+
+\subsection{Optimal policies}
 
 The \emph{policy} is the criterion the agent uses to select the actions to
 perform. If the environment dynamics can be modelled with a MDP, the
@@ -130,6 +136,7 @@ errors, it is always better to prefer nondeterministic policies, which return
 a probability distribution over the actions. The action at time $t$ will be
 sampled according to $a_t \sim \policy(s_t)$. This dependency is represented
 by the dotted arrows of Figure~\ref{fig:mdp}.
+% TODO: policies
 
 We will now introduce few basic quantities of RL that serve to define what it
 means for an action or a policy to be optimal. The \emph{discounted
@@ -143,8 +150,8 @@ The discount factor, $0 \le \discount \le 1$, decides the relative importance
 of immediate and future rewards. Usually, this factor is strictly less than 1
 because this stimulates the agent to achieve rewards as soon as possible.
 It also produces a finite discounted reward, even for an infinite run $T \to
-\infty$.  Since our environments are video games, each play is an episode and
-the total number of steps in each episode is finite.
+\infty$.  Since the environments we will experiment with are video games, each
+play is an episode and the total number of steps in each episode is finite.
 
 It is now clear, that the optimal policy should always maximize the expected
 discounted return. The \emph{value function} of a policy $\policy$ computes
@@ -169,12 +176,13 @@ the value function:
 \begin{equation}
 	q_{\policy}(s, a) \coloneqq \E_{\policy}[G \given s_0 = s, a_0 = a]
 \end{equation}
-that forces the first action to be~$a$. Since the agent only observes outcomes
-of single actions, this is usually a much more convenient form for updating
-the estimate of the expected discounted return. Also, the optimal policy can
-be simply expressed as:
+which forces the first action to be~$a$. Since the agent can only observe
+outcomes of single actions, this is usually a much more convenient form for
+updating the estimate of the expected discounted return. Also, the optimal
+policy can be simply expressed as:
 \begin{equation}
 	\policy^*(s) = \argmax_{a \in A} q_{\policy^*}(s, a)
+	\label{eq:opt-policy-q}
 \end{equation}
 So, instead of learning the optimal policy directly, we can learn the optimal
 state-value function,~$q_{\policy^*}$ (also denoted with $q^*$). Fortunately,
@@ -185,15 +193,64 @@ know it satisfies the Bellman optimality equation:
 	\given s_t = s, a_t = a \bigr] \\
 	&= \sum_{s', r'} p(s', r' \given s, a) \,
 	\bigl( r' + \discount \max_{a'} q^*(s', a') \bigr)
+	\label{eq:q-bellman}
 \end{align}
 for any~$t$.
 
 Many learning algorithms exist for estimating $q^*$. Briefly, on-policy
-algorithms, estimate $q_\policy$ of the policy currently in use $\policy \to
-\policy^*$; off-policy algorithms, instead, act according to any exploration
-policy $\policy'$ and directly estimate $q^*$. Two famous algorithms in these
-classes are SARSA and Q-learning, respectively. The one used in this thesis is
-derived from the latter.
+algorithms, estimate $q_\policy$ of the policy $\policy$ currently under
+improvement $\policy \to \policy^*$; off-policy algorithms, instead, act
+according to any exploration policy $\policy_e$ and directly estimate $q^*$.
+Two famous algorithms in these classes are SARSA and Q-learning, respectively.
+The one used in this thesis is derived from the latter.
+
+
+\subsection{Exploration policies}
+
+If $q^*$ were know, equation~\eqref{eq:opt-policy-q} would be enough to always
+select the optimal action. Generalizing in $q$, we call this the \emph{greedy
+policy}, because it always selects the best action according to $q$:
+\begin{equation}
+	\policy_q(s) \coloneqq \argmax_{a \in A} q(s, a)
+	\label{eq:pol-greedy}
+\end{equation}
+Unfortunately, while learning, we only have an estimate of the optimal
+function, ${\est{q} \approx q^*}$. Being greedy with respect to sub-optimal
+values is dangerous, because the agent may deterministically select
+actions that repeatedly lead to dead-ends.  To mitigate this issue, we can
+choose some actions randomly. The \emph{\eps-greedy policy} is defined:
+\begin{equation}
+	\policy_{q,\epsilon}(s) \coloneqq
+	\begin{cases}
+		\text{random action $a \in A$}
+		&\text{with probability $\epsilon$} \\
+		\argmax_{a \in A} q(s, a)
+		&\text{otherwise}
+	\end{cases}
+	\label{eq:pol-eps}
+\end{equation}
+More precisely, random actions are sampled from a uniform distribution over
+the set of actions $A$. By making random moves, the agent might escape from
+suboptimal regions.  We can note that if $\epsilon = 1$,
+definition~\eqref{eq:pol-eps} reduces to the random policy:
+\begin{equation}
+	\policy_r(s) \coloneqq \text{random action $a \in A$}
+	\label{eq:pol-random}
+\end{equation}
+
+When training begins, the agent has no clue about the optimal q-function. It
+can only try out all actions by following the random policy. It will receive
+low rewards but it will observe all the possible outcomes. This is the purpose
+of exploration. After a while, the agent can begin to trust about it's
+predictions. So, it may choose the most promising actions to achieve higher
+rewards. This is the exploitation phase. The exploitation--exploration
+trade-off is a general problem in RL. Unfortunately, there's no general
+solution because it's not easy to determine when the policy is ``good
+enough''. Usually, we need some compromise between the two.
+
+% Linear annealed. More later
+
+% Exploration policies
 
 
 \section{Deep Reinforcement Learning}
@@ -206,7 +263,7 @@ parametrized value functions and policies.  \emph{Deep Reinforcement Learning}
 (Deep RL) is a recent field of RL in which Neural Networks (NN) are used as
 powerful function approximators for policies or value functions.
 
-The main advantage of NN, and parametric models in general, is that they can
+The main advantage of NNs, and parametric models in general, is that they can
 be trained in high-dimensional and continuous input spaces. In fact, a good
 fit does not require a complete exploration of the input space, which may be
 unfeasible or impossible. Instead, they are trained with some form of
@@ -214,25 +271,136 @@ Stochastic Gradient Descent (SGD) on the set of parameters from input-output
 samples. Then, the model will be able to generalize to inputs that have been
 never observed.
 
-Deep RL algorithms allow very little guarantees about convergence and
-optimality.  Even if the input space would be explored completely, due to
-parametrization, updates for recent samples also affect the regions previously
-visited. In fact, any Deep RL algorithm introduces some techniques in order to
-generate a stable training.
-
-The Deep Q-Network (DQN)~\cite{bib:atari-deeprl} is an important algorithm
-because it successfully combined previous techniques for a stable training,
-and an interesting model based on deep NN for the state-value function.
-The outcome is very satisfactory: the same neto
-This resulted in an 
-They demonstrated that the same network can be trained in different games and
-achieve These promising
-results sparked a lively interest in Deep RL.
+Unfortunately, due to approximation and parametrization, Deep RL algorithms
+allow very little guarantees about convergence and optimality. Even if the
+input space would be explored completely, updates for recent samples would
+also affect the regions previously visited. In fact, any method introduces
+some techniques in order to generate a stable training.
 
 
+\subsection{Environment: Atari 2600 games}
 
-% TODO We'll only deal with discrete action spaces, where the policy
-% is a categorical distribution (a vector of probabilities).
+The Atari 2600 is a video game platform that was developed in 1977. There are
+hundreds of classic games available to play: Space Invaders, Ms. Pacman,
+Breakout and many others. The screen is 160 pixels wide and 210 pixels high,
+with 8-bits colour depth. The joystick has 9 positions (3 for each axis) and
+one button, for a total of 18 possible actions. For this reason, we'll only
+focus on RL methods for discrete action spaces.
+
+The Arcade Learning Environment~\cite{bib:atari-games} is a simple interface
+to the Atari 2600 emulator. It allows agents to play and be trained on these
+games. At each step, the agent sends one of the 18 actions and receives as
+result a frame of the game and a reward. The reward is the increment in the
+player's score. This is really the same interface that a human player would
+use. Figure~\ref{fig:atari-frames} shows frames from few games in this
+collection. 
+
+\begin{figure}
+	\centering
+	\includegraphics[width=0.25\textwidth]{./imgs/si0.png}
+	\quad
+	\includegraphics[width=0.25\textwidth]{./imgs/br0.png}
+	\quad
+	\includegraphics[width=0.25\textwidth]{./imgs/mz0.png}
+	\caption{Initial frames of some Atari 2600 games (left to right): Space
+		Invaders, Breakout, Montezuma's Revenge.}
+	\label{fig:atari-frames}
+\end{figure}
+
+Although these games come from an early stage of video games development, they
+represent the appropriate challenge for current (Deep) Reinforcement Learning
+agents. In fact, many papers tested their RL algorithms on these
+games~\cite{bib:atari-deeprl}%
+\cite{bib:atari-deepq-nature}\cite{bib:double-q}\cite{bib:rainbow}.
+In this thesis, we also tested with some of these environments. We will also
+show how improve on the hardest game in this collection for a RL agent:
+Montezuma's Revenge.
+
+
+\subsection{Deep Q-Network}
+
+The \emph{Deep Q-Network} (DQN)~\cite{bib:atari-deeprl} was the first
+algorithm to successfully combine deep learning models and Reinforcement
+Learning. Although many basic ideas presented here have been already
+introduced in Neural Fitted Q~iteration~\cite{bib:nfq}, DQN addressed some
+causes of training instability. They also demonstrated that exactly the
+same agent can be trained in many Atari games and achieve human-level
+performances in many of those~\cite{bib:atari-deepq-nature}. These promising
+results sparked a lively interest in Deep RL, recently.
+
+In DQN, the state-action value is approximated by a deep neural network ${Q(s,
+a; \params)}$, on the parmeters $\params$, that we call Q-Network. The purpose
+of learning, is to train this network to approximate the optimal q-function: 
+$\est{\params}: Q(s, a; \est{\params}) \approx q^*(s, a)$. Then, the estimated
+optimal policy will be:
+\begin{equation}
+	\est{\policy}(s) = \argmax_{a \in A} Q(s, a; \est{\params})
+\end{equation}
+
+To train the network, we ensure that, for each input $(s, a)$, the model
+returns the expected value of the target~$y_{s,a}$. For this network, the
+targets are the optimal state-action values to estimate. To do so, we select
+the parameters that minimize the squared difference between the estimates and
+the targets:
+\begin{equation}
+	\text{loss}(\params) \coloneqq \bigl(Q(s, a; \params) - y_{s,a} \bigr)^2
+\end{equation}
+where $y_{s,a}$ is the target value $q^*(s, a)$. This loss contains some
+random variables. So, we minimize it through some stochastic optimization
+algorithm. In Stochastic Gradient Descent (SGD), at each step $t$,
+we observe an input ${(s_t, a_t)}$ and the associated target $y_t$, and we
+take a small step toward the negative gradient of the loss:
+\begin{equation}
+	\params_{t+1} = \params_t - \alpha\, \nabla_{\params}\,
+	\Bigl( \bigl(Q(s_t, a_t; \params) - y_t \bigr)^2 \Bigr) \Big|_{\params =
+	\params_t}
+	\label{eq:sgd-update}
+\end{equation}
+in which $0 < \alpha < 1$ is a small learning rate. This equation is not
+the only update rule possible. There are more advanced optimization
+algorithms, such as: Momentum, RMSprop and Adam. In this thesis, we've
+mostly experimented with Adam.
+
+What has just been described is the usual way of fitting a neural network
+to a dataset of samples. In RL, however, the targets $q^*(s_t, a_t)$ are
+unknown, because they depend recursively from the same optimal state-function
+that we're trying to learn (see equation~\eqref{eq:q-bellman}). In classic RL,
+this is not a problem: the 1-step approximation,
+\begin{equation}
+	r_{t+1} + \discount \max_{a \in A} \est{q}(s_{t+1}, a)
+	\label{eq:1step-targets}
+\end{equation}
+or the n-step approximation, are a valid targets $y_t$ for the
+function~$\est{q}$. By updating toward these values on the whole input space,
+convergence is guaranteed. 
+
+With neural networks, instead, by updating the parameters, we also modify the
+target, because the weights have a global influence on the function. It's not
+possible apply a correction for just one tiny region of the input space (nor
+it's desirable, after all).  It has been shown~\cite{bib:nfq}, that due to
+this effect, propagating errors slow down convergence or even render the
+training unstable.  To address this issue one must ensure that the targets do
+not move much.
+
+The DQN~\cite{bib:atari-deeprl} algorithm addresses this issue in two ways.
+First, the targets in equation~\eqref{eq:1step-targets} are not generated by
+the network being trained, $Q(s, a; \params)$, but they are computed from a
+second net, $Q(s, a; \params')$. Every $C$ iterations, the target net is
+updated to match the trained net, with the assignment: $\params' \gets
+\params$. This keeps the targets constant for $C$ steps and helps to stabilize
+the training.
+
+Second, the network is not trained from the last sample, but from the recent
+experience. At each step, the agent acts according to some exploration policy,
+$a_t \sim \policy_e$. Each transition, of the form $\langle s_t, a_t, r_{t+1},
+s_{t+1} \rangle$, is recorded in a buffer of size $n_r$, called ``experience
+replay''. Then, at each training step, we sample a number of $n_b$ transitions,
+thus creating a batch, and we perform an update $\params_{i+1} = \params_i -
+\alpha\, g_i$ on the cumulative gradient $g_i$ of the whole batch.
+
+% TODO: accorgimenti per atari games
+% TODO: network
+% TODO: policies?
 
 
 
@@ -410,10 +578,10 @@ The goal of a RL agent is to maximize the rewards received.  A goal, or a
 task, is said \emph{non-Markovian} if the rewards do not satisfy the Markov
 assumption on rewards, i.e:
 \begin{equation}
-	r_{t+1} \not\perp s_i, a_i, r_i \quad 0 \le i < t \qquad \text{for some $t$}
+	r_{t+1} \not\perp s_t, a_t, r_t \quad 0 \le i < t \qquad \text{for some $t$}
 	\label{eq:markov-rewards}
 \end{equation}
-% TODO: the above equation should have o_i not s_i, notation?
+% TODO: the above equation should have o_t not s_t, notation?
 Of course, this can happen only if the environment cannot be modelled with an
 MDP. Excellent algorithms exists for MDPs; instead, non-Markovian goals are
 much more difficult to learn.  There are two main causes for non-Markovian
@@ -693,6 +861,6 @@ the reward at time $t$ as $r_t = R(\langle s_0, s_1, \dots, s_t \rangle)$.
 % TODO: Logic that models traces (remove definition of traces)
 
 
-\section{Reinforcement learning with restraining specifications}
+\section{Reinforcement Learning with restraining specifications}
 Restraining Bolt method~\cite{bib:bolt}\cite{bib:rb-imitation-l}.
 
