@@ -116,7 +116,7 @@ state~$s_t$.  This is the essence of a Markov assumption.
 	the board. Future states of the game and rewards only depend on the current
 	situation, not on the whole play. In Chess, for example, we can determine
 	whether a configuration is a win or loss just by looking for a checkmate;
-	there is no need to ask the players how the game has carried out.
+	there is no need to ask the players how the game has been carried out.
 
 	Proving that Markovian $T$ and $R$ exist is easy for board games, because
 	the rules of the game define them. As we will see in
@@ -149,17 +149,18 @@ return}~$G$ is the combination of all rewards collected:
 The discount factor, $0 \le \discount \le 1$, decides the relative importance
 of immediate and future rewards. Usually, this factor is strictly less than 1
 because this stimulates the agent to achieve rewards as soon as possible.
-It also produces a finite discounted reward, even for an infinite run $T \to
-\infty$.  Since the environments we will experiment with are video games, each
-play is an episode and the total number of steps in each episode is finite.
+It also produces a finite discounted reward, even for an infinite run, where
+$T \to \infty$.  Since the environments we will experiment with are video
+games, each play is an episode and the total number of steps in each episode
+is finite.
 
 It is now clear, that the optimal policy should always maximize the expected
 discounted return. The \emph{value function} of a policy $\policy$ computes
-this quantity for each state $s$:
+this quantity from each state $s$:
 \begin{equation}
 	v_{\policy}(s) \coloneqq \E_{\policy}[G \given s_0 = s]
 \end{equation}
-which computes the expected value of $G$, when the agent starts from state $s$
+which is the expected value of $G$, when the agent starts from state $s$
 and it follows the policy~$\policy$. The notation $\E_{\policy}$ indicates
 that the estimation assumes that the actions are sampled according
 to~$\policy$. Finally, we can define the \emph{optimal policy} $\policy^*$ as
@@ -176,10 +177,10 @@ the value function:
 \begin{equation}
 	q_{\policy}(s, a) \coloneqq \E_{\policy}[G \given s_0 = s, a_0 = a]
 \end{equation}
-which forces the first action to be~$a$. Since the agent can only observe
+which also forces the first action to be~$a$. Since the agent can only observe
 outcomes of single actions, this is usually a much more convenient form for
-updating the estimate of the expected discounted return. Also, the optimal
-policy can be simply expressed as:
+updating the estimate of the expected discounted return. Most important, the
+optimal policy can be simply expressed as:
 \begin{equation}
 	\policy^*(s) = \argmax_{a \in A} q_{\policy^*}(s, a)
 	\label{eq:opt-policy-q}
@@ -198,8 +199,8 @@ know it satisfies the Bellman optimality equation:
 for any~$t$.
 
 Many learning algorithms exist for estimating $q^*$. Briefly, on-policy
-algorithms, estimate $q_\policy$ of the policy $\policy$ currently under
-improvement $\policy \to \policy^*$; off-policy algorithms, instead, act
+algorithms, estimate $q_\policy$ of the policy $\policy$ that is being used
+and improved, $\policy \to \policy^*$; off-policy algorithms, instead, act
 according to any exploration policy $\policy_e$ and directly estimate $q^*$.
 Two famous algorithms in these classes are SARSA and Q-learning, respectively.
 The one used in this thesis is derived from the latter.
@@ -208,17 +209,18 @@ The one used in this thesis is derived from the latter.
 \subsection{Exploration policies}
 
 If $q^*$ were know, equation~\eqref{eq:opt-policy-q} would be enough to always
-select the optimal action. Generalizing in $q$, we call this the \emph{greedy
-policy}, because it always selects the best action according to $q$:
+select the optimal action. Generalizing for any $q$, we call that the
+\emph{greedy policy}, because it always selects the best action according to
+$q$:
 \begin{equation}
 	\policy_q(s) \coloneqq \argmax_{a \in A} q(s, a)
 	\label{eq:pol-greedy}
 \end{equation}
-Unfortunately, while learning, we only have an estimate of the optimal
+Unfortunately, while learning, we only have a rough estimate of the optimal
 function, ${\est{q} \approx q^*}$. Being greedy with respect to sub-optimal
 values is dangerous, because the agent may deterministically select
 actions that repeatedly lead to dead-ends.  To mitigate this issue, we can
-choose some actions randomly. The \emph{\eps-greedy policy} is defined:
+choose some actions at random. The \emph{\eps-greedy policy} is defined as:
 \begin{equation}
 	\policy_{q,\epsilon}(s) \coloneqq
 	\begin{cases}
@@ -231,7 +233,7 @@ choose some actions randomly. The \emph{\eps-greedy policy} is defined:
 \end{equation}
 More precisely, random actions are sampled from a uniform distribution over
 the set of actions $A$. By making random moves, the agent might escape from
-suboptimal regions.  We can note that if $\epsilon = 1$,
+suboptimal environment configurations. If $\epsilon = 1$,
 definition~\eqref{eq:pol-eps} reduces to the random policy:
 \begin{equation}
 	\policy_r(s) \coloneqq \text{random action $a \in A$}
@@ -239,24 +241,67 @@ definition~\eqref{eq:pol-eps} reduces to the random policy:
 \end{equation}
 
 When training begins, the agent has no clue about the optimal q-function. It
-can only try out all actions by following the random policy. It will receive
-low rewards but it will observe all the possible outcomes. This is the purpose
-of exploration. After a while, the agent can begin to trust about it's
-predictions. So, it may choose the most promising actions to achieve higher
-rewards. This is the exploitation phase. The exploitation--exploration
-trade-off is a general problem in RL. Unfortunately, there's no general
-solution because it's not easy to determine when the policy is ``good
-enough''. Usually, we need some compromise between the two.
+can just try out all actions by executing the random policy. In this phase,
+the agent receives low rewards but observes a lot of different outcomes for
+its actions. This is the purpose of exploration. After a while, the agent can
+begin to trust in its predictions. So, it may gradually choose the most
+promising actions in order to achieve higher rewards. This is the exploitation
+phase.  The exploitation--exploration trade-off is a fundamental problem in
+AI.  Unfortunately, there's no general solution in RL, because the agent has
+no way to tell when the policy is ``good enough''. Usually, we need to try
+some compromises between the two.
 
-% Linear annealed. More later
+To address this issue, during training, the agent can act according to a
+policy that is initially stochastic but gradually approaches the greedy
+policy, over time. There are many ways to do this. One of the most simple
+options is to select the \eps{}-greedy policy of equation~\eqref{eq:pol-eps}
+with \eps{} that varies over time according to some schedule.
+Figure~\ref{fig:policy-schedules} shows two common possibilities.
+\begin{figure}
+	\centering
+	\begin{tikzpicture}
+		\begin{axis}[
+				xmin=0, xmax=120, width=0.4\textwidth, height=4cm,
+				xlabel=$t$, ylabel=\eps{}, xtick=\empty]
+			\addplot [blue!50!black] coordinates {
+				(0, 1)
+				(100, 0.1)
+				(120, 0.1)
+			};
+		\end{axis}
+	\end{tikzpicture}
+	\qquad
+	\begin{tikzpicture}
+		\begin{axis}[
+				xmin=0, xmax=120, width=0.4\textwidth, height=4cm,
+				xlabel=$t$, ylabel=\eps{}, xtick=\empty]
+			\addplot [blue!50!black, domain=0:120] {
+				0.9*exp(-x/30)+0.1
+			};
+		\end{axis}
+	\end{tikzpicture}
+	\caption{Probability of a random action over time: \eps{} with linear decay
+	(left), \eps{} with exponential decay (right).}
+	\label{fig:policy-schedules}
+\end{figure}
+On the left-hand figure, the probability of a random action is linearly
+decreased over time, while on the right, it follows an exponential decay. In
+both cases \eps{} never becomes zero, because that would effectively terminate
+the learning process. The rate of this decrease is a hyperparameter that
+can be tuned.
 
-% Exploration policies
+The most important policies are those just described. They can be directly
+used in a RL algorithm or combined to create more complex policies.  The
+variants adopted in this thesis will be presented in the next chapters.  With
+``exploration policy'' we refer to any policy that has a strong component of
+nondeterminism and it's suitable to select the agent's actions during
+training.
 
 
 \section{Deep Reinforcement Learning}
 
-Classic RL algorithms, such as SARSA and Q-learning, are tabular methods
-because they store and update the estimate for each pair $(s, a)$
+Classic RL algorithms, such as SARSA and Q-learning, are tabular methods.
+In fact, they store and update the estimate for each pair $(s, a)$
 independently. Unfortunately, this requires discrete and small states and
 actions spaces. To overcome this very limiting assumption, we need
 parametrized value functions and policies.  \emph{Deep Reinforcement Learning}
@@ -268,14 +313,14 @@ be trained in high-dimensional and continuous input spaces. In fact, a good
 fit does not require a complete exploration of the input space, which may be
 unfeasible or impossible. Instead, they are trained with some form of
 Stochastic Gradient Descent (SGD) on the set of parameters from input-output
-samples. Then, the model will be able to generalize to inputs that have been
-never observed.
+samples. Then, the model can be able to generalize to inputs that have been
+never observed, in a meaningful way.
 
 Unfortunately, due to approximation and parametrization, Deep RL algorithms
 allow very little guarantees about convergence and optimality. Even if the
 input space would be explored completely, updates for recent samples would
-also affect the regions previously visited. In fact, any method introduces
-some techniques in order to generate a stable training.
+also affect the regions previously visited. In fact, any effective Deep RL
+algorithm introduces some techniques in order to generate a stable training.
 
 
 \subsection{Environment: Atari 2600 games}
@@ -289,11 +334,11 @@ focus on RL methods for discrete action spaces.
 
 The Arcade Learning Environment~\cite{bib:atari-games} is a simple interface
 to the Atari 2600 emulator. It allows agents to play and be trained on these
-games. At each step, the agent sends one of the 18 actions and receives as
-result a frame of the game and a reward. The reward is the increment in the
-player's score. This is really the same interface that a human player would
-use. Figure~\ref{fig:atari-frames} shows frames from few games in this
-collection. 
+games. At each step, the agent chooses one of the 18 actions available and
+receives in return a frame of the game and a reward. The reward is the
+increment in the player's score for the original game. This is really the same
+interface that a human player would use. Figure~\ref{fig:atari-frames} shows
+the frames from few games in this collection. 
 
 \begin{figure}
 	\centering
@@ -322,11 +367,11 @@ Montezuma's Revenge.
 The \emph{Deep Q-Network} (DQN)~\cite{bib:atari-deeprl} was the first
 algorithm to successfully combine deep learning models and Reinforcement
 Learning. Although many basic ideas presented here have been already
-introduced in Neural Fitted Q~iteration~\cite{bib:nfq}, DQN addressed some
-causes of training instability. They also demonstrated that exactly the
-same agent can be trained in many Atari games and achieve human-level
-performances in many of those~\cite{bib:atari-deepq-nature}. These promising
-results sparked a lively interest in Deep RL, recently.
+introduced by the Neural Fitted Q~iteration algorithm~\cite{bib:nfq}, DQN
+addressed some causes of training instability. They also demonstrated that
+exactly the same agent can be trained in many Atari games and achieve
+human-level performances in many of those~\cite{bib:atari-deepq-nature}. These
+promising results sparked a lively interest in Deep RL, recently.
 
 In DQN, the state-action value is approximated by a deep neural network ${Q(s,
 a; \params)}$, on the parmeters $\params$, that we call Q-Network. The purpose
@@ -337,19 +382,20 @@ optimal policy will be:
 	\est{\policy}(s) = \argmax_{a \in A} Q(s, a; \est{\params})
 \end{equation}
 
-To train the network, we ensure that, for each input $(s, a)$, the model
-returns the expected value of the target~$y_{s,a}$. For this network, the
-targets are the optimal state-action values to estimate. To do so, we select
-the parameters that minimize the squared difference between the estimates and
-the targets:
+A trained network, for each input $(s, a)$, should return the expected value
+of some target~$y_{s,a}$. To do so, we select the parameters that minimize the
+squared difference between the estimates and the targets:
 \begin{equation}
 	\text{loss}(\params) \coloneqq \bigl(Q(s, a; \params) - y_{s,a} \bigr)^2
+	\label{eq:qnet-generic-loss}
 \end{equation}
-where $y_{s,a}$ is the target value $q^*(s, a)$. This loss contains some
-random variables. So, we minimize it through some stochastic optimization
-algorithm. In Stochastic Gradient Descent (SGD), at each step $t$,
-we observe an input ${(s_t, a_t)}$ and the associated target $y_t$, and we
-take a small step toward the negative gradient of the loss:
+Since this is a Q-Network, the targets are the optimal state-action
+values~$q^*(s, a)$ that the net should estimate.  The
+loss~\eqref{eq:qnet-generic-loss} contains some random variables. So, we
+minimize it through any stochastic optimization algorithm. In Stochastic
+Gradient Descent (SGD), at each step $t$, we observe an input ${(s_t, a_t)}$
+and the associated target $y_t$. Then, we take a small step toward the
+negative gradient of the loss:
 \begin{equation}
 	\params_{t+1} = \params_t - \alpha\, \nabla_{\params}\,
 	\Bigl( \bigl(Q(s_t, a_t; \params) - y_t \bigr)^2 \Bigr) \Big|_{\params =
@@ -363,18 +409,19 @@ mostly experimented with Adam.
 
 What has just been described is the usual way of fitting a neural network
 to a dataset of samples. In RL, however, the targets $q^*(s_t, a_t)$ are
-unknown, because they depend recursively from the same optimal state-function
+unknown, because they depend recursively from the same optimal q-function
 that we're trying to learn (see equation~\eqref{eq:q-bellman}). In classic RL,
-this is not a problem: the 1-step approximation,
+this is not a problem: the 1-step approximation of the q-values (derived from
+equation~\eqref{eq:q-bellman}),
 \begin{equation}
-	r_{t+1} + \discount \max_{a \in A} \est{q}(s_{t+1}, a)
+	y_t \coloneqq r_{t+1} + \discount \max_{a \in A} \est{q}(s_{t+1}, a)
 	\label{eq:1step-targets}
 \end{equation}
-or the n-step approximation, are a valid targets $y_t$ for the
-function~$\est{q}$. By updating toward these values on the whole input space,
-convergence is guaranteed. 
+or the n-step approximation, are a valid targets for the function~$\est{q}$.
+By updating toward these values on the whole input space, convergence is
+guaranteed. In other words, targets can be estimates themselves.
 
-With neural networks, instead, by updating the parameters, we also modify the
+With neural networks, instead, any update to the parameters also affects the
 target, because the weights have a global influence on the function. It's not
 possible apply a correction for just one tiny region of the input space (nor
 it's desirable, after all).  It has been shown~\cite{bib:nfq}, that due to
@@ -384,27 +431,74 @@ not move much.
 
 The DQN~\cite{bib:atari-deeprl} algorithm addresses this issue in two ways.
 First, the targets in equation~\eqref{eq:1step-targets} are not generated by
-the network being trained, $Q(s, a; \params)$, but they are computed from a
-second net, $Q(s, a; \params')$. Every $C$ iterations, the target net is
-updated to match the trained net, with the assignment: $\params' \gets
+the network that is being trained, $Q(s, a; \params)$, but they are computed
+from a second net, $Q(s, a; \params')$. Every $C$ iterations, the target net
+is updated to match the trained net, with the assignment: $\params' \gets
 \params$. This keeps the targets constant for $C$ steps and helps to stabilize
 the training.
 
-Second, the network is not trained from the last sample, but from the recent
-experience. At each step, the agent acts according to some exploration policy,
-$a_t \sim \policy_e$. Each transition, of the form $\langle s_t, a_t, r_{t+1},
-s_{t+1} \rangle$, is recorded in a buffer of size $n_r$, called ``experience
-replay''. Then, at each training step, we sample a number of $n_b$ transitions,
-thus creating a batch, and we perform an update $\params_{i+1} = \params_i -
-\alpha\, g_i$ on the cumulative gradient $g_i$ of the whole batch.
+Second, the network is not trained from the last sample, but from transitions
+of the recent experience. At each step, the agent acts according to some
+exploration policy, $a_t \sim \policy_e$. Each transition, of the form
+$\langle s_t, a_t, r_{t+1}, s_{t+1} \rangle$, is recorded in a buffer of size
+$n_r$, called ``experience replay''. Then, at each training step, we sample a
+number of $n_b$ transitions, thus creating a batch, and we perform an update
+$\params_{i+1} = \params_i - \alpha\, g_i$ on the cumulative gradient $g_i$ of
+the whole batch.
 
-% TODO: accorgimenti per atari games
-% TODO: network
-% TODO: policies?
+DQN also includes a number of heuristics that greatly help the training
+but are specific to the Atari~2600 environments:
+\begin{itemize}
+	\item Rewards can be really high, so they are limited in the range $[-1,
+		+1]$; this is called \emph{reward clipping}. It helps to keep the same
+		learning rate for diverse games.
+	\item The agent has a single life available. When a life is lost, the
+		episode ends. This prevents the agent to rely on restarts.
+	\item The frames are slightly down-scaled to further reduce the resolution,
+		they are transformed to gray-scale and mapped to the range $[-1, +1]$.
+		These are common preprocessing steps for NNs.
+	\item Every observation is composed by the last 4 frames stacked together.
+		This allows the agent to observe how the objects in the scene move.
+		See Section~\ref{sec:non-markov} and Example~\vref{ex:motion}.
+\end{itemize}
 
+The algorithm used in this thesis is called \emph{Double
+DQN}~\cite{bib:double-q}. It is a slight variant of DQN, so all details
+mentioned so far also apply. The motivation of this algorithm is a known issue
+of Q-learning: it is likely to make overoptimistic value estimates.
+To show this, let's rewrite the targets of~\eqref{eq:1step-targets} as:
+\begin{equation}
+	y_t \coloneqq r_{t+1} + \discount \, Q(s_{t+1}, \argmax_{a \in A} Q(s_{t+1},
+	a; \params_t); \params_t)
+\end{equation}
+where the estimates $\est{q}$ are computed with the Q-Network. This form makes
+more evident that the same model is used both to select the next greedy action
+and to estimate the q-value of state~$s_t$. As result, any action with an
+overestimated q-value will be selected and its value propagated. To remove
+this bias, Double DQN decouple the two operations by using different sets of
+parameters, $\params\group{1}$ and $\params\group{2}$. The targets $y_t$ are
+computed as:
+\begin{equation}
+	y_t \coloneqq r_{t+1} + \discount \, Q(s_{t+1}, \argmax_{a \in A} Q(s_{t+1},
+	a; \params_t\group{1}); \params_t\group{2})
+	\label{eq:double-q-targets}
+\end{equation}
+Then, just the parameters $\params\group{1}$ are updated toward this targets;
+this is called the online network. With random chance, the roles of the two
+parameters are continuously swapped at each step.
+
+To compute the target, we need to compute the q-values for all actions in
+state $s_{t+1}$. To speed up this computation, the network is defined as a
+function that takes in input a state and computes a vector of state-action
+values, one for each action. So, just one forward pass is required to select
+the next action. Common Q-Networks for images are composed of a number of
+convolutional layers and some fully-connected layers. The specific structure
+may change, and the network used will be defined in the implementation section.
 
 
 \section{Temporal logics and Linear Dynamic Logic}
+
+% TODO: maybe as first chapter?
 
 \subsection{Temporal logics on finite traces}
 
@@ -419,17 +513,17 @@ Linear Temporal Logic (LTL)~\cite{bib:pnueli-ltl}.
 % Structures
 The assumptions about the nature of time directly reflect to the type of
 structures these logics are interpreted on: their models are $\modelsym =
-\langle T, \prec, V \rangle$, where the set $T$ is a discrete set of time
-instants, such as $\N$, and $\prec$ is a complete ordering relation on $T$,
-like~$<$. If a logic defines a set $\fluents$ of atomic propositions, the
-evaluation function $V: T \times \fluents \to \{\true, \false\}$, for each
-instant of time, assigns a truth value to each fluent. An equivalent and
-compact way of defining such structures is with \emph{traces}. A trace
-$\trace$ is a sequence of propositional interpretations $2^\fluents$ of the 
-fluents~$\fluents$. Each element of the trace, $\trace(i)$, is the set of true
-symbols at time~$i$. $\trace(i, j)$ represents the trace between instants $i$
-and~$j$.
-% TODO: evaluation or valuation?
+\langle T, \prec, V \rangle$, where $T$ is a discrete set of time instants,
+such as $\N$, and $\prec$ is a complete ordering relation on $T$, like~$<$. 
+Finally, for a logic that defines a set $\fluents$ of atomic propositions, the
+valuation function $V: T \times \fluents \to \{\true, \false\}$ assigns a
+truth value to each proposition, in every instant of time. The atomic
+propositions $\fluents$ are also called ``fluents'' (or simply ``symbols'', in
+this thesis).  An equivalent and compact way of defining such structures is
+with \emph{traces}. A trace $\trace$ is a sequence of propositional
+interpretations of the fluents~$\fluents$. Each interpretation in the
+sequence, $\trace(i) \in 2^\fluents$, is the set of true symbols at time~$i$.
+$\trace(i, j)$ represents the trace between instants $i$ and~$j$.
 
 % Structures in LTL
 LTL is a logic that only allows to talk about the future. The semantic of its
@@ -440,25 +534,26 @@ instant, which are equivalent to valuations on the temporal frame $\langle \N,
 < \rangle$.
 
 % Finite traces
-As it has been pointed out~\cite{bib:ltlf-ldlf}, most practical uses of LTL
+As it has been pointed out in~\cite{bib:ltlf-ldlf}, most practical uses of LTL
 interpret the formulae on \emph{finite} traces, not infinite. The pure
 existence of a last instant of time has strong consequences on the meaning of
 the operators, because they need to handle such instant differently. The
 Always operator~$\always$, translates to ``until the last instant'', quite
-naturally. However, writing $\always\eventually \formula$ does not require
-that $\formula$ becomes true an infinite number of times, that is the
-``response'' property; instead, it is satisfied exactly by those traces in
-which $\formula$ is true at $\const{Last}$ ($\const{Last}$ is an abbreviation
-for $\lnot \next \true$ and it evaluates to true at last instant only).
-Furthermore $\always\eventually \formula$ and $\eventually\always \formula$
-are both equivalent to $\eventually (\const{Last} \land \formula)$, something
-that doesn't happen in standard LTL. From last example, it should be clear
-that the expressive power of the language has changed and LTL interpreted over
-finite traces should be regarded as a different logic, that we denote with
-\ltl{}. More precisely, over infinite linearly-ordered interpretations, LTL
+naturally. However, the formula $\always\eventually \formula$ does not require
+that $\formula$ becomes true an infinite number of times (in LTL, this formula
+represents the ``response'' property); instead, it is satisfied exactly by
+those traces in which $\formula$ is true at the last instant. It assumes a
+completely different meaning.  Furthermore $\always\eventually \formula$ and
+$\eventually\always \formula$ are both equivalent to $\eventually
+(\const{Last} \land \formula)$, something that doesn't happen in standard LTL.
+($\const{Last}$ is an abbreviation for $\lnot \next \true$ and it evaluates to
+true at last instant only).  From this example, it should be clear that the
+expressive power of the language has changed and LTL interpreted over finite
+traces should be regarded as a different logic, that we will denote with
+\ltl{}.  More precisely, over infinite linearly-ordered interpretations, LTL
 has the same expressive power of Monadic Second Order Logic (MSO), while
 \ltl{} is equivalent to First-Order Logic (FOL) and star-free regular
-expressions, which are strictly less expressive.
+expressions, which are strictly less expressive than MSO.
 
 % Every finite is fine
 In the next section, we will define a temporal logic, called \ldl{}, that is
@@ -472,7 +567,7 @@ logics of the past~\cite{bib:nmrdp-logic-first}.
 
 \subsection{Linear Dynamic Logic}
 
-In this section, we will define Linear Dynamic Logic of finite traces
+In this section, we will define the Linear Dynamic Logic of finite traces
 (\ldl{})~\cite{bib:ltlf-ldlf}. Its syntax combines regular expressions and
 propositional logic, just like Propositional Dynamic Logic (PDL)
 does~\cite{bib:pdl}\cite{bib:pdl-stanford}. So, we will review regular
@@ -606,6 +701,7 @@ observation function ${O: S \to \obsS}$.
 
 The graphical model of a POMDP is shown in Figure~\ref{fig:pomdp}.
 \begin{figure}
+
 	\centering
 	\begin{tikzpicture}
 		\matrix [
@@ -810,8 +906,9 @@ Figure~\ref{fig:pomdp-as-mpd} represents this situation.
 	Including the momentum in the state space is very common for mechanical
 	systems. However, this can be also necessary for games. In fact, just
 	looking at a single frame, the agent has no clue about how all the elements
-	in the picture are moving.  For example, an optimal policy would take into
-	account the direction of an approaching ball in order to hit it.
+	in the picture are moving.  For example, an optimal policy would need to
+	take into account the direction of an approaching ball in order to hit it.
+	\label{ex:motion}
 \end{example}
 
 

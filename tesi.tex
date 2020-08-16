@@ -12,6 +12,7 @@
 \usepackage{comment}
 \usepackage{tikz}
 \usepackage{subfig}
+\usepackage{pgfplots}
 \usepackage{titlesec}
 \usepackage{varioref}
 \usepackage[hidelinks]{hyperref}
@@ -63,6 +64,7 @@
 \newcommand{\policy}{\pi}
 \newcommand{\stateS}{S}  % Don't change, because s_i won't be updated
 \newcommand{\obsS}{\Omega}
+\newcommand{\group}[1]{^{(#1)}}
 
 % TikZ
 \usetikzlibrary{arrows}
@@ -97,6 +99,12 @@
 	%
 	flow/.style={->, thick, >=spaced stealth'},
 	pin line/.style={very thin, draw, gray},
+}
+
+% pgfplots
+\pgfplotsset{
+	compat=1.16,
+	every axis/.style={font=\scriptsize},
 }
 
 % Colors
