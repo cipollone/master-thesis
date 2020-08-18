@@ -1,5 +1,5 @@
 
-\documentclass[LaM, binding=1.5cm]{sapthesis}
+\documentclass[LaM, binding=1.8cm]{sapthesis}
 
 \usepackage[utf8]{inputenc}
 \usepackage{microtype}
@@ -15,6 +15,7 @@
 \usepackage{pgfplots}
 \usepackage{titlesec}
 \usepackage{varioref}
+\usepackage[color=orange!70!white]{todonotes}  % TODO: disable
 \usepackage[hidelinks]{hyperref}
 \usepackage{biblatex}
 
@@ -36,7 +37,7 @@
 \newcommand{\until}{\mathcal{U}}
 \newcommand{\eventually}{\lozenge}
 \newcommand{\always}{\square}
-\newcommand{\next}{\Circle}
+\newcommand{\lnext}{\Circle}
 \renewcommand{\lnot}{\neg}
 \newcommand{\const}[1]{\text{\textit{#1}}}
 \newcommand{\R}{\mathbb{R}}
@@ -48,6 +49,11 @@
 \newcommand{\set}[1]{\{#1\}}
 \newcommand{\given}{\mid}
 \newcommand{\eps}{$\epsilon$}  % eps in text
+\newcommand{\ldiamond}[1]{\langle\, {#1} \,\rangle}
+\newcommand{\lbox}[1]{[\, {#1} \,]}
+\newcommand{\mathiff}{\quad \text{iff} \quad}
+\newcommand{\mathand}{\quad \text{and} \quad}
+\newcommand{\mathor}{\quad \text{or} \quad}
 
 \newcommand{\params}{\theta}
 \newcommand{\est}[1]{\hat{#1}}
@@ -65,6 +71,8 @@
 \newcommand{\stateS}{S}  % Don't change, because s_i won't be updated
 \newcommand{\obsS}{\Omega}
 \newcommand{\group}[1]{^{(#1)}}
+\newcommand{\lend}{\const{End}}
+\newcommand{\llast}{\const{Last}}
 
 % TikZ
 \usetikzlibrary{arrows}
