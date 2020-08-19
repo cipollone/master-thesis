@@ -73,17 +73,14 @@ or any temporal logic over finite traces that can be translated to equivalent
 finite-state automata; even temporal logics of the
 past~\cite{bib:nmrdp-logic-first}.
 
-
-\section{Linear Dynamic Logic}
-
-In this section, we will define the Linear Dynamic Logic of finite traces
-(\ldl{})~\cite{bib:ltlf-ldlf}. Its syntax combines regular expressions and
-propositional logic, just like Propositional Dynamic Logic (PDL)
+In Section~\ref{sec:ldlf}, we will define the Linear Dynamic Logic of finite
+traces (\ldl{})~\cite{bib:ltlf-ldlf}. Its syntax combines regular expressions
+and propositional logic, just like Propositional Dynamic Logic (PDL)
 does~\cite{bib:pdl}\cite{bib:pdl-stanford}. So, we will review regular
 expressions first.
 
 
-\subsection{Regular Temporal Specifications}
+\section{Regular Temporal Specifications}
 
 Regular languages are the class of languages exactly recognized by finite
 state automata and regular expressions~\cite{bib:languages-book}. So, we will
@@ -157,7 +154,10 @@ generated or accepted by the specification~$\resym$.
 \end{example}
 
 
-\subsection{Linear Dynamic Logic}
+\section{Linear Dynamic Logic}
+\label{sec:ldlf}
+
+\subsection{Definition}
 
 We can now move on to the \emph{Linear Dynamic Logic of finite traces}
 (\ldl{}).  This logic was first defined in~\cite{bib:ltlf-ldlf}. The
@@ -180,12 +180,13 @@ This definition appears in~\cite{bib:degiacomo-logic-nmrdp}.
 	where $\ltt$ is a constant that stands for logical true and $\propformula$
 	is a propositional formula over a set of symbols~$\fluents$. We also define
 	the following abbreviations:
-	\[
+	\begin{gather*}
 		\lff \coloneqq \lnot \ltt \qquad
 		\lbox{\resym}\formula \coloneqq \lnot \ldiamond{\resym}\lnot \formula
-		\qquad \propformula \coloneqq \ldiamond{\propformula} \ltt
-	\]
-	% TODO: last and end must be inside this definition
+		\qquad \propformula \coloneqq \ldiamond{\propformula} \ltt \\
+		\lend \coloneqq \lbox{\true} \lff \qquad
+		\llast \coloneqq \ldiamond{\true} \lend
+	\end{gather*}
 	together with all those of propositional logic, which are all to be
 	considered part of the language.
 	\label{def:ldlf-syntax}
@@ -272,13 +273,19 @@ last instant in the sequence: $\const{last} \coloneqq \abs{\trace}-1$.
 \todo[inline, size=\footnotesize]{NOTE: The only doubly-inductive semantics
 for the empty-trace version of \ldl{} that I could find was in Marco
 Favorito's thesis at page 15. With respect to that, I've just corrected ${i <
-\const{last}}$ with ${i < \abs{\trace} = \const{length}(\trace)}$.}
+\const{last}}$ with ${i < \abs{\trace}}$.}
 
 \begin{definition}
-	A formula $\formula$ \emph{is true} in (or, is satisfied by) a trace
-	$\trace$, written ${\trace \models \formula}$, iff $\trace, 0 \models
-	\formula$. A formula $\formula$ is \emph{satisfiable} iff there exists a
-	trace that satisfy it; it is \emph{valid} iff it is true in every trace.
+	A \ldl{} formula $\formula$ \emph{is true} in (or, is satisfied by) a trace
+	$\trace$, written ${\trace \models \formula}$, if ${\trace, 0 \models
+	\formula}$.
+\end{definition}
+\begin{definition}
+	A \ldl{} formula $\formula$ is \emph{satisfiable} if there exists a
+	trace that satisfy it; it is \emph{valid} if it is true in every trace.
+	A formula $\formula$ logically implies a formula $\formula'$, in notation 
+	${\formula \models \formula'}$, if for every trace $\trace$, we have that
+	${\trace \models \formula}$ implies ${\trace \models \formula'}$.
 \end{definition}
 
 \begin{example}
@@ -332,10 +339,171 @@ unsatisfiable. What we're actually saying is that at each point of the trace,
 even at the end, $A$ must follow; which is impossible. What we meant is
 ${\lbox{\true^*}(A \lor \lend)}$, or ${\lbox{\true^*; (\lnot \lend)?}A}$.
 
-% TODO: special cases end
+In~\cite{bib:ltlf-ldlf} (\citeauthor{bib:ltlf-ldlf}) some important theorems
+have been established for \ldl{}\footnote{
+	The following theorems have been proved in~\cite{bib:ltlf-ldlf} for the
+	original definition of \ldl{}, which is slightly different. The same results
+	are valid for the empty trace variant presented here.
+}:
+\begin{theorem}
+	\ltl{} and \re{} formulae can be translated to \ldl{} in linear time.
+\end{theorem}
+\begin{theorem}
+	Over finite linearly-ordered traces, \ldl{} has the same expressive power of
+	MSO.
+\end{theorem}
+\begin{theorem}
+	Satisfiability, validity and logical implication for \ldl{} formulae are
+	PSPACE-complete.
+	\label{th:ldlf-completeness}
+\end{theorem}
 
-% TODO: theorems of LDL
 
-% TODO: LDL translation
+\subsection{Automaton translation}
+
+Automata are a well-established common formalism for talking about languages.
+The set of traces that satisfy a formula form a language, in fact.  What we're
+looking for is an equivalent automaton $\mathcal{A}_\formula$ that accepts
+exactly the same traces that satisfy a given \ldl{} formula~$\formula$.  As we
+will see, this translation is indeed possible, because to every \ldl{}
+formula, it can be associated an equivalent alternating automaton on finite
+words.  We assume the reader is acquainted with basic automata theory, such as
+DFAs, NFAs~\cite{bib:languages-book}.
 
 
+\subsubsection{Alternating automaton}
+
+\begin{definition}
+	An \emph{Alternating Automaton on finite Words} (AFW) is a tuple
+	$\mathcal{A} \coloneqq \langle \Sigma, Q, q_0, \delta, F \rangle$, where
+	$\Sigma$ is a finite nonempty alphabet, $Q$ is a finite nonempty set of
+	states, $q_0 \in Q$ is the initial state, $F \subseteq Q$ is a set of final
+	states, and ${\delta: Q \times \Sigma \to \lboolsetplus{Q}}$ is the
+	transition function.  $\lboolsetplus{Q}$ denotes the set of all positive
+	boolean functions composed from the set of atoms~$Q$, together with $\true$
+	and $\false$.
+\end{definition}
+
+Let's define a word $w \coloneqq \sigma w'$, with $\sigma \in \Sigma$ and $w'
+\in \Sigma^*$.  In a \emph{Nondeterministic Finite-state Automaton} (NFA), a
+transition $\delta(q_0, \sigma) = \set{q_1, q_2, q_3}$ means that input word,
+$w$, is accepted iff $w'$ is accepted by \emph{any} of the runs continuing
+from $q_1$, $q_2$, or $q_3$ (a run accepts if it ends up in a final state).
+We could also write this transition as $\delta(q_0, \sigma) = (q_1 \lor q_2
+\lor q_3)$, because the agent can ``choose'' among these states. The dual
+operation is to require that \emph{all} the following runs needs to be
+accepting: $\delta(q_0, \sigma) = (q_1 \land q_2 \land q_3)$. The transition
+function of an AFW adopts boolean functions without negations to allow both
+conjunctions and disjunctions. For example, we may write $\delta(q_0, \sigma)
+= q_1 \land (q_2 \lor q_3)$. Due to conjunctions, the AFW is usually thought
+to be in multiple states at the same time. An AFW, $\mathcal{A}$, accepts a
+word $w$ iff there exists a run of $\mathcal{A}$ on $w$ such that all the
+current states at the end of the computation are either final or labelled with
+$\true$. For a more precise description of runs and acceptance condition for
+AFWs, see~\cite{bib:temp-logic-automata}.
+
+Surprisingly, alternating automata have the same expressive power as NFA, but
+they are exponentially more succinct. So, it is possible to transform any AFW
+to an equivalent NFA that has an exponentially bigger state space. Therefore,
+we can also build an equivalent \emph{Deterministic Finite-state Automaton}
+(DFA) through a double exponential transformation. The AFW-to-NFA
+transformation is provided in~\cite{bib:temp-logic-automata}.
+
+
+\subsubsection{Delta function}
+
+In this section, given a \ldl{} formula $\formula$, we define its associated
+AFW, $\mathcal{A}_\formula \coloneqq \langle \Sigma, Q, q_0, \delta, F
+\rangle$. The alphabet, $\Sigma \coloneqq 2^\fluents$, is the set of all
+propositional interpretations for the fluents~$\fluents$ (we will indicate
+them with~$\Pi \in \Sigma$). It will be handy to use \ldl{} formulae to refer
+to the states $q \in Q$: each formula will be an (implicitly quoted)
+identifier for a state. Formally, the set $Q$ is the Fisher-Ladner closure
+of~$\formula$ extended with two special constructs, but we don't need to
+define it explicitly. The initial state is $q_0 \coloneqq \formula$. The set
+of final states is empty, $F \coloneqq \set{}$, so acceptance can only be
+ensured by reaching~$\true$. We now assume that the formula $\formula$ has
+been already transformed in Negation Normal From (NNF), trough a function
+$\const{nnf}(\cdot)$. A formula is in NNF if negations only appear in front of
+atomic propositions. We can finally define the transition function, also
+called the \emph{delta function}, as:
+\begingroup
+\allowdisplaybreaks
+\begin{align*}
+	\delta(\ltt, \Pi) &= \true \\
+	\delta(\lff, \Pi) &= \false \\
+	\delta(\propformula, \Pi) &= \delta(\ldiamond{\propformula}\ltt, \Pi) 
+		\qquad \text{\small ($\propformula$ propositional)} \\
+	\delta(\formula_1 \land \formula_2, \Pi) &=
+		\delta(\formula_1, \Pi) \land \delta(\formula_2, \Pi) \\
+	\delta(\formula_1 \lor \formula_2, \Pi) &=
+		\delta(\formula_1, \Pi) \lor \delta(\formula_2, \Pi) \\
+	\delta(\ldiamond{\propformula}\formula, \Pi) &=
+		\begin{cases}
+			\mathbf{E}(\formula) & \text{if $\Pi \models \propformula$} \\
+			\false & \text{if $\Pi \not\models \propformula$}
+		\end{cases}
+		\qquad \text{\small $(\propformula$ propositional)} \\
+	\delta(\ldiamond{\psi?}\formula, \Pi) &=
+		\delta(\psi, \Pi) \land \delta(\formula, \Pi) \\
+	\delta(\ldiamond{\resym_1 + \resym_2}\formula, \Pi) &=
+		\delta(\ldiamond{\resym_1}\formula, \Pi) \lor
+		\delta(\ldiamond{\resym_2}\formula, \Pi) \\
+	\delta(\ldiamond{\resym_1 ; \resym_2}\formula, \Pi) &=
+		\delta(\ldiamond{\resym_1}\ldiamond{\resym_2}\formula, \Pi)
+		% Label here
+		\stepcounter{equation}\label{eq:ldlf-delta}\tag{\theequation} \\
+	\delta(\ldiamond{\resym^*}\formula, \Pi) &=
+		\delta(\formula, \Pi) \lor
+		\delta(\ldiamond{\resym}\mathtt{F}_{\ldiamond{\resym^*}\formula}, \Pi)
+		\\
+	\delta(\lbox{\propformula}\formula, \Pi) &=
+		\begin{cases}
+			\mathbf{E}(\formula) & \text{if $\Pi \models \propformula$} \\
+			\true & \text{if $\Pi \not\models \propformula$}
+		\end{cases}
+		\qquad \text{\small $(\propformula$ propositional)} \\
+	\delta(\lbox{\psi?}\formula, \Pi) &=
+		\delta(\const{nnf}(\lnot\psi), \Pi) \lor \delta(\formula, \Pi) \\
+	\delta(\lbox{\resym_1 + \resym_2}\formula, \Pi) &=
+		\delta(\lbox{\resym_1}\formula, \Pi) \land
+		\delta(\lbox{\resym_2}\formula, \Pi) \\
+	\delta(\lbox{\resym_1 ; \resym_2}\formula, \Pi) &=
+		\delta(\lbox{\resym_1}\lbox{\resym_2}\formula, \Pi) \\
+	\delta(\lbox{\resym^*}\formula, \Pi) &=
+		\delta(\formula, \Pi) \land
+		\delta(\lbox{\resym}\mathtt{T}_{\lbox{\resym^*}\formula}, \Pi) \\
+	\delta(\mathtt{F}_\formula, \Pi) &= \false \\
+	\delta(\mathtt{T}_\formula, \Pi) &= \true
+\end{align*}
+\endgroup
+where $\mathbf{E}(\formula)$ recursively replaces in $\formula$ all
+occurrences of atoms of the form $\mathtt{T}_\psi$ and $\mathtt{F}_\psi$ by
+$\mathbf{E}(\psi)$; and $\delta(\formula, \epsilon)$ is defined inductively as
+above, except for the following base cases:
+\begin{equation*}
+	\delta(\ldiamond{\propformula}\formula, \epsilon) = \false \qquad
+	\delta(\lbox{\propformula}\formula, \epsilon) = \true \qquad
+	\text{\small ($\propformula$ propositional)}
+\end{equation*}
+
+The role of $\mathtt{T}_\formula$ and $\mathtt{F}_\formula$ is to valuate as
+$\true/\false$ or as $\formula$ depending on the context. This allows to
+respect the ``test-only'' requirement in Definition~\ref{def:ldlf-semanitcs}
+for the star operator.
+
+Let $\formula$ be an \ldl{} formula and $\automa_\formula$ the corresponding
+AFW of equation~\ref{eq:ldlf-delta}. Then, for every trace~$\trace$, we have
+that $\trace \models \formula$ if and only if $\automa_\formula$
+accepts~$\trace$. Also, the space-size of $\automa_\formula$ is linear in the
+size of~$\formula$. Since the emptiness problem for AFWs is PSPACE-complete,
+we get a proof for Theorem~\vref{th:ldlf-completeness}.
+
+DFAs are the easiest automata to visualize and simulate. A \ldl{} formula can
+be translated to an equivalent DFA through the following transformations:
+\ldl{} $\to$ AFW $\to$ NFA $\to$ DFA. Although the worst-case cost of this
+algorithm is the best known, which double exponential on the size of the
+formula, it is possible to combine some or all of these steps in a single
+algorithm, that may have some advantages. A \ldl{}-to-NFA algorithm is
+presented in~\cite{bib:degiacomo-logic-nmrdp}; while a \ldl{}-to-DFA is
+described in~\cite{bib:favorito-thesis}.
