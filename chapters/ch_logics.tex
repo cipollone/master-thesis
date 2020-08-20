@@ -1,5 +1,7 @@
 \chapter{Temporal logics and Linear Dynamic Logic}
 
+\label{ch:logics}
+
 \section{Temporal logics on finite traces}
 
 % Intro to temporal logics
@@ -502,8 +504,8 @@ we get a proof for Theorem~\vref{th:ldlf-completeness}.
 DFAs are the easiest automata to visualize and simulate. A \ldl{} formula can
 be translated to an equivalent DFA through the following transformations:
 \ldl{} $\to$ AFW $\to$ NFA $\to$ DFA. Although the worst-case cost of this
-algorithm is the best known, which double exponential on the size of the
-formula, it is possible to combine some or all of these steps in a single
-algorithm, that may have some advantages. A \ldl{}-to-NFA algorithm is
+algorithm is the best known (which doubly-exponential on the size of the
+formula), it is possible to combine some or all of these steps in a single
+algorithm, that may allow some optimizations. A \ldl{}-to-NFA algorithm is
 presented in~\cite{bib:degiacomo-logic-nmrdp}; while a \ldl{}-to-DFA is
 described in~\cite{bib:favorito-thesis}.

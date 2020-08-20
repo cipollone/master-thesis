@@ -1,6 +1,10 @@
 \chapter{Deep Reinforcement Learning for non-Markovian goals}
 
+\label{ch:rl}
+
 \section{Reinforcement Learning}
+
+\label{sec:rl}
 
 % Motivation
 In this section, we will briefly review the most important aspects of classic
@@ -299,6 +303,8 @@ training.
 
 \section{Deep Reinforcement Learning}
 
+\label{sec:deep-rl}
+
 Classic RL algorithms, such as SARSA and Q-learning, are tabular methods.
 In fact, they store and update the estimate for each pair $(s, a)$
 independently. Unfortunately, this requires discrete and small states and
@@ -496,6 +502,7 @@ may change, and the network used will be defined in the implementation section.
 
 
 \section{Non-Markovian goals}
+
 \label{sec:non-markov}
 
 The goal of a RL agent is to maximize the rewards received.  A goal, or a
@@ -622,11 +629,11 @@ these environments. See, for example, the games with worst performances
 in~\cite{bib:atari-deepq-nature}. This is a subtle mistake, because
 determining whether we're observing the state space is the same as answering
 the following question: does the observation space capture the whole dynamics
-of the system being observed? Or, more precisely, does an equivalent MDP
-$\langle \obsS, A, T_\obsS, R_\obsS, \discount' \rangle$ that produces the
-same rewards exist? If both $T_\obsS: \obsS \times A \times \obsS \to \R$ and
-$R_\obsS: \obsS \times A \times \obsS \to \R$ exist and produce the same
-rewards, the environment can be successfully modelled and solved with an MDP.
+of the system? Or, more precisely, does an equivalent MDP $\langle \obsS, A,
+T_\obsS, R_\obsS, \discount' \rangle$, that produces the same rewards, exist?
+If both $T_\obsS: \obsS \times A \times \obsS \to \R$ and $R_\obsS: \obsS
+\times A \times \obsS \to \R$ exist and produce the same rewards, the
+environment can be successfully modelled and solved with an MDP.
 Figure~\ref{fig:pomdp-as-mpd} represents this situation.
 
 \begin{figure}
@@ -713,7 +720,9 @@ Figure~\ref{fig:pomdp-as-mpd} represents this situation.
 	incomplete view over the state of the game. In fact, in order to determine
 	the best action we must consider whether there are some attacking pieces on
 	the hidden region. In this case, classic RL algorithms would perform poorly,
-	because an image it's not sufficient to predict the next image and reward.
+	because without any memory about the position of the hidden pieces, 
+	it's not possible to predict the next image and reward from the current
+	observation.
 \end{example}
 
 \begin{example}
@@ -723,20 +732,21 @@ Figure~\ref{fig:pomdp-as-mpd} represents this situation.
 	is to stabilize the pendulum in the upward position, which is the
 	configuration of unstable equilibrium. In order to solve this problem with
 	Reinforcement Learning, we need to define the spaces $S$ and $A$ of the MDP.
-	In this domain, actions are continuous torques. So, assuming a normalized
-	range, $A \coloneqq [-1, +1] \subseteq \R$. The angle of the pendulum
-	$\theta$ with respect to some fixed reference completely determines the
-	position of the masses. Is the reward Markovian with respect to $S =
-	\{\theta \in [-\pi, +\pi]\}$? No, because the agent is rewarded when the
-	pendulum stops in the upward position. So, the appropriate state space
-	consists of both $\theta$ and $\dot\theta$ (or, rather its discrete-time
-	approximation).
+	In this domain, actions are continuous torques, which we may represent in a
+	normalized range: $A \coloneqq [-1, +1] \subseteq \R$. The angle of the
+	pendulum $\theta$ with respect to some fixed reference completely determines
+	the position of the masses. Is the reward Markovian with respect to $S
+	\coloneqq \{\theta \in [-\pi, +\pi]\}$? No, because the agent is rewarded
+	when the pendulum stops in the upward position. So, the appropriate state
+	space consists of both $\theta$ and $\dot\theta$ (or, rather its
+	discrete-time approximation).
 
 	Including the momentum in the state space is very common for mechanical
 	systems. However, this can be also necessary for games. In fact, just
 	looking at a single frame, the agent has no clue about how all the elements
-	in the picture are moving.  For example, an optimal policy would need to
-	take into account the direction of an approaching ball in order to hit it.
+	in the picture are moving.  For example, in a video game where the agent has
+	to hit a moving ball, the optimal policy certainly needs to observe also its
+	direction.
 	\label{ex:motion}
 \end{example}
 
@@ -754,10 +764,8 @@ of events
 with $R: \stateS^* \to \R$. The sequence of states $\trace
 \coloneqq \langle s_0, s_1, \dots, s_t \rangle$ will be also called
 execution \emph{trace}. In general, with the term ``trace'' we indicate any
-sequence that is produced during a run. $\trace(i, j)$, with $i \le j$,
-denotes a slice of the trace $\trace$ between instants $i$ and $j$;
-$\trace(i)$ is the value at time $i$; $\abs{\trace}$ denotes the number of
-instants of the sequence; and $\langle \rangle$ is the empty trace.
+sequence that is produced during a run. We adopt a similar notation to those
+we've seen for interpretations of temporal logics.
 
 Why should we define a reward function that is explicitly non-Markovian?
 Because, for example, instead of just reaching a desirable state, we might
