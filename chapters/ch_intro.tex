@@ -2,15 +2,15 @@
 
 % Intro logic
 A classic and important branch of Artificial Intelligence (AI) aims at
-developing agents that select their actions through some form of logic
-reasoning, such as planning. One of the main advantages of these approaches is
-that reasoning proceeds by manipulating \emph{abstractions}. In fact, in
-logic, we can define a symbol to represent any meaningful event or condition
-that should be considered. For example, some propositional symbols might
-represent conditions such as ``the door is closed'' or ``I am holding an
-object'', etc. We'll also call these propositional symbols with the term
-``\emph{fluents}'' (a name that suggests how their truth can change over
-time).
+developing agents that select their actions through a form of logic reasoning,
+such as planning. One of the main advantages of these approaches is that
+reasoning proceeds by manipulating \emph{abstractions}. In fact, in logic,
+we can define symbols that represent any meaningful event or condition that
+should be considered. For example, some propositional symbols might represent
+conditions such as ``the door is closed'' or ``I am holding an object'', etc.
+We'll also call these propositional symbols with the term ``\emph{fluents}''
+(a name that suggests how their truth can change over time).
+% TODO: read again
 
 % Grounding
 These reasoning methods based on logics are powerful but they imply one
@@ -22,11 +22,11 @@ because the agent's sensors may return a noisy and multidimensional output,
 that is difficult to interpret.
 
 % Observations in RL
-Reinforcement Learning (RL) is a recently-successful field of AI, in which the
-agent's goal is to learning a policy that maximize the rewards received.  We
+Reinforcement Learning (RL) is a successful field of AI, in which the
+agent's goal is to learn a policy that maximize the rewards received.  We
 could argue that RL does not require the valuations just mentioned. Still,
 rewards and punishments must be somehow supplied in response to desirable and
-undesirable events. We could think of providing these feedbacks with
+undesirable events. We could consider of providing these feedbacks with
 programmed ad-hoc conditions, but this can be easily done just for the
 simulations we create. Furthermore, as we will see, some complex tasks can
 only be solved through a combination of both RL and logic-based methods; thus,

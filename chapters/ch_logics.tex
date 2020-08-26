@@ -11,7 +11,7 @@ time~\cite{bib:temporal-logics-stanford}. Among all formalisms, we care about
 logics that assume a linear time, as opposed to branching, and a discrete
 sequence of instants, instead of continuous time.  In computer science, the
 most famous logic in this group is the Pnueli's Linear Temporal Logic
-(LTL)~\cite{bib:pnueli-ltl}.
+(LTL)\nomenclature{LTL}{Linear Temporal Logic}~\cite{bib:pnueli-ltl}.
 
 % Structures
 The assumptions about the nature of time directly reflect to the type of
@@ -59,11 +59,13 @@ $\eventually\always \formula$ become equivalent to $\eventually (\const{Last}
 	\formula)$ means: eventually, at the last instant, $\formula$ is true.}.
 From this example, it should be clear that the expressive power of the
 language has changed, and LTL interpreted over finite traces should be
-regarded as a different logic, that we will denote with \ltl{}.  More
-precisely, over infinite linearly-ordered interpretations, LTL has the same
-expressive power of Monadic Second Order Logic (MSO), while \ltl{} is
-equivalent to First-Order Logic (FOL) and star-free regular expressions, which
-are strictly less expressive than MSO.
+regarded as a different logic, that we will denote with
+\ltl{}\nomenclature[LTLf]{\ltl{}}{Linear Temporal Logic of finite traces}.
+More precisely, over infinite linearly-ordered interpretations, LTL has the
+same expressive power of Monadic Second Order Logic
+(MSO)\nomenclature{MSO}{Monadic Second-Order Logic}, while \ltl{} is
+equivalent to First-Order Logic (FOL)\nomenclature{FOL}{First-Order Logic} and
+star-free regular expressions, which are strictly less expressive than MSO.
 
 % Every finite is fine
 In the next section, we will define a temporal logic, called \ldl{}, that was
@@ -77,7 +79,8 @@ past~\cite{bib:nmrdp-logic-first}.
 
 In Section~\ref{sec:ldlf}, we will define the Linear Dynamic Logic of finite
 traces (\ldl{})~\cite{bib:ltlf-ldlf}. Its syntax combines regular expressions
-and propositional logic, just like Propositional Dynamic Logic (PDL)
+and propositional logic, just like Propositional Dynamic Logic
+(PDL)\nomenclature{PDL}{Propositional Dynamic Logic}
 does~\cite{bib:pdl}\cite{bib:pdl-stanford}. So, we will review regular
 expressions first.
 
@@ -162,11 +165,12 @@ generated or accepted by the specification~$\resym$.
 \subsection{Definition}
 
 We can now move on to the \emph{Linear Dynamic Logic of finite traces}
-(\ldl{}).  This logic was first defined in~\cite{bib:ltlf-ldlf}. The
-definition we see here, also adopted in this thesis, is a small variant that
-can also be interpreted over the empty trace, $\trace_\epsilon = \langle
-\rangle$, unlike most logics, which assume a non-empty temporal domain~$T$.
-This definition appears in~\cite{bib:degiacomo-logic-nmrdp}.
+(\ldl{})\nomenclature[LDLf]{\ldl{}}{Linear Dynamic Logic of finite traces}.
+This logic was first defined in~\cite{bib:ltlf-ldlf}. The definition we see
+here, also adopted in this thesis, is a small variant that can also be
+interpreted over the empty trace, $\trace_\epsilon = \langle \rangle$, unlike
+most logics, which assume a non-empty temporal domain~$T$.  This definition
+appears in~\cite{bib:degiacomo-logic-nmrdp}.
 
 \begin{definition}
 	A \ldl{} formula $\formula$ is built as follows:
@@ -335,11 +339,12 @@ peculiarities of the language:
 
 The last observation has some profound consequences that we should consider
 when writing the formulae. Let's suppose we want to encode that $A$ must
-always hold, just like the \ltl{} ``always A'', $\always A$. The \ldl{}
-formula ${\lbox{\true^*}A}$ doesn't represent this concept: it is, instead,
-unsatisfiable. What we're actually saying is that at each point of the trace,
-even at the end, $A$ must follow; which is impossible. What we meant is
-${\lbox{\true^*}(A \lor \lend)}$, or ${\lbox{\true^*; (\lnot \lend)?}A}$.
+always hold, just like the \ltl{} sentence ``always A'', $\always A$. The
+\ldl{} formula ${\lbox{\true^*}A}$ doesn't represent this concept; instead, it
+is unsatisfiable. What we're actually saying is that at each point of
+the trace, even at the end, $A$ must follow; which is impossible. What we
+meant is ${\lbox{\true^*}(A \lor \lend)}$, or ${\lbox{\true^*; (\lnot
+\lend)?}A}$.
 
 In~\cite{bib:ltlf-ldlf} (\citeauthor{bib:ltlf-ldlf}) some important theorems
 have been established for \ldl{}\footnote{
@@ -351,8 +356,8 @@ have been established for \ldl{}\footnote{
 	\ltl{} and \re{} formulae can be translated to \ldl{} in linear time.
 \end{theorem}
 \begin{theorem}
-	Over finite linearly-ordered traces, \ldl{} has the same expressive power of
-	MSO.
+	\ldl{} has the same expressive power of MSO (Monadic Second-Order logic)
+	over finite traces.
 \end{theorem}
 \begin{theorem}
 	Satisfiability, validity and logical implication for \ldl{} formulae are
@@ -376,7 +381,8 @@ DFAs, NFAs~\cite{bib:languages-book}.
 \subsubsection{Alternating automaton}
 
 \begin{definition}
-	An \emph{Alternating Automaton on finite Words} (AFW) is a tuple
+	An \emph{Alternating Automaton on finite Words}
+	(AFW)\nomenclature{AFW}{Alternating Automaton on finite Words} is a tuple
 	$\mathcal{A} \coloneqq \langle \Sigma, Q, q_0, \delta, F \rangle$, where
 	$\Sigma$ is a finite nonempty alphabet, $Q$ is a finite nonempty set of
 	states, $q_0 \in Q$ is the initial state, $F \subseteq Q$ is a set of final
@@ -387,29 +393,33 @@ DFAs, NFAs~\cite{bib:languages-book}.
 \end{definition}
 
 Let's define a word $w \coloneqq \sigma w'$, with $\sigma \in \Sigma$ and $w'
-\in \Sigma^*$.  In a \emph{Nondeterministic Finite-state Automaton} (NFA), a
-transition $\delta(q_0, \sigma) = \set{q_1, q_2, q_3}$ means that input word,
-$w$, is accepted iff $w'$ is accepted by \emph{any} of the runs continuing
-from $q_1$, $q_2$, or $q_3$ (a run accepts if it ends up in a final state).
-We could also write this transition as $\delta(q_0, \sigma) = (q_1 \lor q_2
-\lor q_3)$, because the agent can ``choose'' among these states. The dual
-operation is to require that \emph{all} the following runs needs to be
-accepting: $\delta(q_0, \sigma) = (q_1 \land q_2 \land q_3)$. The transition
-function of an AFW adopts boolean functions without negations to allow both
-conjunctions and disjunctions. For example, we may write $\delta(q_0, \sigma)
-= q_1 \land (q_2 \lor q_3)$. Due to conjunctions, the AFW is usually thought
-to be in multiple states at the same time. An AFW, $\mathcal{A}$, accepts a
-word $w$ iff there exists a run of $\mathcal{A}$ on $w$ such that all the
-current states at the end of the computation are either final or labelled with
-$\true$. For a more precise description of runs and acceptance condition for
-AFWs, see~\cite{bib:temp-logic-automata}.
+\in \Sigma^*$.  In a \emph{Nondeterministic Finite-state Automaton}
+(NFA)\nomenclature{NFA}{Nondeterministic Finite-state Automaton}, a transition
+$\delta(q_0, \sigma) = \set{q_1, q_2, q_3}$ means that input word, $w$, is
+accepted iff $w'$ is accepted by \emph{any} of the runs continuing from $q_1$,
+$q_2$, or $q_3$ (a run accepts if it ends up in a final state).  We could also
+write this transition as $\delta(q_0, \sigma) = (q_1 \lor q_2 \lor q_3)$,
+because the agent can ``choose'' among these states. The dual operation is to
+require that \emph{all} the following runs needs to be accepting: $\delta(q_0,
+\sigma) = (q_1 \land q_2 \land q_3)$. The transition function of an AFW adopts
+boolean functions without negations to allow both conjunctions and
+disjunctions. For example, we may write $\delta(q_0, \sigma) = q_1 \land (q_2
+\lor q_3)$. Due to conjunctions, the AFW is usually thought to be in multiple
+states at the same time. An AFW, $\mathcal{A}$, accepts a word $w$ iff there
+exists a run of $\mathcal{A}$ on $w$ such that all the current states at the
+end of the computation are either final or are labelled with
+$\true$\footnote{$\delta(q, \sigma) = \true$ can be considered as an empty
+conjunction of states: this branch of the computation accepts without the need
+of further tests.}. For a more precise description of runs and acceptance
+condition of AFWs, see~\cite{bib:temp-logic-automata}.
 
 Surprisingly, alternating automata have the same expressive power as NFA, but
 they are exponentially more succinct. So, it is possible to transform any AFW
 to an equivalent NFA that has an exponentially bigger state space. Therefore,
 we can also build an equivalent \emph{Deterministic Finite-state Automaton}
-(DFA) through a double exponential transformation. The AFW-to-NFA
-transformation is provided in~\cite{bib:temp-logic-automata}.
+(DFA)\nomenclature{DFA}{Deterministic Finite-state Automaton} through a double
+exponential transformation. The AFW-to-NFA transformation is provided
+in~\cite{bib:temp-logic-automata}.
 
 
 \subsubsection{Delta function}
@@ -425,7 +435,8 @@ of~$\formula$ extended with two special constructs, but we don't need to
 define it explicitly. The initial state is $q_0 \coloneqq \formula$. The set
 of final states is empty, $F \coloneqq \set{}$, so acceptance can only be
 ensured by reaching~$\true$. We now assume that the formula $\formula$ has
-been already transformed in Negation Normal From (NNF), trough a function
+been already transformed in Negation Normal From
+(NNF)\nomenclature{NNF}{Negation Normal Form}, trough a function
 $\const{nnf}(\cdot)$. A formula is in NNF if negations only appear in front of
 atomic propositions. We can finally define the transition function, also
 called the \emph{delta function}, as:
@@ -503,9 +514,9 @@ we get a proof for Theorem~\vref{th:ldlf-completeness}.
 
 DFAs are the easiest automata to visualize and simulate. A \ldl{} formula can
 be translated to an equivalent DFA through the following transformations:
-\ldl{} $\to$ AFW $\to$ NFA $\to$ DFA. Although the worst-case cost of this
-algorithm is the best known (which doubly-exponential on the size of the
-formula), it is possible to combine some or all of these steps in a single
-algorithm, that may allow some optimizations. A \ldl{}-to-NFA algorithm is
-presented in~\cite{bib:degiacomo-logic-nmrdp}; while a \ldl{}-to-DFA is
-described in~\cite{bib:favorito-thesis}.
+\ldl{} $\to$ AFW $\to$ NFA $\to$ DFA. Although the asymptotic worst-case cost
+of this algorithm is already the best known (which doubly-exponential on the
+size of the formula), it is possible to combine some or all of these steps in
+a single algorithm, that may allow some optimizations. A \ldl{}-to-NFA
+algorithm is presented in~\cite{bib:degiacomo-logic-nmrdp}; while a
+\ldl{}-to-DFA is described in~\cite{bib:favorito-thesis}.

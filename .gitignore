@@ -18,6 +18,10 @@
 *-blx.bib
 *.run.xml
 
+*.ilg
+*.nlo
+*.nls
+
 ## Linux
 *~
 .fuse_hidden*
