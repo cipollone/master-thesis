@@ -169,6 +169,7 @@ discounted return. The \emph{value function} of a policy $\policy$ computes
 this quantity from each state $s$:
 \begin{equation}
 	v_{\policy}(s) \coloneqq \E_{\policy}[G \given s_0 = s]
+	\label{eq:mdp-value}
 \end{equation}
 which is the expected value of $G$, when the agent starts from state $s$
 and it follows the policy~$\policy$. The notation $\E_{\policy}$ indicates
@@ -764,6 +765,8 @@ Figure~\ref{fig:pomdp-as-mpd} represents this situation.
 
 \subsection{Temporally-extended goals}
 
+\label{sec:tempoal-goals}
+
 The previous section has shown how partial observations may falsify the Markov
 assumption on rewards. A second possibility is to have a complete observation
 of the state ($\obsS = \stateS$) but a task that is intrinsically
@@ -793,8 +796,10 @@ may define very complex reward functions.
 	at the end of the episode, the light has been set on only once.  The
 	environment is extremely simple: its state may be completely described by a
 	Boolean variable, ``lightOn'', which reflects the status of the light.
-	Still, in order to valuate whether the task has been accomplished, we need
-	to consider the whole sequence of states, not just the final configuration.
+	Still, in order to valuate whether the task has been accomplished, it's not
+	sufficient to check whether the light is off at the end of the episode; we
+	also need to ensure that, \emph{during the whole episode}, it has been
+	switched on only once.
 \end{example}
 
 We now define a model that, by generalizing MDPs, can describe this large
@@ -813,11 +818,11 @@ Every NMRDP admits an optimal policy as ${\optimal\policy: S^* \to A}$, which
 computes actions from the history of states. So, we'll only consider policies
 with this form. In order to define optimality, we would need to proceed as for
 MDPs, by defining value functions. However, this is sightly more complex,
-since the effect of non-Markovian rewards is that value functions can only
-predict the future expected discounted return, if the past history is given.
-They effectively compare policies on traces, rather than single states.  The
-simplest case is the valuation of any initial state, whose value function
-is~\cite{bib:nmrdp-logic-first}:
+since as a consequence of non-Markovian rewards, value functions can
+only predict the future expected discounted return, if the past history is
+given. They effectively compare policies on traces, rather than single
+states. The simplest case is the valuation of any initial state, whose value
+function is~\cite{bib:nmrdp-logic-first}:
 \begin{equation}
 	v_{\policy}(\langle s_0 \rangle) \coloneqq \E_{\policy} \Biggl[\,
 		\sum_{t=0}^{T} \discount^t R(\langle s_0, s_1, \dots, s_t \rangle)
@@ -827,10 +832,10 @@ Informally, an NMRDP policy~$\optimal\policy$ is optimal if it maximizes the
 value function of future states. However, we won't further delve into the
 definition of optimality and value functions, because common solution methods
 (that we'll see in Section~\ref{sec:nmrdp-solution}) transform NMRDPs into
-standard MDPs.
+standard MDPs, that we already know how to solve.
 
 
-\subsubsection[NMRDP with LDLf rewards]{NMRDP with \ldl{} rewards}
+\subsubsection*{NMRDP with \ldl{} rewards}
 
 Non-Markovian reward functions have huge domains. Defining them by listing all
 the traces that should be (positively or negatively) rewarded is unfeasible,
@@ -844,6 +849,7 @@ produced whenever a trace satisfies~$\formula_i$. So, the reward function is
 defined as:
 \begin{equation}
 	R(\trace) \coloneqq \sum_{i \,:\, \trace \models \formula_i} r_i
+	\label{eq:ldlf-rewards}
 \end{equation}
 It follows that an equivalent way to define NMRDPs is: $\langle S, A, T,
 \set{(\formula_i, r_i)_{i=1}^m}, \discount \rangle$.
@@ -879,7 +885,7 @@ Before looking at the construction, we need to define what is an
 \begin{definition}
 	\cite{bib:nmrdp-logic-first} An NMRDP $\nmrdpS \coloneqq \langle S, A, T, R,
 	\discount \rangle$ is \emph{equivalent} to an extended MDP $\mdpS \coloneqq
-	\langle S', A, T', R', \discount' \rangle$ if there exist two functions
+	\langle S', A, T', R', \discount \rangle$ if there exist two functions
 	$\tau: S' \to S$ and $\sigma: S \to S'$ such that:
 	\begin{enumerate}
 		\item $\forall s \in S : \tau(\sigma(s)) = s$;
@@ -892,6 +898,7 @@ Before looking at the construction, we need to define what is an
 			s_0'$, we have $R(\langle s_0, a_1, \dots, s_{n-1}, a_n
 			\rangle) = R'(\langle s_0', a_1, \dots, s_{n-1}', a_n \rangle)$.
 	\end{enumerate}
+	\label{def:nmrdp-mdp-equiv}
 \end{definition}
 Conditions 1 and 2 require that every feasible trajectory of the NMRDP can be
 simulated with a trajectory of the MDP. Condition 3 forces corresponding
@@ -904,47 +911,103 @@ equivalent MDP is also called ``extended''.
 \begin{definition}
 	\cite{bib:nmrdp-logic-first} Let $\policy': S' \to A$ be a policy for the
 	MDP $\mdpS$. The corresponding policy $\policy: S^* \to A$ of the NMRDP
-	$\nmrdpS$ is defined as $\policy'(s_n') \coloneqq \policy(\langle s_0,
-	\dots, s_n \rangle)$ where $\langle s_0', \dots, s_n' \rangle$ is the
+	$\nmrdpS$ is defined as $\policy(\langle s_0, \dots, s_n \rangle) \coloneqq
+	\policy'(s_n')$ where $\langle s_0', \dots, s_n' \rangle$ is the
 	corresponding trajectory for $\langle s_0, \dots, s_n \rangle$.
 \end{definition}
-As we can see $\policy'$ is a stationary policy. A very important result for
-equivalent MDPs is the following:
+As we can see $\policy'$, is a stationary policy. A very important result that
+allows to correlate the solutions between the two classes of problems is the
+following:
 \begin{theorem}
 	\cite{bib:nmrdp-logic-first} For any policy $\policy'$ for the MDP $\mdpS$,
 	its corresponding policy $\policy$ for the NMRDP $\nmrdpS$, and $s \in S$,
-	we have $v_\policy(s) = v_{\policy'}(\sigma(s))$\footnote{In this equation,
-	$v$ refers to the value function for NMRDPs and MDP respectively.}.
+	we have $v_\policy(s) = v_{\policy'}(\sigma(s)).~$\footnote{In this equation,
+	$v$ refers to the value function for NMRDPs and MDPs respectively.}
 \end{theorem}
 As a corollary of the previous theorem, any optimal policy of the MDP has a
 corresponding policy that is optimal for the NMRDP. This is is the result we
-were looking for: by applying classic RL algorithms we can learn optimal
-policies of MDPs and their equivalent NMRDP. In practice, we don't need to
-translate the policy $\policy'$ to the non-stationary equivalent~$\policy$.
-It is possible to apply the trained RL agent directly to the NMRDP, by
-continuously transforming each observation $s$ through the translation
-function~$\sigma: S \to S'$.
+were looking for: by applying classic RL algorithms, we can learn optimal
+policies of MDPs that apply to their equivalent NMRDP. In practice, we don't
+need to translate the policy $\policy'$ to the non-stationary
+equivalent~$\policy$.  It is possible to apply the trained RL agent directly
+to the NMRDP, by continuously transforming each observation $s$ through the
+translation function~$\sigma: S \to S'$.
 
 
-\subsubsection*[LDLf rewards]{\ldl{} rewards}
+\subsubsection*{\ldl{} rewards}
 
-% Solution for them
-We will consider NMRDPs with \ldl{} rewards: $\nmrdpS \coloneqq \langle S, A,
-T, \set{(\formula_i, r_i)_{i=1}^m}, \discount \rangle$, where $S \coloneqq
+We will now define a specific MDP expansion for NMRDPs with \ldl{} rewards.
+In fact, if the rewards are specified through \ldl{} or \ltl{}, it is possible
+to create extended MDPs that are very compact. We recall that a NMRDP with
+\ldl{} rewards is a tuple $\nmrdpS \coloneqq {\langle S, A, T,
+\set{(\formula_i, r_i)_{i=1}^m}, \discount \rangle}$, where $S \coloneqq
 2^\fluents$ is a set of propositional interpretations and $\formula_i$ are
 \ldl{} formulae on the set of fluents~$\fluents$.
 
-% TODO: definition of equivalent MDP for NMRDP for LDL rewards
+First, using the methods presented in Section~\ref{sec:ldlf-to-automa}, we
+transform each reward formula~$\formula_i$ to its associated minimal
+DFA,~${\automa_i \coloneqq \langle 2^\fluents, Q_i, q_{i0}, \delta_i, F_i
+\rangle}$. Then, we state the following:
+\begin{definition}
+	\cite{bib:degiacomo-logic-nmrdp} Given an NMRDP with \ldl{} rewards~$\nmrdpS
+	= \langle S, A, T, \set{(\formula_i, r_i)_{i=1}^m}, \discount \rangle$, we
+	define the equivalent extended MDP~$\mdpS \coloneqq {\langle S', A', T', R',
+	\discount \rangle}$, where:
+	\begin{itemize}
+		\item $S' \coloneqq Q_1 \times \dots \times Q_m \times S$ is the set of
+			states
+		\item $A' \coloneqq A$
+		\item $T' : S' \times A' \times S' \to [0, 1]$ is defined as:
+			\[
+				T'((q_1, \dots, q_m, s), a, (q_1', \dots, q_m', s')) \coloneqq
+				\begin{cases}
+					T(s, a, s') & \text{if $\forall i : \delta_i(q_i, s') = q_i'$} \\
+					0 & \text{otherwise}
+				\end{cases}
+			\]
+		\item $R' : S' \to \R$ is defined as\footnote{There is a slight difference
+			with the original definition in~\cite{bib:degiacomo-logic-nmrdp}, which
+			accounts for a small notation difference in some previous definitions:
+			$R(s_t)$ is assumed to produce $r_t$, not $r_{t+1}$.}:
+			\[
+				R((q_1, \dots, q_m, s)) \coloneqq \sum_{i\, :\, q_i \in F_i} r_i
+			\]
+	\end{itemize}
+	\label{def:ldlf-eq-mdp}
+\end{definition}
+As we can see from this definition, the extended MDP augments the original
+model with all the automata~$\automa_i$ corresponding to the $m$ temporal
+goals. After each observation, both the original system and every
+component~$\automa_i$ are advanced accordingly, in parallel. The reward
+function, which is now Markovian, can produce the same rewards as in the
+original formulation (see equation~\eqref{eq:ldlf-rewards}) because all the
+necessary information has been included in the state space.
 
-% TODO: just an observation about minimality
-%It will be shown that every NMRDP with \ldl{} rewards can be translated to an
-%equivalent MDP (equivalence will be defined shortly). The solution presented
-%here is derived from~\cite{bib:degiacomo-logic-nmrdp}. As we will see,
-%temporal logics not only simplify the definition of the rewards, but they
-%allow very efficient translations. Any NMRDP can be formulated as an MDP, if
-%enough history is included in the state space. So, what is really interesting
-%about this translation is that the MDP produced is minimal.
+\begin{theorem}
+	\cite{bib:degiacomo-logic-nmrdp} The NMRDP with \ldl{} rewards $\nmrdpS =
+	{\langle S, A, T, \set{(\formula_i, r_i)_{i=1}^m}, \discount \rangle}$ is
+	equivalent to the MDP $\mdpS$ of Definition~\ref{def:ldlf-eq-mdp}.
+\end{theorem}
+The last theorem states that our construction creates an equivalent MDP,
+according to the Definition~\ref{def:nmrdp-mdp-equiv}. Any NMRDP can be
+formulated as an MDP, if enough history is included in the state space. So,
+what is really interesting about this translation is that the expanded MDP has
+a minimal state space. This is possible because the current state of the
+automaton~$\automa_i$ is a sufficient information that retains just enough
+history to render the rewards $r_i$ Markovian. We have:
+\begin{theorem}
+	\cite{bib:degiacomo-logic-nmrdp} If every automaton $\automa_i \,(1 \le i
+	\le m)$ is minimal, then the extended MDP of
+	Definition~\ref{def:ldlf-eq-mdp} is minimal.
+\end{theorem}
 
+To recap, in this section, we've shown how to train an agent on a
+Non-Markovian Reward Decision Process, by applying classic RL algorithms on
+the equivalent MDP. Once the relevant fluents have been selected, we need to
+express our goal as \ldl{} conditions that are associated to a positive reward
+(or, maybe, conditions for negative rewards). We will see some practical
+examples in the following section, where we study how to deal with multiple
+representations of the same configuration of the environment. 
 
 
 \subsection[RL with LDLf restraining specifications]%
@@ -952,8 +1015,278 @@ T, \set{(\formula_i, r_i)_{i=1}^m}, \discount \rangle$, where $S \coloneqq
 
 \label{sec:rb}
 
+\subsubsection{Multiple representations}
+
+The solution for NMRDPs that we've seen in the previous section is elegant and
+effective. However, at first sight, it may only seem applicable in very simple
+state spaces, that are composed of Boolean valuations for sets of fluents
+(for example, at some time $t$, we might have a state $s_t$ in which:
+$\set{\text{\texttt{HaveKey}} = \const{True}, \text{\texttt{DoorClosed} =
+\const{False}}}$). This is not true, because we must remember that the NMRDP
+is just a model that we've defined. We're free to adopt a new formalism, where
+the sequence of observations produced by the environment is decoupled from the
+trace where our formulae are interpreted on. The ideas presented have been
+developed in~\cite{bib:bolt}.
+
+Let's denote with $W$ the set of world states. This is an abstract
+representation of the environment configuration that is inaccessible to the
+agent. Instead, it receives observations that directly depend on these states.
+We can represent this sensory input with a function $f_S: W \to S$.
+Frequently, $S$ is a multidimensional space, so the observations $s \in S$ are
+also called \emph{features vectors}, or simply \emph{features}. Assuming that
+these features are the state space of a Markov Decision Process, we can apply
+RL on~$S$.
+
+We now assume that there is a second function $f_\highlevelS: W \to
+\highlevelS$, with $\highlevelS \coloneqq 2^\fluents$, that given a world
+state, assigns a truth value to all fluents in~$\fluents$.  This creates two
+representations with different roles: $S$ is a \emph{low-level} features space
+that can be complex, noisy and difficult to interpret directly; $\highlevelS$
+is a \emph{high-level} logic representation of the same world states. To any
+configuration $w \in W$ correspond the two representations $s \in S$ and $l
+\in \highlevelS$. See Figure~\ref{fig:representations}.
+
+\begin{figure}
+	\centering
+	\begin{tikzpicture}[
+			hidden node/.style={node, fill=lightgray},
+			every node/.append style={font=\small},
+			box/.style={rounded corners=5pt, inner sep=1.8ex, draw=#1!50,
+				fill=#1!20},
+		]
+		\matrix [
+			column sep={2cm,between origins}, row sep={1.2cm,between origins},
+		] {
+			\coordinate (ltrace); \&
+			\node (ltm1) [node, label=above:$l_{t-1}$] {}; \&
+			\node (lt) [node, label=above:$l_t$] {}; \&
+			\node (lt1) [node, label=above:$l_{t+1}$] {}; \\
+			\&
+			\node (wtm1) [hidden node, label=above right:$w_{t-1}$] {}; \&
+			\node (wt) [hidden node, label=above right:$w_t$] {}; \&
+			\node (wt1) [hidden node, label=above right:$w_{t+1}$] {}; \\
+			\coordinate (strace); \&
+			\node (stm1) [node, label=below:$s_{t-1}$] {}; \&
+			\node (st) [node, label=below:$s_t$] {}; \&
+			\node (st1) [node, label=below:$s_{t+1}$] {}; \\
+		};
+		\draw [->] (wtm1) -- (wt);
+		\draw [->] (wt) -- (wt1);
+		\path [->] (wtm1) edge (ltm1) edge (stm1);
+		\path [->] (wt) edge (lt) edge (st);
+		\path [->] (wt1) edge (lt1) edge (st1);
+		%
+		\node (high-text) [anchor=east, xshift=0.7cm] at (ltrace) 
+			{high-level $l_i \in \highlevelS = 2^\fluents$};
+		\node (low-text) [anchor=east, xshift=0.7cm] at (strace)
+			{low-level $s_i \in S$};
+		\begin{pgfonlayer}{below}
+			\node [fit={(high-text) (lt1)}, box=blue!50!gray] {};
+			\node [fit={(low-text) (st1)}, box=orange] {};
+		\end{pgfonlayer}
+		% TODO: maybe remove boxes
+		%
+		\draw [->, dotted] (ltm1) -- (lt) -- (lt1) -- +(2cm,0)
+			node [right, black] {trace $\trace$};
+		%
+		\draw [<-, darkgray, dashed] (wtm1) -- +(-1, 0);
+		\draw [->, darkgray, dashed] (wt1) -- +(1, 0);
+	\end{tikzpicture}
+	\caption{Every world state generates both high-level and low-level
+		configurations.}
+	\label{fig:representations}
+\end{figure}
+
+This distinction is powerful: it allows us to declare temporally-extended
+goals with \ldl{} on the set of fluents~$\fluents$, while the agent receives
+and works with a different set of features. We now formally define a specific
+problem that is possible thanks to this distinction.
+
+
+\subsubsection{Restraining Specifications}
+
+Consider a Reinforcement Learning agent on the MDP $\mdpS \coloneqq \langle
+S, A, T, R \rangle$\footnote{The discount factor has been omitted in this
+section. This will be discussed later.}. This already defines the environment
+dynamics and the agent's optimal policy. We now want to modify the agent's
+behaviour by declaring an additional temporally-extended goal on some
+fluents~$\fluents$. The purpose is to train an agent that pursues the original
+rewards, while complying with the additional specification we provided.
+As we know from Section~\ref{sec:tempoal-goals}, the \ldl{} goals are just a
+clever way of declaring a non-Markovian reward function. These will be summed
+with the original rewards, so that the agent will try to pursue both\footnote{
+	The agent can behave optimally with respect to this combination, but this
+	doesn't necessarily mean that this is the policy we were looking for.
+	Finding the appropriate combination of rewards is a general issue in RL.
+}.
+We call this additional module, which reads the current fluents' configuration
+and sends the non-Markovian reward back, as the ``Restraining
+Bolt''~\cite{bib:bolt}. This term, borrowed from Science Fiction, suggests
+that with this additional construction, we're able to modify the ``natural''
+agent's behaviour. In this context, the \ldl{} goals $\set{(\formula_i,
+r_i')_{i=1}^m}$ are referred to as ``restraining specifications''. The general
+setup is presented in Figure~\ref{fig:rb-schema}.
+\begin{figure}
+	\centering
+	\begin{tikzpicture}[
+			every node/.append style={font=\scriptsize},
+			arrow/.style={->, semithick},
+		]
+		\node (rb-features) [block] {RB\\features\\extractor};
+		\node (rb) [block, right=of rb-features]  {Restraining\\Bolt};
+		\node (agent) [block, right=of rb.south east, anchor=south west,
+				minimum width=3cm, minimum height=3cm]
+			{Learning agent};
+		\node (agent-south) [below=1.2cm of agent.south east, inner sep=0pt] {};
+		\node (rb-features-south) [below=1.2cm of rb-features.south west, inner sep=0pt] {};
+		\node (world-block) [block, fit=(rb-features-south) (agent-south),
+			inner sep=0, minimum height=1cm] {};
+		\node at (world-block.center) {\scriptsize World};
+		\node (agent-features) [block, above=0.5cm of rb-features]
+			{LA\\features\\extractor};
+		%
+		\draw [arrow] (agent.east) -- +(0.7,0) |-
+			node [right, pos=0.2] {$a$} (world-block);
+		\coordinate (world-west) at ($(world-block.west)+(-0.7,0)$);
+		\node [anchor=east] at (world-west |- rb-features.west) {$w$};
+		\draw [arrow] (world-block.west) -- (world-west) |- (rb-features);
+		\draw [arrow] (world-west |- rb-features.west) |- (agent-features);
+		\draw [arrow] (rb-features) -- node [above] {$l$} (rb);
+		\draw [arrow] (rb) -- node [above] {$r'$} (agent.west |- rb.east);
+		\draw [arrow] (agent-features) -- node [above] {$s$}
+			(agent.west |- agent-features);
+		\draw [arrow] (rb.north) -- +(0,0.5) -- node [above] {$\vec{q}$} 
+			($(rb.north -| agent.west)+(0,0.5)$);
+		\draw [arrow] (world-block.north -| agent.south) --
+			node [left] {$r$} (agent.south);
+	\end{tikzpicture}
+	\caption{Learning agent with Restraining Bolt applied. $r$ is the classic
+	MDP reward; $r'$ is the additional non-Markovian reward generated.}
+	\label{fig:rb-schema}
+\end{figure}
+Notice, in particular, that the learning agent has access to the original
+observations~$s$ and rewards~$r$, and the additional non-Markovian
+rewards~$r'$.  The quantity $\vec{q}$ will be discussed shortly. Let's now
+formalize this problem.
+\begin{definition}
+	\cite{bib:bolt} A \emph{RL problem with \ldl{} restraining specifications}
+	is a pair $\langle \mdpS, \const{RB} \rangle$, where: $\mdpS \coloneqq
+	\langle S, A, T, R \rangle$ represents a learning agent, and $\const{RB}
+	\coloneqq \langle \highlevelS, \set{(\formula_i, r_i')_{i=1}^m} \rangle$ is
+	a Restraining Bolt formed by a set of \ldl{} formulae $\formula_i$ over
+	$\fluents$ with associated rewards~$r_i'$.
+	\label{def:rb-problem}
+\end{definition}
+
+We can't simply apply a RL algorithm on the rewards $r_i, r_i'$ over the state
+space~$S$, because $r_i'$ are non-Markovian in $S$. What we can do, instead,
+is to formulate a NMRDP with \ldl{} rewards, that we already know how to
+solve. The complete proof is shown in~\cite{bib:bolt}
+and~\cite{bib:favorito-thesis}.	What we see here is a shorter explanation that
+just highlights the main concepts.
+
+We first observe that, in Definition~\ref{def:rb-problem}, the MDP and the
+Restraining Bolt are completely distinct; their only interaction is in the sum
+of the rewards they produce (let's denote with $\bar{r}_i \coloneqq r_i +
+r_i'$ the combined reward). So, to simplify the computation, we may keep
+these two problems separate, transform the restraining specifications to their
+equivalent MDP and combine them later. This is possible because, given two
+MDPs, $\mdpS_a = \langle S_a, A, T_a, R_a \rangle$ and $\mdpS_b = \langle S_b,
+A, T_b, R_b \rangle$, the following~$\mdpS_{ab} \coloneqq \langle S_{ab}, A,
+T_{ab}, R_{ab} \rangle$, with states $S_{ab} \coloneqq S_a \times S_b$,
+transition function $T_{ab}: S_{ab} \times A \times S_{ab} \to \R$ and rewards
+\[
+	R_{ab}((s_a, s_b), a, (s_a', s_b')) \coloneqq R_a(s_{a}, a, s_{a}') +
+	R_b(s_{b}, a, s_{b}')
+\]
+is still an MDP.  Note that we didn't define $T_{ab}$. This is not required,
+as in RL, it is sufficient that this unknown function exists; and by the laws
+of probability, this is certainly the case, because the existence of $T_a$ and
+$T_b$ is a stronger requirement.
+
+Every Restraining Bolt $\const{RB} = \langle \highlevelS, \set{(\formula_i,
+r_i')_{i=1}^m} \rangle$ defines a NMRDP with \ldl{} rewards
+$\nmrdpS_{\const{RB}} \coloneqq \langle \highlevelS, A, T_\highlevelS,
+\set{(\formula_i, r_i')_{i=1}^m} \rangle$, with states $\highlevelS =
+2^\fluents$ and $T_\highlevelS$ as the unknown transition function over
+fluents configurations. This is a problem that we already know how to solve.
+By directly applying Definition~\ref{def:ldlf-eq-mdp}, we can write the
+extended MDP~$\mdpS_{\const{RB}} \coloneqq \langle S_{\const{rb}}, A,
+T_{\const{rb}}, R_{\const{rb}} \rangle$ that is equivalent to the
+NMRDP~$\nmrdpS_{\const{RB}}$. Notice in particular, that the state space
+becomes: $S_{\const{rb}} \coloneqq Q_1 \times \dots \times Q_m \times
+\highlevelS$, where each $Q_i$ is the set of states of the $i$-th automaton.
+For brevity, we will denote elements of $Q_1 \times \dots \times Q_m$ with
+$\vec{q}$, because they are vectors of automaton states.
+
+We can now combine the original MDP~$\mdpS$ with the one generated from the
+Restraining Bolt~$\mdpS_{\const{RB}}$, just like we've done for $\mdpS_{ab}$,
+to obtain a new unified MDP that is defined as $\mdpS' \coloneqq \langle S',
+A, T', R' \rangle$, where:
+\begin{itemize}
+	\item $S' \coloneqq Q_1 \times \dots \times Q_m \times \highlevelS \times S$
+	\item $T' : S' \times A \times S' \to \R$ is defined:
+		\begin{multline*}
+			T'((q_1, \dots, q_m, l, s), a, (q_1', \dots, q_m', l', s')) \coloneqq \\
+			\begin{cases}
+				T_{l,s}((l,s), a, (l',s')) &
+					\text{if $\forall i : \delta_i(q_i, l') = q_i'$} \\
+				0 & \text{otherwise}
+			\end{cases}
+		\end{multline*}
+	\item $R' : S' \times A \times S' \to \R$ is defined:
+		\[
+			R'((q_1, \dots, q_m, l, s), a, (q_1', \dots, q_m', l', s')) \coloneqq
+			\sum_{i\, :\, q_i' \in F_i} r_i' + R(s, a, s')
+		\]
+\end{itemize}
+Both $T_{l,s}$, that is the joint transition function of the symbols $s$ and
+$l$, and the original reward function, $R$, are unknown: we only observe the
+samples produced while the agent plays. Instead, we have to move all
+automata and return the associated rewards, because this is a dynamics we've
+defined.
+
+To this point, we've reduced the original problem of
+Definition~\ref{def:rb-problem} to standard RL on the MDP~$\mdpS'$. However,
+we can move one step further. In fact, the combined rewards $\bar{r}_i$ do not
+depend on the fluents configurations~$l_i \in \highlevelS$, if both $s_i$
+and $\vec{q}_i$ are given, that is:
+\[
+	\bar{r}_t \perp l_0, \dots, l_t \given \vec{q}_t, s_t \qquad
+	\text{for any $t$}
+\]
+This means that an optimal policy exists for $\mdpS'$ with the form:
+$\optimal\policy: Q_1 \times \dots \times Q_m \times S \to A$.
+To prove it formally, we would need to show that the value of any state
+$(\vec{q}, l, s)$, defined in equation~\eqref{eq:mdp-value}, does not depend
+on~$l$. We finally get to the following result:
+\begin{theorem}
+	\cite{bib:bolt} RL with \ldl{} restraining specifications
+	$\langle \mdpS, \const{RB} \rangle$, with $\mdpS = \langle S, A, T,
+	R \rangle$ and $\const{RB} = \langle \highlevelS, \set{(\formula_i,
+	r_i')_{i=1}^m} \rangle$, can be reduced to RL over the MDP $\mdpS'' \coloneqq
+	\langle Q_1 \times \dots \times Q_m \times S, A, T'', R''\rangle$,
+	and optimal policies for $\langle \mdpS, \const{RB} \rangle$ can be learnt
+	by learning corresponding optimal policies for~$\mdpS''$.
+\end{theorem}
+If we denote with $S''$ the state space $Q_1 \times \dots \times Q_m \times
+S$, the functions $T''$ and $R''$ are partially unknown functions $S'' \times
+A \times S'' \to R$, that are defined as $T'$ and $R'$ respectively,
+marginalized with respect to~$\highlevelS$. With the MDP $\mdpS''$, we assumed
+that a each instant $t$, we observe the current state $(\vec{q}_t, s_t)$. This
+is true for $s_t$, but not for $\vec{q}_t$. What we do instead, is receiving
+an observation of the symbols $l_t$, moving the automata accordingly and
+collect the resulting states~$\vec{q}_t$. The symbols $\highlevelS$ don't need
+to be passed to the learning agent. See Figure~\ref{fig:rb-schema}, once
+again.
+
+% TODO: note about only markovian
+% TODO: discount omitted
+
 
 \subsection{Restraining Bolt for partial observations}
+
+% TODO: W is inaccessible
 
 How RL for non-Markovian goals can solve partial observations?
 
