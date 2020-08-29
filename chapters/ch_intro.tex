@@ -10,7 +10,6 @@ should be considered. For example, some propositional symbols might represent
 conditions such as ``the door is closed'' or ``I am holding an object'', etc.
 We'll also call these propositional symbols with the term ``\emph{fluents}''
 (a name that suggests how their truth can change over time).
-% TODO: read again
 
 % Grounding
 These reasoning methods based on logics are powerful but they imply one
@@ -23,14 +22,14 @@ that is difficult to interpret.
 
 % Observations in RL
 Reinforcement Learning (RL) is a successful field of AI, in which the
-agent's goal is to learn a policy that maximize the rewards received.  We
+agent's goal is to learn a policy that maximizes the rewards received.  We
 could argue that RL does not require the valuations just mentioned. Still,
 rewards and punishments must be somehow supplied in response to desirable and
 undesirable events. We could consider of providing these feedbacks with
 programmed ad-hoc conditions, but this can be easily done just for the
-simulations we create. Furthermore, as we will see, some complex tasks can
-only be solved through a combination of both RL and logic-based methods; thus,
-introducing all the needs of the latter.
+simulations we create. Furthermore, as we will see, complex and non-Markovian
+tasks can only be solved through a combination of both RL and logic-based
+methods; thus, introducing all the needs of the latter.
 
 % Bridge: goal
 With this thesis, we defined and implemented an agent based on temporal logics
@@ -65,8 +64,8 @@ observations received. The Deep Q-Network (DQN)
 algorithm~\cite{bib:atari-deeprl} is one the first to successfully employ
 neural networks in RL. They have shown that a Deep RL agent can be trained
 directly from complex observations such as the frames of a video game. Without
-modifications, the same agent has been able to reach human-level performances
-in many games.
+any modification, the same agent has been able to learn and reach human-level
+performances in many of these games.
 
 % Atari games
 Games have always been a classic benchmark for AI algorithms, because they
@@ -83,14 +82,14 @@ relatively simple algorithm, based on DQN, which has also proven to be
 successful for the specific environments that we'll use in our
 experiments~\cite{bib:atari-deepq-nature}. In fact, among Q-Network
 algorithms, the only ones that were able to clearly achieve superior
-performances in most of these games combined a combination of all DQN
+performances in most of these games combined many of the others DQN
 variants~\cite{bib:rainbow}.
 
 % Some games are hard
 If we look at the results in~\cite{bib:atari-deepq-nature}, DQN agents are
 able to learn excellent policies for many games. However, for many other
 environments of the same collection, the agents struggle to learn and, in some
-cases, they don't learn anything at all. The worst performances have been
+cases, it doesn't learn anything at all. The worst performances have been
 measured for the \emph{Montezuma's Revenge} environment. Even in the works
 that followed, the only methods that were able to achieve good policies in
 this game adopted some form of expert imitation and manual
@@ -106,11 +105,11 @@ declared with linear-time temporal logics, and it has provided a translation
 from this NMRDP to a classic MDP. The logics they used are~\ltl{} and~\ldl{}.
 This idea was initially introduced in~\cite{bib:nmrdp-logic-first} for a
 linear temporal logic of the past. The latter work~\cite{bib:bolt}, instead,
-has shown that through same construction, it's possible to declare with
-temporal logics the rewards of a RL agent, thus influencing its final
-behaviour.  This paper named this additional module with ``Restraining Bolt''.
-Thorough this thesis, it might be handy to use this name to refer to this
-logic construction.
+has shown that through a similar construction, it's possible to influence the
+agent's optimal behaviour by declaring additional non-Markovian rewards that
+are learnt in conjunction with the original rewards. This paper named this
+additional module with ``Restraining Bolt''.  Thorough this thesis, it may be
+practical to use this name to refer to this logic construction.
 
 
 \section{Objective and results}
@@ -118,65 +117,63 @@ logic construction.
 \label{sec:intro-objective}
 
 % Two goals
-This work started with an initial goal: defining and implementing a Deep
-RL agent that, through the Restraining Bolt method, is able to achieve
-non-Markovian goals. As we will see, the environments adopted in Deep RL are
-much more complex than those of classic RL. They usually have very complex
-observation spaces, in which it's much harder to decide the truth of the logic
-propositions used in the Restraining Bolt. This general issue required to
-investigate new ways to solve the problem of fluents valuation, that we've
-opened our introduction with. So, while this thesis achieved the initial goal,
-also start a
-% TODO: si prova con i fluenti
+This work started with the following goal: defining and implementing a Deep RL
+agent that, through the Restraining Bolt, is able to achieve non-Markovian
+tasks. This first objective has been accomplished, but the Restrained Bolt is
+a method based on logic, and, as we've already anticipated in this
+introduction, it requires to correctly valuate the fluents we define. Since
+the environments adopted in Deep RL have much more complex observation spaces,
+it has been necessary to investigate new ways to solve the problem of the
+fluents valuation, at least for a specific class of fluents and observations.
 
-% TODO: separate high-level objective and specific list of results.
-% TODO
-%Every choice or assumption that restricts the applicability of
-%the proposed method will be pointed our along the text.
-
-% Goal 1: computing fluents
-The main purpose of this work is to devise and test a mechanism able to learn
-functions which valuate the fluents we define.  Specifically, learn a
-function that computes the truth value for a set of boolean conditions, given
-a frame of an Atari game. Among the many different ways to accomplish this,
-the most interesting techniques are those which pose the least number of
-assumptions on the specific environment. In this respect, the following are
-important achievements of this work to be highlighted:
+%  Agent
+Thus, it is possible to isolate two groups of contributions of this thesis:
+those concerning the definition of a Deep RL agent for non-Markovian goals,
+and those related to methods for learning the fluents' valuation function.
+Regarding the former, in this thesis:
 \begin{itemize}
-	\item Fluents are selected first. Then, the function to evaluate them is
-		trained from a description of each fluent. This is harder to do than
-		just training a features extractor and manually trying to associate a
-		meaning to each feature.
-	\item To describe the fluents we use temporal logic over finite traces such
-		as \ltl{} and \ldl{}. These are employed as tools to formalize any type of
-		temporal constraints the fluents are always expected to satisfy. The use
-		of such logics for this purpose can be a really generic approach. This
-		thesis is an initial investigation about this possibility. As a
-		description of a fluent, we must consider everything that guides the
-		training process. So, we will certainly consider other types of hints that
-		is useful to include, such as visual hints.
-	\item The training algorithm won't require any manual annotation, nor
-		labelled datasets at all. The main idea is that, inside the agent, two
-		components should coexist: the player and the observer. While the player 
-		explores the environment, the observer can be trained from the images
-		received, without further intervention.
+		\item We provide a flexible implementation of the Restraining Bolt method,
+			described in~\cite{bib:bolt} and~\cite{bib:degiacomo-logic-nmrdp}.
+		\item We proposed a neural network architecture for a Deep RL agent that
+			allowed to successfully employ the Restraining Bolt also in Deep
+			Reinforcement Learning.
+		\item Tests have been conducted in a video game called \emph{Montezuma's
+			Revenge}, the hardest game (for a RL agent) in the Atari~2600
+			collection~\cite{bib:atari-deepq-nature}. We've shown that the agent can
+			be successfully guided through the initial room of the game, with low
+			manual intervention.
 \end{itemize}
 
-% Goal 2: restraining bolt.
-The second goal of this thesis is to demonstrate how such trained features can
-be exploited by a Reinforcement Learning agent to solve hard games. Tests will
-be conducted on Montezuma's Revenge, a game known to be difficult in this
-class~\cite{bib:atari-deepq-nature}. In this thesis:
+% Fluents
+The latter topic, instead, received much attention in this thesis: how is it
+possible to learn a function that, given an observation of the environment,
+predicts whether the fluents we have defined are true? As we may recognise,
+this problem is really general, and we must restrict to a specific class of
+fluents and observations. Observations will be frames of the Atari games, and
+fluents will be propositions decidable from a single frame. Every choice or
+assumption that further restricts the applicability of the proposed method
+will be pointed our along the text. Still, there are some interesting
+achievements of this work that are to be highlighted:
 \begin{itemize}
-		\item We provide a flexible implementation of the construction described
-			in~\cite{bib:degiacomo-logic-nmrdp}\cite{bib:favorito-thesis}, for
-			temporal goals.
-		\item A deep agent architecture is proposed to merge the technique above
-			for the Deep Reinforcement Learning case.
-		\item This implementation is then used to specify a temporal goal in
-			\ldl{}, sufficient to guide the agent through hard environments.
+	\item We don't manually assign a meaning to some Boolean features.
+		Instead, this is an initial investigation about how to proceed in the
+		opposite direction: we first define a set of symbols, then we learn their
+		valuation function.
+	\item We adopt the temporal logic \ldl{} as a formalism to define some
+		temporal constraints that our fluents are always expected to satisfy.
+		Candidate valuation functions will be checked against these constraints.
+	\item The training algorithm won't require any manual annotation,
+		nor labelled datasets at all.
+	\item We propose an architecture, based on Deep Belief Networks, that by
+		reducing the input space dimensionality, binds the valuations to some
+		visual features that are recognizable in the image.
 \end{itemize}
-% TODO: I also contributed to flloat
+All these ideas have been implemented in a Python software and tested on games
+of the Atari collection.
+
+Finally, we also strongly contributed to the development of the \code{flloat}
+package~\cite{bib:flloat}, a Python software for the conversion of \ltl{} and
+\ldl{} formulae to the associated automaton (NFA or DFA).
 
 
 \section{Structure of the thesis}
@@ -184,36 +181,39 @@ class~\cite{bib:atari-deepq-nature}. In this thesis:
 The rest of this thesis is structured as follows:
 \begin{description}[style=nextline]
 	\item[\ref{ch:logics}~--~\nameref{ch:logics}]
-		In this chapter, an important formalism that will be used throughout the
-		thesis is reviewed. We introduce the reader to concepts such as fluents,
-		traces and linear-time temporal logics. Then, we will define the Linear
-		Dynamic Logic, which is the specific temporal logic used in this text.
+		Temporal logics are an important formalism for this work and will be used
+		throughout the text. This chapter introduces the reader to concepts such
+		as: fluents, traces and linear-time temporal logics. Then, we will define
+		the Linear Dynamic Logic~(\ldl{}), that is the specific temporal logic
+		used in this text.
 	\item[\ref{ch:rl}~--~\nameref{ch:rl}]
-		This chapter presents the second large background of this thesis.  We will
-		see Reinforcement Learning from the basic concepts and assumptions, in
-		Section~\ref{sec:rl}. Section~\ref{sec:deep-rl} reviews some of the
-		advancements of the Deep RL field of last years. Then, in
+		In this chapter, we will see how to design Deep RL agents able to achieve
+		non-Markovian goals. In Sections~\ref{sec:rl} and~\ref{sec:deep-rl} we
+		thoroughly explain the basic concepts behind RL and Deep RL. Then, in
 		Section~\ref{sec:non-markov}, we will analyze what happens when the most
-		common assumptions of RL (and of Deep RL) are falsified.
-		We present the recent Restraining Bolt method in Section~\ref{sec:rb} and
-		we apply it to a Deep RL agent, in Section~\ref{sec:rb-deep-model}, by
-		proposing an original model.
+		common assumptions of RL (and of Deep RL) are falsified.  A solution for
+		these complex RL problems will be presented in
+		Section~\ref{sec:non-markov-solutions}, where we illustrate the
+		Restraining Bolt method.  This chapter ends with
+		Section~\ref{sec:rb-deep-model}, where we propose an original model that
+		allows to apply the previous solution also in the context of Deep RL.
 	\item[\ref{ch:fluents}~--~\nameref{ch:fluents}]
-		Here, we'll see how the agent can be trained to valuate a class of fluents
-		to their expected truth. A model for the valuation function will be
-		proposed and a training algorithm.
+		In this important chapter we propose a model for the valuation function
+		of the fluents. We'll also propose a training algorithm for this model
+		that doesn't require labelled datasets at all.
 	\item[\ref{ch:atarieyes}~--~\nameref{ch:atarieyes}]
-		This chapter presents the software that implemented the concepts presented
-		in the previous chapters. I will be first explained from a use
-		perspective, then the most interesting implementation details will follow.
+		This chapter presents the software that implements all the concepts
+		presented in the previous chapters. We will first review its features and
+		its functionality from a user perspective, then the most interesting
+		implementation details will follow.
 	\item[\ref{ch:experiments}~--~\nameref{ch:experiments}]
-		This chapter contains experiments and training outcomes for two Atari
-		games. Experiments will be finalized to test the effectiveness of learning
-		the fluents valuation functions and the capabilities of the ``restrained''
-		Deep RL agents.
+		This chapter contains experiments and training outcomes in two Atari
+		games. The experiments will be finalized to test: the effectiveness of the
+		proposed method for learning the valuation functions; the capabilities of
+		the ``restrained'' Deep RL agents.
 	\item[\ref{ch:conclusions}~--~\nameref{ch:conclusions}]
-		This thesis ends with some final considerations about: the main
-		conclusions that can be derived from this work; the strength of this
-		approach and its weakness; and its possibilities for improvement.
+		In this final chapter, we draw the main conclusions that can be derived
+		from this work, the strength of this approach and its weakness, and all
+		the possibilities for improvement.
 \end{description}
 

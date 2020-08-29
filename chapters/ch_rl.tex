@@ -535,6 +535,8 @@ analyze both scenarios.
 
 \subsection{Partial observations}
 
+\label{sec:partial-obs}
+
 Up to this point, we didn't need to distinguish between observations and
 states. In fact, we assumed that the agent can directly observe the
 environment states and act accordingly (we defined the policy as a function of
@@ -863,6 +865,8 @@ propositional interpretations. This will be addressed in Section~\ref{sec:rb}.
 \section[Reinforcement Learning with LDLf specifications]%
 {Reinforcement Learning with \ldl{} specifications}
 
+\label{sec:non-markov-solutions}
+
 This section illustrates how to learn optimal policies for a large class of
 problems among those introduced in Section~\ref{sec:non-markov}. The main idea
 behind the techniques presented here is to formulate an appropriate NMRDPs
@@ -1080,12 +1084,10 @@ configuration $w \in W$ correspond the two representations $s \in S$ and $l
 			{high-level $l_i \in \highlevelS = 2^\fluents$};
 		\node (low-text) [anchor=east, xshift=0.7cm] at (strace)
 			{low-level $s_i \in S$};
-		\begin{pgfonlayer}{below}
-			\node [fit={(high-text) (lt1)}, box=blue!50!gray] {};
-			\node [fit={(low-text) (st1)}, box=orange] {};
-		\end{pgfonlayer}
-		% TODO: maybe remove boxes
-		%
+		%\begin{pgfonlayer}{below}
+		%	\node [fit={(high-text) (lt1)}, box=blue!50!gray, inner sep=9pt] {};
+		%	\node [fit={(low-text) (st1)}, box=orange, inner sep=9pt] {};
+		%\end{pgfonlayer}
 		\draw [->, dotted] (ltm1) -- (lt) -- (lt1) -- +(2cm,0)
 			node [right, black] {trace $\trace$};
 		%
@@ -1107,14 +1109,15 @@ problem that is possible thanks to this distinction.
 
 Consider a Reinforcement Learning agent on the MDP $\mdpS \coloneqq \langle
 S, A, T, R \rangle$\footnote{The discount factor has been omitted in this
-section. This will be discussed later.}. This already defines the environment
-dynamics and the agent's optimal policy. We now want to modify the agent's
-behaviour by declaring an additional temporally-extended goal on some
-fluents~$\fluents$. The purpose is to train an agent that pursues the original
-rewards, while complying with the additional specification we provided.
-As we know from Section~\ref{sec:tempoal-goals}, the \ldl{} goals are just a
-clever way of declaring a non-Markovian reward function. These will be summed
-with the original rewards, so that the agent will try to pursue both\footnote{
+section because it doesn't apply to problem we study here. It may be simply
+regarded as tunable parameter.}. This already defines the environment dynamics
+and the agent's optimal policy. We now want to modify the agent's behaviour by
+declaring an additional temporally-extended goal on some fluents~$\fluents$.
+The purpose is to train an agent that pursues the original rewards, while
+complying with the additional specification we provided.  As we know from
+Section~\ref{sec:tempoal-goals}, the \ldl{} goals are just a clever way of
+declaring a non-Markovian reward function. These will be summed with the
+original rewards, so that the agent will try to pursue both\footnote{
 	The agent can behave optimally with respect to this combination, but this
 	doesn't necessarily mean that this is the policy we were looking for.
 	Finding the appropriate combination of rewards is a general issue in RL.
@@ -1271,24 +1274,28 @@ on~$l$. We finally get to the following result:
 \end{theorem}
 If we denote with $S''$ the state space $Q_1 \times \dots \times Q_m \times
 S$, the functions $T''$ and $R''$ are partially unknown functions $S'' \times
-A \times S'' \to R$, that are defined as $T'$ and $R'$ respectively,
+A \times S'' \to R$, that are defined respectively as $T'$ and $R'$,
 marginalized with respect to~$\highlevelS$. With the MDP $\mdpS''$, we assumed
-that a each instant $t$, we observe the current state $(\vec{q}_t, s_t)$. This
-is true for $s_t$, but not for $\vec{q}_t$. What we do instead, is receiving
-an observation of the symbols $l_t$, moving the automata accordingly and
-collect the resulting states~$\vec{q}_t$. The symbols $\highlevelS$ don't need
-to be passed to the learning agent. See Figure~\ref{fig:rb-schema}, once
+that at each instant $t$, we observe the current state $(\vec{q}_t, s_t)$.
+This is true for $s_t$, but not for $\vec{q}_t$. What we can do instead, is
+receiving an observation of the symbols $l_t$, moving all the automata
+accordingly and collecting the resulting states~$\vec{q}_t$. So, the new
+state $(\vec{q}_t, s_t)$ is composed of the computed vector of automata
+states, and the observed symbols~$s_t$. The symbols $\highlevelS$ don't need
+to be passed to the learning agent. Refer to Figure~\ref{fig:rb-schema}, once
 again.
-
-% TODO: note about only markovian
-% TODO: discount omitted
 
 
 \subsection{Restraining Bolt for partial observations}
 
+We've thoroughly analyzed solutions for the non-Markovian goals of
+Section~\ref{sec:tempoal-goals}: temporally-extended goals. We've solve them
+both in isolation, and as additional restraining specifications in preexisting
+MDPs. We now want to ask: is it possible to address partial observation\dots
+TODO: continue here
+
 % TODO: W is inaccessible
 
-How RL for non-Markovian goals can solve partial observations?
 
 
 
