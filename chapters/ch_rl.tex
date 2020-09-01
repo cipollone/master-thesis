@@ -737,6 +737,7 @@ Figure~\ref{fig:pomdp-as-mpd} represents this situation.
 	because without any memory about the position of the hidden pieces, 
 	it's not possible to predict the next image and reward from the current
 	observation.
+	\label{ex:chess-partial-obs}
 \end{example}
 
 \begin{example}
@@ -802,6 +803,7 @@ may define very complex reward functions.
 	sufficient to check whether the light is off at the end of the episode; we
 	also need to ensure that, \emph{during the whole episode}, it has been
 	switched on only once.
+	\label{ex:light}
 \end{example}
 
 We now define a model that, by generalizing MDPs, can describe this large
@@ -1029,8 +1031,8 @@ $\set{\text{\texttt{HaveKey}} = \const{True}, \text{\texttt{DoorClosed} =
 \const{False}}}$). This is not true, because we must remember that the NMRDP
 is just a model that we've defined. We're free to adopt a new formalism, where
 the sequence of observations produced by the environment is decoupled from the
-trace where our formulae are interpreted on. The ideas presented have been
-developed in~\cite{bib:bolt}.
+trace where our formulae are interpreted on. The ideas presented here have
+been developed in~\cite{bib:bolt}.
 
 Let's denote with $W$ the set of world states. This is an abstract
 representation of the environment configuration that is inaccessible to the
@@ -1047,8 +1049,8 @@ state, assigns a truth value to all fluents in~$\fluents$.  This creates two
 representations with different roles: $S$ is a \emph{low-level} features space
 that can be complex, noisy and difficult to interpret directly; $\highlevelS$
 is a \emph{high-level} logic representation of the same world states. To any
-configuration $w \in W$ correspond the two representations $s \in S$ and $l
-\in \highlevelS$. See Figure~\ref{fig:representations}.
+configuration $w \in W$ corresponds a pair of the representations $s \in S$
+and $l \in \highlevelS$. See Figure~\ref{fig:representations}.
 
 \begin{figure}
 	\centering
@@ -1108,13 +1110,16 @@ problem that is possible thanks to this distinction.
 \subsubsection{Restraining Specifications}
 
 Consider a Reinforcement Learning agent on the MDP $\mdpS \coloneqq \langle
-S, A, T, R \rangle$\footnote{The discount factor has been omitted in this
-section because it doesn't apply to problem we study here. It may be simply
-regarded as tunable parameter.}. This already defines the environment dynamics
-and the agent's optimal policy. We now want to modify the agent's behaviour by
-declaring an additional temporally-extended goal on some fluents~$\fluents$.
-The purpose is to train an agent that pursues the original rewards, while
-complying with the additional specification we provided.  As we know from
+S, A, T, R \rangle$\footnote{
+	The discount factor has been omitted in this section, because it doesn't
+	apply to the problems we study here. So, it may be simply regarded as
+	tunable parameter.
+}.
+This already defines the environment dynamics and the agent's optimal policy.
+We now want to modify the agent's behaviour by declaring an additional
+temporally-extended goal on some fluents~$\fluents$.  The purpose is to train
+an agent that pursues the original rewards, while complying with the
+additional specification we provided.  As we know from
 Section~\ref{sec:tempoal-goals}, the \ldl{} goals are just a clever way of
 declaring a non-Markovian reward function. These will be summed with the
 original rewards, so that the agent will try to pursue both\footnote{
@@ -1228,7 +1233,7 @@ to obtain a new unified MDP that is defined as $\mdpS' \coloneqq \langle S',
 A, T', R' \rangle$, where:
 \begin{itemize}
 	\item $S' \coloneqq Q_1 \times \dots \times Q_m \times \highlevelS \times S$
-	\item $T' : S' \times A \times S' \to \R$ is defined:
+	\item $T' : S' \times A \times S' \to \R$ with:
 		\begin{multline*}
 			T'((q_1, \dots, q_m, l, s), a, (q_1', \dots, q_m', l', s')) \coloneqq \\
 			\begin{cases}
@@ -1237,7 +1242,7 @@ A, T', R' \rangle$, where:
 				0 & \text{otherwise}
 			\end{cases}
 		\end{multline*}
-	\item $R' : S' \times A \times S' \to \R$ is defined:
+	\item $R' : S' \times A \times S' \to \R$ with:
 		\[
 			R'((q_1, \dots, q_m, l, s), a, (q_1', \dots, q_m', l', s')) \coloneqq
 			\sum_{i\, :\, q_i' \in F_i} r_i' + R(s, a, s')
@@ -1271,6 +1276,7 @@ on~$l$. We finally get to the following result:
 	\langle Q_1 \times \dots \times Q_m \times S, A, T'', R''\rangle$,
 	and optimal policies for $\langle \mdpS, \const{RB} \rangle$ can be learnt
 	by learning corresponding optimal policies for~$\mdpS''$.
+	\label{th:bolt-equivalence}
 \end{theorem}
 If we denote with $S''$ the state space $Q_1 \times \dots \times Q_m \times
 S$, the functions $T''$ and $R''$ are partially unknown functions $S'' \times
@@ -1279,7 +1285,7 @@ marginalized with respect to~$\highlevelS$. With the MDP $\mdpS''$, we assumed
 that at each instant $t$, we observe the current state $(\vec{q}_t, s_t)$.
 This is true for $s_t$, but not for $\vec{q}_t$. What we can do instead, is
 receiving an observation of the symbols $l_t$, moving all the automata
-accordingly and collecting the resulting states~$\vec{q}_t$. So, the new
+accordingly, and collecting the resulting states~$\vec{q}_t$. So, the new
 state $(\vec{q}_t, s_t)$ is composed of the computed vector of automata
 states, and the observed symbols~$s_t$. The symbols $\highlevelS$ don't need
 to be passed to the learning agent. Refer to Figure~\ref{fig:rb-schema}, once
@@ -1291,12 +1297,180 @@ again.
 We've thoroughly analyzed solutions for the non-Markovian goals of
 Section~\ref{sec:tempoal-goals}: temporally-extended goals. We've solve them
 both in isolation, and as additional restraining specifications in preexisting
-MDPs. We now want to ask: is it possible to address partial observation\dots
-TODO: continue here
+MDPs. We now want to ask: is it possible to address partial observations, in a
+similar way? The answer is yes, in general. Although, as we will see in a
+moment, this may not be possible or practical for every problem.
 
-% TODO: W is inaccessible
+Partially observable environments would be properly modelled with POMDPs
+$\langle W, A, T, R, \obsS, O\rangle$, because they define an observation
+function $O: W \to \obsS$ that maps world states to observations. However, in
+RL, this function is unknown and the states~$W$ are inaccessible for the
+agent. So, the simplest approach is to learn a policy directly from the
+observation space, $\policy: \obsS \to A$, as if the system were an MDP with
+states~$\obsS$ (see Figure~\vref{fig:pomdp-as-mpd}). As we've noted, this can
+lead to very poor performances, because rewards can be non-Markovian with
+respect to the observations.
+
+Now, let's define a set of fluents~$\fluents$ that represent Boolean
+conditions whose truth can be valuated from the observations~$\obsS$.
+Just like in the previous section, to each environment state corresponds a
+low-level feature $o \in \obsS$ and a high-level symbol $l \in 2^\fluents$.
+In Figure~\ref{fig:symbols-partial-obs}, the environment is assumed to
+generate the observation~$o$, on which we have no control. While the
+feature extractor indicates that we're free to choose and generate our
+high-level alphabet.
+\begin{figure}
+	\centering
+	\begin{tikzpicture}[
+			arrow/.style={->, semithick},
+		]
+		\matrix [
+			 column sep=1.2cm, row sep=0.5cm,
+			] {
+			\node (w) [block, minimum height=1cm, minimum width=1cm] {World}; \& \&
+			\node (o) [pin=right:observed features] {$o \in \obsS$}; \\ \& 
+			\node (f) [block] {Features\\extractor}; \&
+			\node (l) [pin=right:fluents configuration] {$l \in \highlevelS$}; \\
+		};
+		\draw [arrow] (w) -- coordinate [pos=0.15] (inters) (o);
+		\draw [arrow] (inters) |- (f);
+		\draw [arrow] (f) -- (l);
+	\end{tikzpicture}
+	\caption{Fluents configurations are computed from observations of the
+	environment.}
+	\label{fig:symbols-partial-obs}
+\end{figure}
+
+Suppose our goal is to define a function that generates the same rewards as
+the environment. Since the rewards are non-Markovian with respect to the
+observations, they will certainly be non-Markovian with respect to the fluents
+configurations which are computed from them. So, what we can do is to define a
+NMRDP with \ldl{} rewards from the fluents $\fluents$, that produces the same
+rewards as~$R$. In order to do this, we will certainly select as fluents all
+the conditions which are relevant for deciding whether the reward should be
+supplied.
+
+\begin{example}
+	Let's extend Example~\ref{ex:light}. An agent can control a light bulb
+	through a switch and it can capture images of the room. Suppose the
+	environment rewards the agent with the same condition of the previous
+	example: the light must have been switched on, then off only once.
+	Our goal is to emulate this reward with a NMRDP with \ldl{} rewards.
+	First, we define a single fluent $\const{LightOn}$. The features extractor,
+	given an image in which the light is on, would produce $\const{LightOn} =
+	\true$ (or $l = \set{\const{LightOn}}$), and false otherwise. Now we state
+	the following \ldl{} goal:
+	\[
+		\formula_1 \coloneqq \ldiamond{(\lnot \const{LightOn})^*; \const{LightOn};
+		(\lnot \const{LightOn})^+} \lend
+	\]
+	where $a^+$ is an abbreviation of $a; a^*$.
+	\label{ex:rb-light}
+\end{example}
+
+So, we've defined an NMRDP with \ldl{} rewards, $\nmrdpS = \langle
+\highlevelS, A, T, \set{(\formula_i, r_i')_{i=1}^m} \rangle$, that generates
+the same rewards as the environment. The equivalent MDP of~$\nmrdpS$, $\mdpS
+\coloneqq \langle S', A, T', R' \rangle$ has a state space $S' \coloneqq Q_1
+\times \dots \times Q_m \times \highlevelS$. From
+Theorem~\ref{th:bolt-equivalence}, the rewards generated by~$\mdpS$ are the
+same as those generated by~$\nmrdpS$.  This also means that the original
+rewards, produced by the environment, are Markovian with respect to~$S'$.
+Therefore, by augmenting the observations with the automaton states~$\vec{q}$,
+we produce a state space that restores the Markov property.  This is possible,
+because these states keep track of the unobservable quantities in the
+environment state that affect future rewards.  This is the additional
+information that we need to provide to the agent, we may even not supply the
+rewards that we generate at all. Figure~\ref{fig:rb-partial-obs} shows this
+arrangement.
+\begin{figure}
+	\centering
+	\begin{tikzpicture}[
+			every node/.append style={font=\small},
+			arrow/.style={->, semithick},
+		]
+		\matrix [
+			 row sep=0.5cm, column sep=1cm,
+		] {
+			\node (env) [block, minimum size=2cm] {World}; \& \& \&
+			\node (agent) [block, minimum size=2cm] {Learning\\agent}; \\
+			\&
+			\node (features) [block] {Features\\extractor}; \&
+			\node (rb) [block] {Restraining\\Bolt}; \& \\
+		};
+		\coordinate (a1) at ($(agent.west)+(0,0.5)$);
+		\draw [arrow] (a1) -- node [near end, above] {$a$} (env.east |- a1);
+		\coordinate (w1) at ($(env.east)+(0,-0.2)$);
+		\draw [arrow] (w1) -- node [near end, above] {$r$} (agent.west |- w1);
+		\coordinate (w2) at ($(env.east)+(0,-0.5)$);
+		\draw [arrow] (w2) -- node [near end, below] {$o$} (agent.west |- w2);
+		\draw [arrow] (w2) ++(0.5,0) |- (features.west);
+		\draw [arrow] (features) -- node [near end, above] {$l$} (rb);
+		\draw [arrow] ($(rb.east)+(0,0.1)$) -- ++(0.3,0)
+			|- node [below right] {$\vec{q}$} ($(agent.west)+(0,-0.8)$);
+		\draw [arrow, dashed] ($(rb.east)+(0,-0.1)$)
+			-| node [near end,right] {$r'$} (agent.south);
+	\end{tikzpicture}
+	\caption{Restraining Bolt for partial observations: RL on the state
+	$(o, \vec{q}\,)$.}
+	\label{fig:rb-partial-obs}
+\end{figure}
+
+We've previously mentioned that this solution may not be feasible for every
+problem. First, we must exclude all problems in which the observations are not
+meaningful enough. More precisely, those in which we cannot accurately predict
+the next reward~$r_t$ given the whole sequence of observations $\langle o_1,
+\dots, o_t \rangle$. However, these problems would be problematic for any
+learning algorithm. A second group of environments may define reward
+functions which are difficult to express in temporal logic. These problems
+would generate a large number of fluents and obscure temporal specifications
+(example: the game of Chess with partial observations of
+Example~\ref{ex:chess-partial-obs}).
+
+\begin{example}
+	We now conclude the Example~\ref{ex:rb-light}, where we've prepared an NMRDP
+	with a single \ldl{} reward associated to the condition~$\formula_1$. The
+	DFA that is associated to this formula is shown in
+	Figure~\ref{fig:rb-light-automa}.
+	\begin{figure}
+			\centering
+			\begin{tikzpicture}
+			\graph [
+				automaton, grow right=2.5cm,
+			]{
+				0 -> 1 [>"$\const{LightOn}$"] -> 2 [accept] -> 3,
+				1 -> [self loop] 1,
+				2 -> [self loop] 2,
+%			1 [accept] -> {,
+%			0 [accept,>"b"] -> {
+%			2 [>"a | b"] -> {,}}},
+%			2 -> [clear >, "b", backward] 0,
+%			2 -> [clear >, "a", backward] 1,
+%			1 -> [clear >, "a", self loop] 1
+			}; 
+			\draw [init path] (0.west) +(-0.5,0) -- (0.west);
+			\end{tikzpicture} 
+			\caption{The DFA associated to the formula~$\formula_1$, in
+			Example~\ref{ex:light}.}
+			\label{fig:rb-light-automa}
+	\end{figure}
+\end{example}
 
 
+% TODO: example with light bulb
+
+\subsubsection*{Conclusion}
+
+In this Chapter, we've shown that our construction for NMRDP with \ldl{}
+rewards, that we collectively call ``Restraining Bolt'', is a valid solution
+for many problems: temporally-extended tasks, restraining specifications and
+partial observations. A very interesting aspect is that it can be applied as
+an additional module that is added to the original design. This is possible,
+because the extended MDPs only augment the original state space with
+additional informations. As we will see in the next section, the agent
+requires few little modification to receive those informations. However, this
+is a first step forward modularity and explainablility of agents that solve
+very complex goals.
 
 
 \section{Restrained Deep RL agents}

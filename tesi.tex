@@ -96,6 +96,7 @@
 \usetikzlibrary{shapes.geometric}
 \usetikzlibrary{decorations.pathreplacing}
 \usetikzlibrary{patterns}
+\usetikzlibrary{quotes}
 
 \pgfdeclarelayer{below}
 \pgfdeclarelayer{beloww}
@@ -116,6 +117,20 @@
 	%
 	flow/.style={->, thick, >=spaced stealth'},
 	pin line/.style={very thin, draw, gray},
+	%
+	accept/.style={double},
+	reject/.style={fill=lightgray},
+	backward/.style={bend #1}, backward/.default=right,
+	self loop/.style={to path={
+	.. controls +(70:1) and +(110:1) .. (\tikztotarget) \tikztonodes}},
+	init path/.style={->, decoration={snake, amplitude=0.2mm, segment length=2mm}, decorate}
+}
+% Automaton graph style
+\pgfkeys{
+    /tikz/graphs/automaton/.style={
+        nodes={draw,circle},
+        edge quotes={font={\small}, inner ysep=0.5ex, inner xsep=0.2ex, auto=right, pos=0.35}
+    }
 }
 
 % pgfplots
