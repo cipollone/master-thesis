@@ -1,0 +1,3 @@
+
+make:
+	lualatex tesi.tex
