@@ -57,6 +57,7 @@
 \newcommand{\mathand}{\quad \text{and} \quad}
 \newcommand{\mathor}{\quad \text{or} \quad}
 \newcommand{\lboolsetplus}[1]{\mathcal{B}^+(#1)}
+\newcommand{\relu}{ReLU}
 
 \newcommand{\code}{\texttt}
 \newcommand{\params}{\theta}
@@ -82,6 +83,10 @@
 \newcommand{\nmrdpS}{\mathcal{N}}
 \newcommand{\mdpS}{\mathcal{M}}
 \newcommand{\highlevelS}{L}
+\newcommand{\convlayer}[3]{Conv(#1, #2, #3)} % Abbreviation for
+	% Convolutional layer. Params: n filters, size, stride
+\newcommand{\denselayer}[1]{Dense(#1)}
+\newcommand{\slicelayer}[1]{Slice(#1)}
 
 % TikZ
 \usetikzlibrary{arrows}
@@ -129,7 +134,8 @@
 \pgfkeys{
     /tikz/graphs/automaton/.style={
         nodes={draw,circle},
-        edge quotes={font={\small}, inner ysep=0.5ex, inner xsep=0.2ex, auto=right, pos=0.35}
+        edge quotes={font={\small}, inner ysep=0.5ex, inner xsep=0.2ex,
+					auto=right, pos=0.5}
     }
 }
 

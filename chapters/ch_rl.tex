@@ -341,12 +341,14 @@ algorithm introduces some techniques in order to generate a stable training.
 
 \subsection{Environment: Atari 2600 games}
 
+\label{sec:atari-envs}
+
 The Atari 2600 is a video game platform that was developed in 1977. There are
 hundreds of classic games available to play: Space Invaders, Ms. Pacman,
 Breakout and many others. The screen is 160 pixels wide and 210 pixels high,
-with 8-bits colour depth. The joystick has 9 positions (3 for each axis) and
-one button, for a total of 18 possible actions. For this reason, we'll only
-focus on RL methods for discrete action spaces.
+with RGB colors of 8-bits depth. The joystick has 9 positions (3 for each
+axis) and one button, for a total of 18 possible actions. For this reason,
+we'll only focus on RL methods for discrete action spaces.
 
 The Arcade Learning Environment~\cite{bib:atari-games} is a simple interface
 to the Atari 2600 emulator. It allows agents to play and be trained on these
@@ -379,6 +381,8 @@ Montezuma's Revenge.
 
 
 \subsection{Deep Q-Network}
+
+\label{sec:deep-q-agents}
 
 The \emph{Deep Q-Network} (DQN)\nomenclature{DQN}{Deep Q-Network
 algorithm}~\cite{bib:atari-deeprl} was the first algorithm to successfully
@@ -1294,12 +1298,15 @@ again.
 
 \subsection{Restraining Bolt for partial observations}
 
+\label{sec:rb-for-partial-obs}
+
 We've thoroughly analyzed solutions for the non-Markovian goals of
-Section~\ref{sec:tempoal-goals}: temporally-extended goals. We've solve them
-both in isolation, and as additional restraining specifications in preexisting
-MDPs. We now want to ask: is it possible to address partial observations, in a
-similar way? The answer is yes, in general. Although, as we will see in a
-moment, this may not be possible or practical for every problem.
+Section~\ref{sec:tempoal-goals}: namely, temporally-extended goals. We've
+solve them both in isolation, and as additional restraining specifications in
+preexisting MDPs. We now want to ask: is it possible to address partial
+observations, which is the second source of non-Markovian goals, in a similar
+way? In many cases, the answer is yes. Although, as we will see in a moment,
+this may not be possible or practical for every problem.
 
 Partially observable environments would be properly modelled with POMDPs
 $\langle W, A, T, R, \obsS, O\rangle$, because they define an observation
@@ -1313,11 +1320,11 @@ respect to the observations.
 
 Now, let's define a set of fluents~$\fluents$ that represent Boolean
 conditions whose truth can be valuated from the observations~$\obsS$.
-Just like in the previous section, to each environment state corresponds a
-low-level feature $o \in \obsS$ and a high-level symbol $l \in 2^\fluents$.
-In Figure~\ref{fig:symbols-partial-obs}, the environment is assumed to
-generate the observation~$o$, on which we have no control. While the
-feature extractor indicates that we're free to choose and generate our
+Similarly to the previous section, to each hidden environment state
+corresponds a low-level feature $o \in \obsS$ and a high-level symbol $l \in
+2^\fluents$.  In Figure~\ref{fig:symbols-partial-obs}, the environment is
+assumed to generate the observation~$o$, on which we have no control. Instead,
+the feature extractor indicates that we're free to choose and generate our
 high-level alphabet.
 \begin{figure}
 	\centering
@@ -1346,40 +1353,41 @@ the environment. Since the rewards are non-Markovian with respect to the
 observations, they will certainly be non-Markovian with respect to the fluents
 configurations which are computed from them. So, what we can do is to define a
 NMRDP with \ldl{} rewards from the fluents $\fluents$, that produces the same
-rewards as~$R$. In order to do this, we will certainly select as fluents all
-the conditions which are relevant for deciding whether the reward should be
-supplied.
+rewards~$r$ as the environment. In order to do this, we will certainly select
+as fluents all the conditions which are relevant for deciding whether the
+reward should be supplied.
 
 \begin{example}
 	Let's extend Example~\ref{ex:light}. An agent can control a light bulb
-	through a switch and it can capture images of the room. Suppose the
+	through a switch, but now it can capture images of the room. Suppose the
 	environment rewards the agent with the same condition of the previous
-	example: the light must have been switched on, then off only once.
-	Our goal is to emulate this reward with a NMRDP with \ldl{} rewards.
-	First, we define a single fluent $\const{LightOn}$. The features extractor,
-	given an image in which the light is on, would produce $\const{LightOn} =
-	\true$ (or $l = \set{\const{LightOn}}$), and false otherwise. Now we state
-	the following \ldl{} goal:
+	example: the light must have been switched on, then off, only once during
+	the episode.  Our goal is to emulate this reward with a NMRDP with \ldl{}
+	rewards.  First, we define a fluent $\const{LightOn}$, representing the
+	status of the light. The features extractor, from images of the room in
+	which the light is on, would produce $\const{LightOn} = \true$ (or $l =
+	\set{\const{LightOn}}$), and false otherwise. Now we state the following
+	\ldl{} goal:
 	\[
-		\formula_1 \coloneqq \ldiamond{(\lnot \const{LightOn})^*; \const{LightOn};
-		(\lnot \const{LightOn})^+} \lend
+		\formula_1 \coloneqq \ldiamond{(\lnot \const{LightOn})^*;
+		\const{LightOn}^+; (\lnot \const{LightOn})^+} \lend
 	\]
-	where $a^+$ is an abbreviation of $a; a^*$.
+	where $\resym^+$ is an abbreviation of $\resym; \resym^*$.
 	\label{ex:rb-light}
 \end{example}
 
-So, we've defined an NMRDP with \ldl{} rewards, $\nmrdpS = \langle
-\highlevelS, A, T, \set{(\formula_i, r_i')_{i=1}^m} \rangle$, that generates
-the same rewards as the environment. The equivalent MDP of~$\nmrdpS$, $\mdpS
-\coloneqq \langle S', A, T', R' \rangle$ has a state space $S' \coloneqq Q_1
-\times \dots \times Q_m \times \highlevelS$. From
+Assuming we've been able to define an NMRDP with \ldl{} rewards, $\nmrdpS =
+\langle \highlevelS, A, T, \set{(\formula_i, r_i')_{i=1}^m} \rangle$, that
+generates the same rewards as the environment. The equivalent MDP
+of~$\nmrdpS$, $\mdpS \coloneqq \langle S', A, T', R' \rangle$ has a state
+space $S' \coloneqq Q_1 \times \dots \times Q_m \times \highlevelS$. From
 Theorem~\ref{th:bolt-equivalence}, the rewards generated by~$\mdpS$ are the
 same as those generated by~$\nmrdpS$.  This also means that the original
 rewards, produced by the environment, are Markovian with respect to~$S'$.
 Therefore, by augmenting the observations with the automaton states~$\vec{q}$,
 we produce a state space that restores the Markov property.  This is possible,
 because these states keep track of the unobservable quantities in the
-environment state that affect future rewards.  This is the additional
+environment state that affect future rewards. This is the important additional
 information that we need to provide to the agent, we may even not supply the
 rewards that we generate at all. Figure~\ref{fig:rb-partial-obs} shows this
 arrangement.
@@ -1416,17 +1424,6 @@ arrangement.
 	\label{fig:rb-partial-obs}
 \end{figure}
 
-We've previously mentioned that this solution may not be feasible for every
-problem. First, we must exclude all problems in which the observations are not
-meaningful enough. More precisely, those in which we cannot accurately predict
-the next reward~$r_t$ given the whole sequence of observations $\langle o_1,
-\dots, o_t \rangle$. However, these problems would be problematic for any
-learning algorithm. A second group of environments may define reward
-functions which are difficult to express in temporal logic. These problems
-would generate a large number of fluents and obscure temporal specifications
-(example: the game of Chess with partial observations of
-Example~\ref{ex:chess-partial-obs}).
-
 \begin{example}
 	We now conclude the Example~\ref{ex:rb-light}, where we've prepared an NMRDP
 	with a single \ldl{} reward associated to the condition~$\formula_1$. The
@@ -1436,45 +1433,226 @@ Example~\ref{ex:chess-partial-obs}).
 			\centering
 			\begin{tikzpicture}
 			\graph [
-				automaton, grow right=2.5cm,
+				automaton, grow right=3cm,
 			]{
-				0 -> 1 [>"$\const{LightOn}$"] -> 2 [accept] -> 3,
-				1 -> [self loop] 1,
-				2 -> [self loop] 2,
-%			1 [accept] -> {,
-%			0 [accept,>"b"] -> {
-%			2 [>"a | b"] -> {,}}},
-%			2 -> [clear >, "b", backward] 0,
-%			2 -> [clear >, "a", backward] 1,
-%			1 -> [clear >, "a", self loop] 1
+				0 ->
+					1 [>"$\const{LightOn}$"] ->
+					2 [accept,>"$\lnot\const{LightOn}$"] -> ["$\const{LightOn}$"] 3;
+				0 -> [self loop, "$\lnot\const{LightOn}$"] 0;
+				1 -> [self loop] 1;
+				2 -> [self loop] 2;
+				3 -> [self loop, "$\true$"] 3;
 			}; 
 			\draw [init path] (0.west) +(-0.5,0) -- (0.west);
 			\end{tikzpicture} 
 			\caption{The DFA associated to the formula~$\formula_1$, in
-			Example~\ref{ex:light}.}
+			Example~\ref{ex:rb-light}.}
 			\label{fig:rb-light-automa}
 	\end{figure}
+	The MDP associated to this simple problem is: $\langle Q \times \obsS, A, T,
+	\set{(\formula_1, r')} \rangle$, where the actions are $A \coloneqq
+	\set{\const{Toggle}, \const{NoOp}}$, $\obsS$ is an image, and $Q \coloneqq
+	\set{0, 1, 2, 3}$. With this composite state space, the agent has a complete
+	view about the missing steps to achieve the reward; something that it
+	wouldn't know from the current image or the current value of
+	$\const{LightOn}$.
+	\label{ex:light-rb-automa}
 \end{example}
 
+We've previously mentioned that this solution may not be feasible for every
+problem. In fact, we must first exclude all environments in which the
+observations are not meaningful enough. More precisely, those in which we
+cannot accurately predict the next reward~$r_t$ from the sequence of
+observations $\langle o_1, \dots, o_t \rangle$. However, these problems would
+be problematic for any learning algorithm, due to their weak observation
+function. A second group of environments may define reward functions which are
+difficult to express in temporal logic. Expressing these goals in \ldl{} would
+generate a large number of fluents and obscure temporal specifications
+(example: the game of Chess with partial observations of
+Example~\ref{ex:chess-partial-obs}). However, this last limitation is not as
+strong as it may seem: often, it is possible to greatly simplify the temporal
+specification by simply selecting a different set of fluents.
 
-% TODO: example with light bulb
+We might think that reproducing the environment's reward function is
+impossible if it is unknown. This is not necessarily true, because we are
+those that define the agent's goal and would generate those ``environment's''
+rewards. For an unknown function, we mean that a precise model of that
+function is not available and cannot be exploited, not that the rewarded goal
+is obscure. For example, the rewards of Example~\ref{ex:rb-light} are unknown,
+because we don't know the function that maps \emph{images} to rewards.
+
 
 \subsubsection*{Conclusion}
 
 In this Chapter, we've shown that our construction for NMRDP with \ldl{}
-rewards, that we collectively call ``Restraining Bolt'', is a valid solution
-for many problems: temporally-extended tasks, restraining specifications and
-partial observations. A very interesting aspect is that it can be applied as
-an additional module that is added to the original design. This is possible,
-because the extended MDPs only augment the original state space with
-additional informations. As we will see in the next section, the agent
-requires few little modification to receive those informations. However, this
-is a first step forward modularity and explainablility of agents that solve
-very complex goals.
+rewards, that we call ``Restraining Bolt'', is a valid solution for many
+problems: temporally-extended tasks, restraining specifications and partial
+observations. A very interesting aspect is that it can be applied as an
+additional module, added to the agent's original design. This is possible,
+because the extended MDPs only augment the original state spaces with
+additional informations. As we will see in the next section, in practice, the
+agent requires few modification in order to properly handle these additional
+informations. However, the Restraining Bolt is a first important step toward
+modularity and explainablility of (Deep) RL agents designed for complex
+goals.
 
+
+% TODO: only reward one. Where to write
 
 \section{Restrained Deep RL agents}
 
 \label{sec:rb-deep-model}
 
-Deep agent with RB.
+As illustrated in Section~\ref{sec:deep-q-agents}, the RL algorithm used in
+this thesis is Double DQN, a Deep RL method. Double DQN agents contain a
+Q-Network, which is a function $Q: S \to \R^{\abs{A}}$, that is parametrized
+in~$\params$. Given a MDP state~$s \in S$, this computes the state-action
+value for every action $a \in A$. In this section, we will propose an original
+Q-Network model that properly handles the additional inputs received from the
+Restraining Bolt.
+
+The Restraining Bolt is an interesting method because we can regard it as a
+module that, added to the original setup, generates additional rewards and
+observations. In principle, no structural modifications would be required in
+the agent's design: new rewards can be simply summed with the previous ones,
+and the Restraining Bolt's states~$\vec{q}$ can be stacked with the
+environment's observations to produce a composite MDP state~$(o_t,
+\vec{q}_t)$. Agents can learn from this new state space without
+modifications\footnote{Extending the size of a table, in order to account for
+the additional number of states, is not considered a real modification in the
+agent's design.}.
+
+Deep RL agents, instead, learn approximate value functions and policies. In
+this case, we should carefully select the agent's model, a neural network,
+that has the appropriate expressive power. A network that is suitable to
+approximate a function $\obsS \to \R^{\abs{A}}$ is not necessarily appropriate
+for a function from the new state space, $\obsS \times Q_1 \times \dots \times
+Q_m$. Overfitting and underfitting are well known issues in Machine Learning.
+
+
+\subsection{Q-Network for the Atari games}
+
+We will first illustrate the agent's model that we use in this thesis when the
+Bolt is not applied. Then, in Section~\ref{sec:model-atari-rb}, we'll propose
+a modification of this network that accounts for the additional states of the
+Restraining Bolt.  The environments used in this thesis are games from the
+collection ``Atari~2600''.  As illustrated in Section~\ref{sec:atari-envs},
+the observations produced are frames of size $(210, 160)$, with an RGB colour
+depth of 8-bit. Each game defines a different number of actions, 18 at most.
+
+We use the same architecture as~\cite{bib:atari-deepq-nature}, which is
+illustrated here. Slight modifications will be listed in the implementation
+part, in Section~\ref{sec:impl-agent}. First, a preprocessing function applies
+a fixed transformation to each image. Every frame is converted to a gray-scale
+picture, by computing the luminance value of each pixel. The image is then
+resized to $(84, 84)$, in order to reduce the input dimensionality. Finally, 4
+consecutive images are combined together, producing a tensor of size $(84, 84,
+4)$ that can be passed to the network. This last combination allows to create
+an observation that encodes how the objects in the scene are moving. The lack
+of this information is one of the causes of non-Markovian rewards that can be
+easily solved. See Example~\ref{ex:motion}, for an explanation.
+
+Let's define the following abbreviation: \convlayer{$n$}{$s$}{$t$} represents
+a 2D convolutional layer composed of a number of $n$ filters of size $s \times
+s$ with a stride of $t$. Similarly, \denselayer{$n$} represents a
+fully-connected layer of $n$ units. We can now define the network structure
+as:
+\begin{center}
+	\convlayer{32}{8}{4}, \relu{}, \\
+	\convlayer{64}{4}{2}, \relu{}, \\
+	\convlayer{64}{3}{1}, \relu{}, \\
+	\denselayer{512}, \relu{}, \\
+	\denselayer{$\abs{A}$}
+\end{center}
+where \relu{} is the rectifier linear unit applied to each element. In neural
+networks, images are frequently transformed with a cascade of 2D convolutions,
+followed by a number of dense layers. The authors of the original
+paper~\cite{bib:atari-deepq-nature} have shown that this network size
+generates a model with the appropriate expressive power for our environments.
+
+
+\subsection{Q-Network for the Restraining Bolt}
+
+\label{sec:model-atari-rb}
+
+We now want to apply the method presented in
+Section~\ref{sec:rb-for-partial-obs} in those games in which low performances
+are caused by partial observations. This means that our agent would need to
+receive the original observation, which is a frame of the game, and the
+vector of the Bolt's states,~$\vec{q}$. We'll now suppose that our
+temporally-extended goal can be expressed with a single pair ${(\formula,
+r')}$. So, the Restraining Bolt's state is a single scalar identifier~$q$.
+
+As anticipated, we cannot simply stack $o$ and $q$. Even if the network
+architecture would allow that, we would assign a very low relative importance
+to $q$ among the thousands of pixels of which $o$ is composed. Most
+importantly, the role of $q$ must not be confused with pixels. All these
+considerations are important because every model introduces some biases, and
+we want our model's bias to capture the following basic intuition: $q$ is an
+important index that parametrizes value functions. The state $q$ is a
+parametrization over value functions because, to different automaton states,
+there may correspond dramatically different value functions over inputs.
+
+\begin{example}
+	Let's consider again the light bulb of Example~\ref{ex:light-rb-automa} and
+	the automaton of Figure~\ref{fig:rb-light-automa}. Suppose the initial MDP
+	state is $s_0 = (o_0, 0)$, where $o_0$ is an image of a dark room. In this
+	case, the model should learn an high state-action value for the action
+	$\const{Toggle}$, and a low value for the action $\const{NoOp}$. Later on,
+	at some time~$t$, the agent may observe the following input: $s_t = (o_0,
+	2)$. Even though the image is the same, the agent should assign the highest
+	value to $\const{NoOp}$. A different automaton state dramatically changes
+	the most promising actions that will lead to the goal.
+\end{example}
+
+A very drastic choice would be to maintain a number of $\abs{Q}$ different
+networks, with the same architecture but different parameters~$\params_1,
+\dots, \params_{\abs{Q}}$. At each step, given an input $(o, q)$ the agent may
+use the network $\params_q$ to predict the actions values for the input~$o$.
+This strong parametrization would completely separate the value functions.
+An immediate problem with this approach is space inefficiency (that would be
+very evident with large $Q$ or vectorial~$\vec{q}$). Most importantly, the
+networks associated to states that are rarely encountered would be trained
+on too few input samples.
+
+The model that we propose here is a variant of the network of the previous
+section. We substitute the last fully-connected layer with one of dimension
+$\abs{A} \times \abs{Q}$. This means that a number of $\abs{A} \cdot \abs{Q}$
+linear units is arranged as a matrix, whose first index is an action and
+the second index is a Bolt's state. So, for each automaton state, the net will
+generate a different column of state-action values. The idea behind this
+choice is that we can safely share the initial layers, whose main goal is to
+provide an encoding of the observed input. Instead, separating the last layer
+provides the greatest flexibility among other combinations\footnote{
+	We didn't motivate why the first layers of the original net should behave as
+	an encoder. However, after the modification, they will be shared and trained
+	with different outputs. So, this role will be encouraged.
+}. This is an intermediate approach between completely shared and completely
+separate parameters~$\params_1, \dots, \params_{\abs{Q}}$. For a
+vectorial~$\vec{q}$, it can be easily extended: the last fully-connected layer
+would produce tensors of shape $(\abs{A} \times \abs{Q_1} \times \dots \times
+\abs{Q_m})$. Since the greatest number of parameters is shared, each
+combination of automaton states $\vec{q}$ requires a smaller number of
+training samples to train on.
+
+The resulting Q-Network for the Atari games is:
+\begin{center}
+	\convlayer{32}{8}{4}, \relu{}, \\
+	\convlayer{64}{4}{2}, \relu{}, \\
+	\convlayer{64}{3}{1}, \relu{}, \\
+	\denselayer{512}, \relu{}, \\
+	\denselayer{$\abs{A} \times \abs{Q}$}, \\
+	\slicelayer{$\cdot, q$}
+\end{center}
+where \slicelayer{$\cdot, q$} indicates that we select the $q$-th column of
+the input matrix. This is the agent's model used in this thesis. As we can
+see, we didn't need to define more than one temporal goal in our experiments.
+
+Some other variants may exists. In fact, we should remember that the automata
+states are generated from the conversion of  \ldl{} or \ltl{} expressions.
+Since, this translation has a worst case complexity that is doubly exponential
+in the size of the formula, the state space may be quite large. One
+possibility would be to investigate whether is it possible to adopt the NFA
+states, instead of the DFA's, producing a state space that may be
+exponentially smaller (multiple columns would be active at the same time, in
+this case). But these variants have not been investigated yet.
