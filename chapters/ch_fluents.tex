@@ -132,14 +132,14 @@ all the \emph{possible} trajectories according to the environment dynamics.
 For example, suppose that two conditions $A$ and $B$ cannot be true at
 the same time. Regardless of what we're trying to achieve, we can write the
 following temporal constraint: $\lbox{\true^*}(\lnot A \lor \lnot B)$.
-This constraint is an invariant because it should hold in every instant, but
-there are many other interesting constraints that we may specify with temporal
-logic. We have $A$ and $\ldiamond{\true^*}(\llast \land A)$, which
-respectively mean: every episode starts/ends with $A$ that is $\true$.
-Also, $\lbox{\true^*; A}\ldiamond{\true^*}B$ means that every time $A$ becomes
-true, the event $B$ must follow later on. This is a frequent pattern in
-request--response behaviours. The automaton associated to this constraint is
-shown in Figure~\ref{fig:response-automa}.
+This constraint is an invariant property because it should hold in every
+instant, but there are many other interesting constraints that we may specify
+with temporal logic. We have $A$ and $\ldiamond{\true^*}(\llast \land A)$,
+which respectively mean: every episode starts/ends with an instant where $A$
+is true.  Also, $\lbox{\true^*; A}\ldiamond{\true^*}B$ means that every
+time $A$ becomes true, the event $B$ must follow later on. This is a frequent
+pattern in request--response behaviours. The automaton associated to this
+constraint is shown in Figure~\ref{fig:response-automa}.
 \begin{figure}
 		\centering
 		\begin{tikzpicture}
@@ -147,8 +147,8 @@ shown in Figure~\ref{fig:response-automa}.
 			automaton, grow right=3cm,
 		]{
 			0 [accept] -> ["$A$"] 1;
-			0 -> [self loop, "$\lnot A$"] 0;
-			1 -> [self loop, "$A \lor \lnot B$"] 1;
+			0 -> [self loop above, "$\lnot A$"] 0;
+			1 -> [self loop above, "$A \lor \lnot B$"] 1;
 			1 -> [backward, "$B \land \lnot A$"] 0;
 		}; 
 		\draw [init path] (0.west) +(-0.5,0) -- (0.west);
@@ -170,36 +170,53 @@ shown in Figure~\ref{fig:response-automa}.
 		\land \lnot \ldiamond{\true^*; \lnot \const{HaveKey}}\const{DoorOpen}
 	\]
 	which says that the door cannot be opened if at the previous instant we
-	don't have a key, and initially the door is closed and the agent has no key.
-	The automaton associated is shown in Figure~\ref{fig:door-automa}.
+	don't have a key, and, initially, the door is closed and the agent has no key.
+	The associated automaton is shown in Figure~\ref{fig:door-automa}.
 	\begin{figure}
 			\centering
 			\begin{tikzpicture}
 			\graph [
-				automaton, grow right=5cm,
+				tree layout, automaton, level distance=2cm, sibling distance=3cm,
 			]{
 				0 [accept] -> {
-					1 [accept, >"$\lnot\const{DoorOpen} \land \lnot\const{HaveKey}$"] %
-						-> ["$\const{HaveKey} \land \lnot\const{DoorOpen}$"] %
+					1 [accept, >"$\lnot\const{DoorOpen} \land \lnot\const{HaveKey}$"]
+						-> ["$\const{HaveKey} \land \lnot\const{DoorOpen}$", bend right]
 						2 [accept],
-					3 ["$\const{DoorOpen} \lor \const{HaveKey}$"]
-				};
-				3 -> ["$\true$", self loop] 3
+					3 [>"$\const{DoorOpen} \lor \const{HaveKey}$"']
+				},
+				3 -> [clear >, "$\true$", self loop right] 3,
+				1 -> [clear >, "$\const{DoorOpen}$"] 3,
+				2 -> [clear >, "$\lnot\const{HaveKey}$", bend right] 1,
+				2 -> [clear >, "$\const{HaveKey}$", self loop below] 2,
+				1 -> ["$\lnot\const{DoorOpen} \land \lnot\const{HaveKey}$",
+					self loop left] 1
 			}; 
-			\draw [init path] (0.west) +(-0.5,0) -- (0.west);
+			\draw [init path] (0.north) +(0,0.5) -- (0.north);
 			\end{tikzpicture} 
 			\caption{The DFA associated to Example~\ref{ex:door}.}
 			\label{fig:door-automa}
 	\end{figure}
-	% TODO
 	Note that we didn't specify that the door should be eventually opened. The
 	automaton only excludes the trajectories that certainly can't happen.
-	% TODO: not complete, because no planning, just constraints
 	\label{ex:door}
 \end{example}
 
 We've just described how temporal constraints work. However, there is one
-important 
+important consideration to do: these constraints are a very weak. This means
+that there will be lots of fluents' valuations functions that are consistent
+with this specification. Take Example~\ref{ex:door}, a feature
+extractor~${f(o) \coloneqq \set{}}$, which always predicts that both fluents
+are false, is completely wrong but it is perfectly consistent with the
+specification. Similarly, many other valuation functions that respect the DFA
+dynamics of Figure~\ref{fig:door-automa} will be completely meaningless.
+This may not surprise us, as most constraints can only relate the
+valuation functions with each other, but they cannot force arbitrary
+input--output associations. The initial and final conditions (such as $\lnot
+\const{HaveKey} \land \lnot \const{DoorOpen}$ in the Example~\ref{ex:door})
+are some of the few examples that creates a strong binding from input
+observations and desired fluents' output. In the following sections, we will
+see how to 
+% TODO: not complete definitions, just constraints
 
 % TODO: not alone
 % TODO: only binding fluents together, not to observations

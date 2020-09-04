@@ -1438,10 +1438,10 @@ arrangement.
 				0 ->
 					1 [>"$\const{LightOn}$"] ->
 					2 [accept,>"$\lnot\const{LightOn}$"] -> ["$\const{LightOn}$"] 3;
-				0 -> [self loop, "$\lnot\const{LightOn}$"] 0;
-				1 -> [self loop] 1;
-				2 -> [self loop] 2;
-				3 -> [self loop, "$\true$"] 3;
+				0 -> [self loop above, "$\lnot\const{LightOn}$"] 0;
+				1 -> [self loop above] 1;
+				2 -> [self loop above] 2;
+				3 -> [self loop above, "$\true$"] 3;
 			}; 
 			\draw [init path] (0.west) +(-0.5,0) -- (0.west);
 			\end{tikzpicture} 

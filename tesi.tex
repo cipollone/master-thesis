@@ -104,10 +104,13 @@
 \usetikzlibrary{decorations.pathreplacing}
 \usetikzlibrary{patterns}
 \usetikzlibrary{quotes}
+\usetikzlibrary{graphdrawing}
 
 \pgfdeclarelayer{below}
 \pgfdeclarelayer{beloww}
 \pgfsetlayers{beloww,below,main}
+
+\usegdlibrary{layered,trees}
 
 \tikzset{
 	>=stealth',
@@ -128,9 +131,16 @@
 	accept/.style={double},
 	reject/.style={fill=lightgray},
 	backward/.style={bend #1}, backward/.default=right,
-	self loop/.style={to path={
-	.. controls +(70:1) and +(110:1) .. (\tikztotarget) \tikztonodes}},
-	init path/.style={->, decoration={snake, amplitude=0.2mm, segment length=2mm}, decorate}
+	init path/.style={
+		->, decoration={snake, amplitude=0.2mm, segment length=2mm}, decorate},
+	self loop right/.style={to path={
+		.. controls +(-20:1) and +(20:1) .. (\tikztotarget) \tikztonodes}},
+	self loop above/.style={to path={
+		.. controls +(70:1) and +(110:1) .. (\tikztotarget) \tikztonodes}},
+	self loop left/.style={to path={
+		.. controls +(160:1) and +(200:1) .. (\tikztotarget) \tikztonodes}},
+	self loop below/.style={to path={
+		.. controls +(250:1) and +(290:1) .. (\tikztotarget) \tikztonodes}},
 }
 % Automaton graph style
 \pgfkeys{
