@@ -66,6 +66,7 @@
 \newcommand{\est}[1]{\hat{#1}}
 \newcommand{\optimal}[1]{{#1}_*}
 \newcommand{\fluents}{\setSym{F}}
+\newcommand{\fluent}{p}
 \newcommand{\formula}{\varphi}
 \newcommand{\propformula}{\phi}
 \newcommand{\trace}{\pi}
@@ -89,6 +90,7 @@
 	% Convolutional layer. Params: n filters, size, stride
 \newcommand{\denselayer}[1]{Dense(#1)}
 \newcommand{\slicelayer}[1]{Slice(#1)}
+\newcommand{\constraintS}{\psi}
 
 % TikZ
 \usetikzlibrary{arrows}
@@ -120,13 +122,14 @@
 	block/.style={
 		rounded corners=4pt, draw, fill=white, inner sep=6pt, outer sep=1pt},
 	image/.style={inner sep=0pt, outer sep=3pt},
-	region box/.style={orange, draw},
+	region box/.style={draw=orange},
 	dot/.style={fill, circle, inner sep=0.7pt},
 	node/.style={draw, fill=white, circle, semithick, inner sep=0pt, minimum
 		size=1.7ex},
 	%
 	flow/.style={->, thick, >=spaced stealth'},
-	pin line/.style={very thin, draw, gray},
+	arrow/.style={->, semithick},
+	pin line/.style={-, very thin, draw=gray},
 	%
 	accept/.style={double},
 	reject/.style={fill=lightgray},
@@ -145,7 +148,7 @@
 % Automaton graph style
 \pgfkeys{
     /tikz/graphs/automaton/.style={
-        nodes={draw,circle},
+        nodes={draw, circle},
         edge quotes={font={\small}, inner ysep=0.5ex, inner xsep=0.2ex,
 					auto=right, pos=0.5}
     }
@@ -183,7 +186,7 @@ Cipollone}}
 
 % Thesis info
 \title{Fluents valuation in Deep Reinforcement Learning agents for
-non-Markovian goals}% TODO: title
+non-Markovian rewards}% TODO: title
 \author{Roberto Cipollone}
 \IDnumber{1528014}
 \course{Artificial Intelligence and Robotics}

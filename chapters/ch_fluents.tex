@@ -49,16 +49,17 @@ environment and produce a Boolean valuation for some predefined propositional
 symbols, that we call fluents. We assume that the set of fluents~$\fluents$
 has already been defined, and the truth of every atomic proposition
 in~$\fluents$ can be decided from a single input~$o$~\footnote{If we did
-define a symbol that cannot be decided, for example a generic
-``$\const{GoalReached}$'', we need to split that condition into much simpler
-events, and define $\const{GoalReached}$ in terms of the new symbols.}.
+define a symbol that cannot be decided from one observation, for example a
+generic ``$\const{GoalReached}$'', we need to split that condition into much
+simpler events, and define $\const{GoalReached}$ in terms of the new
+symbols.}.
 
 Usually, the features extractor is not a really interesting component. Once,
-we've defined a fluent~$p \in \fluents$, we could manually program a function,
-$f_p: \obsS \to \B$, that predicts when that event occurs or that condition is
-verified\footnote{$\B$ is the set $\set{0, 1}$, which represents $\set{\false,
-\true}$.}.  This approach is perfectly fine, when applicable.  However, the
-environments used in Deep Reinforcement Learning usually produce
+we've defined a fluent~$\fluent \in \fluents$, we could manually program a
+function, $f_p: \obsS \to \B$, that predicts when that event occurs or that
+condition is verified\footnote{$\B$ is the set $\set{0, 1}$, which represents
+$\set{\false, \true}$.}.  This approach is perfectly fine, when applicable.
+However, the environments used in Deep Reinforcement Learning usually produce
 high-dimensional or noisy observations. As we may imagine, it becomes really
 hard to manually classify such inputs in the two classes. So, in order to
 apply to Deep RL the Restraining Bolt, or any other logic-based method, we
@@ -72,10 +73,10 @@ defined: $f: \obsS \to \B^{\abs{\fluents}}$. The simplest way to train this
 model is through supervised learning, where we provide many input-output
 samples. Supervised learning can generate very accurate models, but, for every
 image in the training dataset, we would need to manually label the desired
-outputs, i.e. the fluents that are true in that image. The effort of this
-manual intervention would completely dominate over the advantages of the
-high-level, logic approach. If possible, we would certainly like to avoid this
-manual work. 
+outputs, i.e. the fluents that are true in that image. Unfortunately, the
+effort of this manual intervention would completely dominate over the
+advantages of the high-level, logic approach. If possible, we would certainly
+like to avoid this manual work. 
 
 A very promising alternative is unsupervised learning. These models don't
 return predictions. Instead, they memorize patterns and features that the
@@ -84,7 +85,7 @@ input space, and the latent space. To any input that is presented to the
 model corresponds a compact representation in the latent space. The purpose
 of this representation is to distinguish the specific input among all of the
 training set\footnote{To emphasize this concept: the purpose of the latent
-representation is to distinguish the input sample with respect to the training
+representation is to identify the input sample with respect to the training
 distribution.}. Since the latent space is much more compact, it may be used in
 other computations in place of the original input. In this case, the latent
 vector is called an \emph{encoding}.
@@ -93,53 +94,63 @@ Unsupervised learning will be a central part of the solution proposed here.
 However, it may not be the only part, because unsupervised models makes no
 guarantees about the meaning of the latent representation. This means that
 we cannot predict what each number in the latent vector represents. So, the
-proposed model transforms the encodings through a second function, which
-computes the truth value of the fluents. 
+proposed model will transform the encodings through a second function, which
+computes the truth value of the fluents.
 
+To better understand the motivation behind our choices, we list few general
+goals that we want to pursue with this work:
+\begin{enumerate}
+	\item Learning should not require manual labelling.
+	\item \label{en:select-fluents} We select the fluents that should be learnt.
+	\item \label{en:generic-model} Model should make as few environment-specific
+		assumptions as possible.
+\end{enumerate}
+The second principle means that we first choose the propositions to use in our
+temporal formulae, then we train a model to valuate them. The opposite
+approach would be to train an extractor of Boolean features, then recognize a
+meaning in those fluents.
 
-\section{Temporal constraints}
-
-In this whole Chapter, we'll develop an original technique to realize the
-features extractor. These are the general goals that we want to pursue with
-this work:
-\begin{itemize}
-	\item We choose the set of fluents that should be learnt.
-	\item Learning without manual labelling.
-	\item As few environment specific choices as possible.
-\end{itemize}
-
-In this section, we illustrate the concept of ``temporal constraints''. This
-is the central idea introduced with this work, that will help us achieve
-the three principles above. As we'll discuss in
+With the general goals~\ref{en:select-fluents} and~\ref{en:generic-model}
+above, in particular, we express that the model should be generalizable to a
+wide range of output fluents and input observations. Of course, this is only
+possible to some extent. As we'll discuss in
 Section~\ref{sec:fluents-assumptions} and~\nameref{sec:fluents-limitations},
 this method, as realized in this thesis, makes some assumptions that limits
 its applicability to a specific class of fluents and observations. However, it
 poses some interesting ideas that certainly needs to be further investigated
-in future research. This thesis is just an initial study in this direction.
+in the future. This thesis is just an initial study in this direction.
 
-We can start from the following observation: a dataset of labelled samples is
-a description, by examples, of the desired meaning of the fluents. A good
-model would interpolate between these samples to inputs that have never been
-observed. Without these examples, how do we specify the desired meaning of a
-fluent? Note that by ``meaning'', we mean the set of inputs in which the
-propositional symbol should be valuated to true.
+
+\section{Temporal constraints}
+
+% TODO: read again
+
+In this section, we illustrate the concept of ``temporal constraints''. This
+is the central idea introduced with this work, that will help us pursue the
+three principles above. We can start from the following observation: a dataset
+of labelled samples is a description, by examples, of the desired meaning of
+the fluents. A good model would interpolate between these samples to inputs
+that have never been observed. Without these examples, how do we specify the
+desired meaning of a fluent? Note that by ``meaning'', we mean the set of
+inputs in which the propositional symbol should be valuated to true.
 
 What we propose here is to specify the desired temporal behaviour of these
-fluents with temporal logics: we can write a temporal formula, in \ltl{} or
+fluents with temporal logics: we write a temporal formula, in \ltl{} or
 \ldl{}, that describes all the possible traces of the fluents we want to
 define. We don't talk about \emph{desirable} trajectories. Instead, we define
 all the \emph{possible} trajectories according to the environment dynamics.
-For example, suppose that two conditions $A$ and $B$ cannot be true at
-the same time. Regardless of what we're trying to achieve, we can write the
-following temporal constraint: $\lbox{\true^*}(\lnot A \lor \lnot B)$.
-This constraint is an invariant property because it should hold in every
-instant, but there are many other interesting constraints that we may specify
-with temporal logic. We have $A$ and $\ldiamond{\true^*}(\llast \land A)$,
-which respectively mean: every episode starts/ends with an instant where $A$
-is true.  Also, $\lbox{\true^*; A}\ldiamond{\true^*}B$ means that every
-time $A$ becomes true, the event $B$ must follow later on. This is a frequent
-pattern in request--response behaviours. The automaton associated to this
-constraint is shown in Figure~\ref{fig:response-automa}.
+For example, suppose that two conditions $A$ and $B$, according to their
+desired meaning, cannot be true at the same time. Regardless of what we're
+trying to achieve, we can write the following temporal constraint:
+$\lbox{\true^*}(\lnot A \lor \lnot B)$.  This constraint is an invariant
+property because it should hold in every instant, but there are many other
+interesting constraints that we may specify with temporal logic. For example,
+$A$ and $\ldiamond{\true^*}(\llast \land A)$ respectively mean: every episode
+starts/ends with an instant where $A$ is true.  Also, $\lbox{\true^*;
+A}\ldiamond{\true^*}B$ means that every time $A$ becomes true, the event $B$
+must follow later on. This is a frequent pattern in request--response
+behaviours. The automaton associated to this constraint is shown in
+Figure~\ref{fig:response-automa}.
 \begin{figure}
 		\centering
 		\begin{tikzpicture}
@@ -159,6 +170,11 @@ constraint is shown in Figure~\ref{fig:response-automa}.
 \end{figure}
 % TODO: note about symbolic transitions?
 
+Usually, we won't be able to write exact constraints or complete definitions
+of the fluents, but this is not necessary. It is sufficient to exclude as many
+inconsistent trajectories as we can (inconsistent with respect to the desired
+fluents' meaning).
+
 \begin{example}
 	Suppose that an agent should open a door that is closed with a key, and
 	we've defined the fluents $\fluents \coloneqq \set{\const{HaveKey},
@@ -169,9 +185,9 @@ constraint is shown in Figure~\ref{fig:response-automa}.
 		(\lnot \const{HaveKey} \land \lnot \const{DoorOpen})
 		\land \lnot \ldiamond{\true^*; \lnot \const{HaveKey}}\const{DoorOpen}
 	\]
-	which says that the door cannot be opened if at the previous instant we
-	don't have a key, and, initially, the door is closed and the agent has no key.
-	The associated automaton is shown in Figure~\ref{fig:door-automa}.
+	which says that the door cannot be opened if, at the previous instant, we
+	don't have a key. Also, initially, the door is closed and the agent has no
+	key.  The associated automaton is shown in Figure~\ref{fig:door-automa}.
 	\begin{figure}
 			\centering
 			\begin{tikzpicture}
@@ -193,7 +209,7 @@ constraint is shown in Figure~\ref{fig:response-automa}.
 			}; 
 			\draw [init path] (0.north) +(0,0.5) -- (0.north);
 			\end{tikzpicture} 
-			\caption{The DFA associated to Example~\ref{ex:door}.}
+			\caption{The DFA associated to the Example~\ref{ex:door}.}
 			\label{fig:door-automa}
 	\end{figure}
 	Note that we didn't specify that the door should be eventually opened. The
@@ -214,28 +230,104 @@ valuation functions with each other, but they cannot force arbitrary
 input--output associations. The initial and final conditions (such as $\lnot
 \const{HaveKey} \land \lnot \const{DoorOpen}$ in the Example~\ref{ex:door})
 are some of the few examples that creates a strong binding from input
-observations and desired fluents' output. In the following sections, we will
-see how to 
-% TODO: not complete definitions, just constraints
-
-% TODO: not alone
-% TODO: only binding fluents together, not to observations
+observations and desired fluents' output.
 
 
 \section{Assumptions}
 
 \label{sec:fluents-assumptions}
 
+The environments we're dealing with are video games from the Atari collection.
+So, the input space is composed of images of size $(210, 160)$. In the
+following, we will always use images from this games, because this is how
+environment's observations $\obsS$ look like.
+
+We'll now list the initial choices and assumptions taken in this work.
+As we've seen, assumptions like these restricts the range of valuation
+functions that can be learnt with this model. However, they are essential in
+order to devise a solution. The purpose of most of them is to address the
+issue mentioned in the previous section: temporal constraints are only very
+weak indications of the desired meaning of the fluents. Let's look at the
+general problem, in Figure~\ref{fig:generic-weak-constraints}.
+\begin{figure}
+	\centering
+	\begin{tikzpicture}[
+			every pin/.style={font=\footnotesize},
+			node distance=0.7cm,
+		]
+		% Inputs
+		\node (frame0) [image, xshift=-0.4cm, yshift=0.4cm, opacity=0.5]
+			{\includegraphics[width=1cm]{./imgs/mz0.png}};
+		\node (frame1) [image, xshift=-0.2cm, yshift=0.2cm, opacity=0.8]
+			{\includegraphics[width=1cm]{./imgs/mz1.png}};
+		\node (frame2) [image]
+			{\includegraphics[width=1cm]{./imgs/mz3.png}};
+		\node (frames) [fit=(frame0) (frame2), pin=above:{input sequence}] {};
+		% Function
+		\draw [->, thin, draw=lightgray] (frame0.east) ++(0.7,0) -- ++(2,0)
+			coordinate (fn0-right);
+		\draw [->, thin, draw=gray] (frame1.east) ++(0.7,0) -- ++(2,0)
+			coordinate (fn1-right);
+		\path (frame2.east) ++(0.7,0) edge [arrow]
+			node [midway, auto=right, outer sep=0.7ex,
+					pin={[pin edge=pin line]below:{unknown\\valuation function}}] {
+				$f: \obsS \to \B^{\abs{\fluents}}$}
+			coordinate [at end] (fn2-right) ++(2,0);
+		% Output
+		\begin{scope}[every matrix/.style={
+			matrix of nodes, nodes in empty cells,
+			row sep=-\pgflinewidth, column sep=-\pgflinewidth,
+			nodes={anchor=center, draw, minimum width=1.1em, minimum height=1.1em,
+				font=\footnotesize, inner sep=3pt, fill=white},
+			cells={draw},
+		}]
+			\matrix (values0) [right=of fn0-right, nodes={draw=lightgray, thin}] {
+				\\\\\\\\\\
+			};
+			\matrix (values1) [right=of fn1-right, nodes={draw=gray, thin}] {
+				\\\\\\\\\\
+			};
+			\matrix (values2) [right=of fn2-right] {
+				1\\1\\0\\1\\0\\
+			};
+		\end{scope}
+		\node (values) [fit=(values0) (values2), pin={output trace}] {};
+		% Constraint
+		\draw (values2.east) ++(0.5,0) edge [thick, dashed]
+			node [midway, auto=right, outer sep=0.7ex,
+					pin=below:{temporal constraint}]
+				{$\trace \models \constraintS$}
+			coordinate [at end] (line-right) ++(2,0);
+		\node (formula) [right=0.5cm of line-right] [pin=above:{\ldl{} formula}]
+			{\constraintS};
+	\end{tikzpicture}
+	\caption{} % TODO
+	\label{fig:generic-weak-constraints}
+\end{figure}
+At each timestep, the same valuation function is applied to the current
+observation, which is a frame of the game, in order to compute a
+configuration of the fluents. This sequence of assignments, a trace, needs to
+be consistent with the temporal constraint~$\constraintS$. As noted in the
+previous section, there will be a huge number of possible functions, and lots
+of them will respect the specification, by chance.
+
+For each fluent $\fluent \in \fluents$, we're trying to learn a function
+$f_{\fluent}: \obsS \to \B$ that is able to compute a truth value from each
+input image. For simplicity, we'll only focus on environments that provides a
+static view of the game. This will greatly simplify the training of our model,
+because a dynamic view
+
 A temporal constraints aren't definitions; they are just minimal constraints.
 We need additional clues: visual description of fluents.
 Now follow my assumptions:
-\begin{itemize}
-	\item Local propertes (with regions I don't have to find elements in a
-		frame).
-	\item The property is visually apparent, inside the region.
-\end{itemize}
 
-Limitations and other ideas for a stronger grouding.
+% TODO: \item Local propertes (with regions I don't have to find elements in a
+	% frame).
+% TODO: \item The property is visually apparent, inside the region.
+
+
+% TODO: link to chapter where relax the assumptions and other ideas for
+% stronger grounding
 
 \section{General structure of the model}
 
