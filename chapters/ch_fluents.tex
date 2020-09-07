@@ -106,27 +106,26 @@ goals that we want to pursue with this work:
 		assumptions as possible.
 \end{enumerate}
 The second principle means that we first choose the propositions to use in our
-temporal formulae, then we train a model to valuate them. The opposite
-approach would be to train an extractor of Boolean features, then recognize a
+temporal formulae, then we train a model to valuate them. An opposite approach
+could have been to train an extractor of Boolean features, then recognize a
 meaning in those fluents.
 
 With the general goals~\ref{en:select-fluents} and~\ref{en:generic-model}
 above, in particular, we express that the model should be generalizable to a
 wide range of output fluents and input observations. Of course, this is only
 possible to some extent. As we'll discuss in
-Section~\ref{sec:fluents-assumptions} and~\nameref{sec:fluents-limitations},
-this method, as realized in this thesis, makes some assumptions that limits
-its applicability to a specific class of fluents and observations. However, it
-poses some interesting ideas that certainly needs to be further investigated
-in the future. This thesis is just an initial study in this direction.
+Section~\ref{sec:fluents-assumptions} and~\ref{sec:fluents-limitations}, this
+method, as realized in this thesis, makes some assumptions that limit its
+applicability to a specific class of fluents and observations. However, this
+work poses some interesting ideas, such as temporal constraints, that
+certainly needs to be further investigated in the future. This thesis is just
+an initial study in this direction.
 
 
 \section{Temporal constraints}
 
-% TODO: read again
-
 In this section, we illustrate the concept of ``temporal constraints''. This
-is the central idea introduced with this work, that will help us pursue the
+is an important idea introduced with this work, that will help us pursue the
 three principles above. We can start from the following observation: a dataset
 of labelled samples is a description, by examples, of the desired meaning of
 the fluents. A good model would interpolate between these samples to inputs
@@ -137,7 +136,7 @@ inputs in which the propositional symbol should be valuated to true.
 What we propose here is to specify the desired temporal behaviour of these
 fluents with temporal logics: we write a temporal formula, in \ltl{} or
 \ldl{}, that describes all the possible traces of the fluents we want to
-define. We don't talk about \emph{desirable} trajectories. Instead, we define
+define. We don't talk about \emph{desired} trajectories. Instead, we define
 all the \emph{possible} trajectories according to the environment dynamics.
 For example, suppose that two conditions $A$ and $B$, according to their
 desired meaning, cannot be true at the same time. Regardless of what we're
@@ -169,18 +168,20 @@ Figure~\ref{fig:response-automa}.
 		\label{fig:response-automa}
 \end{figure}
 % TODO: note about symbolic transitions?
+Temporal logics like \ldl{} are very expressive and allows to write many
+complex property that the symbols satisfy.
 
 Usually, we won't be able to write exact constraints or complete definitions
-of the fluents, but this is not necessary. It is sufficient to exclude as many
-inconsistent trajectories as we can (inconsistent with respect to the desired
-fluents' meaning).
+of the fluents. This is not necessary, though. It is sufficient to exclude as
+many inconsistent trajectories as we can (inconsistent with respect to the
+desired fluents' meaning).
 
 \begin{example}
 	Suppose that an agent should open a door that is closed with a key, and
 	we've defined the fluents $\fluents \coloneqq \set{\const{HaveKey},
 	\const{DoorOpen}}$. We need to train a feature extractor that valuates these
-	two propositions with their intended meaning. We may write the following
-	constraint:
+	two propositions with their intended interpretation. We may write the
+	following constraint:
 	\[
 		(\lnot \const{HaveKey} \land \lnot \const{DoorOpen})
 		\land \lnot \ldiamond{\true^*; \lnot \const{HaveKey}}\const{DoorOpen}
@@ -217,38 +218,11 @@ fluents' meaning).
 	\label{ex:door}
 \end{example}
 
-We've just described how temporal constraints work. However, there is one
-important consideration to do: these constraints are a very weak. This means
-that there will be lots of fluents' valuations functions that are consistent
-with this specification. Take Example~\ref{ex:door}, a feature
-extractor~${f(o) \coloneqq \set{}}$, which always predicts that both fluents
-are false, is completely wrong but it is perfectly consistent with the
-specification. Similarly, many other valuation functions that respect the DFA
-dynamics of Figure~\ref{fig:door-automa} will be completely meaningless.
-This may not surprise us, as most constraints can only relate the
-valuation functions with each other, but they cannot force arbitrary
-input--output associations. The initial and final conditions (such as $\lnot
-\const{HaveKey} \land \lnot \const{DoorOpen}$ in the Example~\ref{ex:door})
-are some of the few examples that creates a strong binding from input
-observations and desired fluents' output.
-
-
-\section{Assumptions}
-
-\label{sec:fluents-assumptions}
-
-The environments we're dealing with are video games from the Atari collection.
-So, the input space is composed of images of size $(210, 160)$. In the
-following, we will always use images from this games, because this is how
-environment's observations $\obsS$ look like.
-
-We'll now list the initial choices and assumptions taken in this work.
-As we've seen, assumptions like these restricts the range of valuation
-functions that can be learnt with this model. However, they are essential in
-order to devise a solution. The purpose of most of them is to address the
-issue mentioned in the previous section: temporal constraints are only very
-weak indications of the desired meaning of the fluents. Let's look at the
-general problem, in Figure~\ref{fig:generic-weak-constraints}.
+The general idea is shown in Figure~\ref{fig:constraints-scheme}. We're
+trying to learn the unknown function $f: \obsS \to \B^{\abs{\fluents}}$,
+which, from a single input observation, computes the truth value for all
+fluents. The trace generated must always satisfy the temporal constraint
+defined in~$\constraintS$.
 \begin{figure}
 	\centering
 	\begin{tikzpicture}[
@@ -301,39 +275,240 @@ general problem, in Figure~\ref{fig:generic-weak-constraints}.
 		\node (formula) [right=0.5cm of line-right] [pin=above:{\ldl{} formula}]
 			{\constraintS};
 	\end{tikzpicture}
-	\caption{} % TODO
-	\label{fig:generic-weak-constraints}
+	\caption{The trace generated by the valuation function must satisfy the
+	temporal constraint.}
+	\label{fig:constraints-scheme}
 \end{figure}
-At each timestep, the same valuation function is applied to the current
-observation, which is a frame of the game, in order to compute a
-configuration of the fluents. This sequence of assignments, a trace, needs to
-be consistent with the temporal constraint~$\constraintS$. As noted in the
-previous section, there will be a huge number of possible functions, and lots
-of them will respect the specification, by chance.
 
-For each fluent $\fluent \in \fluents$, we're trying to learn a function
-$f_{\fluent}: \obsS \to \B$ that is able to compute a truth value from each
-input image. For simplicity, we'll only focus on environments that provides a
-static view of the game. This will greatly simplify the training of our model,
-because a dynamic view
-
-A temporal constraints aren't definitions; they are just minimal constraints.
-We need additional clues: visual description of fluents.
-Now follow my assumptions:
-
-% TODO: \item Local propertes (with regions I don't have to find elements in a
-	% frame).
-% TODO: \item The property is visually apparent, inside the region.
+We've just described how temporal constraints work. However, there is one
+important consideration to do: these constraints are a very weak. This means
+that there will be lots of fluents' valuations functions that are consistent
+with this specification. Consider Example~\ref{ex:door}, a feature
+extractor~${f(o) \coloneqq \set{}}$ completely ignores the input and always
+predicts that both fluents are false. It is wrong but it is perfectly
+consistent with the specification. Similarly, many other valuation functions
+that respect the DFA dynamics of Figure~\ref{fig:door-automa} will be
+completely meaningless.  This may not surprise us, as most constraints can
+only relate the valuation functions with each other, but they cannot force
+arbitrary input--output associations. The initial and final conditions (such
+as $\lnot \const{HaveKey} \land \lnot \const{DoorOpen}$ in the
+Example~\ref{ex:door}) are some of the few examples that creates a strong
+binding between input observations and desired fluents' output.
 
 
-% TODO: link to chapter where relax the assumptions and other ideas for
-% stronger grounding
+\section{Assumptions}
+
+\label{sec:fluents-assumptions}
+
+In this section, we'll list the choices and assumptions taken in this work.
+Of course, assumptions like these restrict the range of valuation functions
+that can be learnt. However, they are essential in order to devise a solution.
+The purpose of most of them is to address the issue mentioned in the previous
+section: temporal constraints are only very weak indications of the desired
+meaning of the fluents. Other assumptions, instead, describe the range of
+environments that the proposed model can be applied to.
+
+First, we remember that the environments we're dealing with are video games
+from the Atari collection.  So, the input space is composed of images of size
+$(210, 160)$. In the following, we will always use images from this games,
+because this is how environment's observations look like.
+
+We now assume that each atomic proposition can be decided just from a fixed
+region of the input image. In other words, to each fluent, we associate a
+rectangular portion of the input and we assume that an observation of this
+region is sufficient to decide the truth of the symbol. Regions can overlap
+and different fluents can be defined on the same region. By restricting the
+input space of the model so much, we're partially reducing the complexity of
+the problem.  
+
+\begin{example}
+	In order to better understand what regions are, we anticipate one
+	environment that we'll encounter in the experiments
+	Section~\ref{sec:exp-breakout}: Breakout. In this famous game, the player's
+	goal is to direct the ball toward the bricks. Suppose we want to learn three
+	fluents~$\fluents \coloneqq \set{\const{Empty}, \const{Full},
+	\const{PaddleLeft}}$, as shown in Figure~\ref{fig:assumption-ex-breakout}.
+	\begin{figure}
+		\centering
+		\begin{tikzpicture}[
+				every node/.append={font=\footnotesize},
+				small arrow/.style={->, thin, >=spaced stealth'},
+			]
+			\node [image, outer sep=0pt] (env-br)
+				{\includegraphics[height=3cm]{./imgs/br2.png}}; \&
+			\begin{scope}[
+					shift=(env-br.north west), x={(env-br.north east)},
+					y={(env-br.south west)}]
+				\draw [region box] \boxblueright node (blueright) {};
+				\draw [region box] \boxpaddleleft node (paddleleft) {};
+			\end{scope}
+			\matrix (bluem) [matrix of math nodes, right=of blueright] {
+				\const{Full} \\ \const{Empty} \\
+			};
+			\node (leftn) [left=of paddleleft] {$\const{PaddleLeft}$};
+			\draw [small arrow] (bluem-1-1) -- (blueright-|env-br.east);
+			\draw [small arrow] (bluem-2-1) -- (blueright-|env-br.east);
+			\draw [small arrow] (leftn) -- (paddleleft-|env-br.west);
+		\end{tikzpicture}
+		\caption{Fluents and regions for the environment Breakout in
+		Example~\ref{ex:assumption-ex-breakout}.}
+		\label{fig:assumption-ex-breakout}
+	\end{figure}
+	The region associated to each of these symbols is indicated with an orange
+	box. $\const{PaddleLeft}$ should be true when the paddle is inside the
+	region on the left; $\const{Empty}$ and $\const{Full}$ should be true
+	respectively when all the bricks, or no bricks, have been shot down.
+	\label{ex:assumption-ex-breakout}
+\end{example}
+
+As it may be clear from this example, the regions also help to do something
+that would be impossible in logic: indicate which portion of the input the
+fluents refer to. Also, we should choose each region as a small selection of
+the image in which the condition we'd like to extract is \emph{visually
+evident}: to different valuations should correspond noticeable differences
+in the region. In the following sections, we'll refine what we mean by
+``noticeable''. Essentially, we mean that the model we're going to define must
+be able to capture and focus on such changes. Unfortunately, this is not
+something that can be described with extreme precision, in machine learning.
+Consider, for example, the region of the fluents $\const{Full}$ and
+$\const{Empty}$ of Figure~\ref{fig:assumption-ex-breakout}. The most evident
+change in that area are the disappearing bricks; we won't be able to learn a
+fluent $\const{BallInside}$ that becomes true when the ball is inside the
+region.
+
+As a consequence of regions, this method is only applicable to games with a
+static view of the scene. If every object in the image were moving, we
+couldn't apply the simplification of static regions. Few examples of games
+that respect this constraint are: Breakout, Mr.~Pac-Man, Video Pinball, Pong.
+We'll also experiment with Montezuma's Revenge, but we'll limit to the first
+room.
+
+In Section~\ref{sec:fluents-limitations},
+``\nameref{sec:fluents-limitations}'', we'll suggest few ideas about how some
+of these limitations can be relaxed.
+
 
 \section{General structure of the model}
 
-Illustration and general description of the model.
+\label{sec:model-structure}
+
+In this section, we introduce the general structure of the model proposed in
+this thesis. The remaining parts of the chapter cover all the details and
+definitions.
+
+As we already know, temporal constraints can exclude many inconsistent
+assignments but they are only weak indications about the desired valuation
+functions. By assuming regions, we've strongly reduced the size of the input
+space, hence of the possible functions. Still, the problem is only mitigated.
+To address this issue, we propose to learn each valuation function from an
+encoding vector that represents the region of interest, rather than from the
+pixel values directly. An encoding is a low-dimensional vector that represents
+a more complex input. So, we might use this vector in place of the original
+input in order to simplify the learning process of the valuation function.
+
+An encoding can be viewed as a lossy compression of the input. The meaning
+of the encoding vector depends on the specific model, which will be presented
+in Section~\ref{sec:encoding}. Here we only want to highlight that many input
+images, which are considered similar according to the model, can correspond to
+the same encoding vector. These inputs will produce the same interpretation
+for the fluents. This is certainly a desirable effect: the encoder can extract
+few relevant indicators from which we can compute the fluent value, while
+noises and tiny variations of the input will be ignored.
+
+Therefore, the model that we propose is a function composed of two consecutive
+parts: an array of \emph{encoders} and an array of \emph{Boolean functions}.
+This scheme is illustrated in Figure~\ref{fig:model-scheme}.
+\begin{figure}
+	\centering
+	\begin{tikzpicture}[
+			node distance=0.7cm,
+			every label/.style={font=\scriptsize},
+		]
+
+		% Input
+		\node [image] (frame)
+			{\includegraphics[height=2cm]{./imgs/br0.png}};
+		\node [dot, right=0.7cm of frame] (input) {};
+
+		% Encoders
+		\matrix [
+			right=of input, nodes={anchor=center},
+			row sep=0.5cm, column sep=0.5cm,
+		] (encoders) {
+			\node [block] (encoder1) {Encoder\\(region 1)}; \&
+			\node [dot] (encoded1) {}; \\
+			\node [block] (encoder2) {Encoder\\(region 2)}; \&
+			\node [dot] (encoded2) {}; \\
+		};
+
+		% Boolean functions & output
+		\matrix [
+			right=of encoders, nodes={anchor=center},
+			row sep=0.3cm, column sep=1cm, label distance=0.4cm,
+		] (boolfns) {
+			\node [block] (boolfn1) {Boolean fn 1}; \&
+			\node [label=right:Fluent 1] (output1) {0}; \\
+			\node [block] (boolfn2) {Boolean fn 2}; \&
+			\node [label=right:Fluent 2] (output2) {1}; \\
+			\node [block] (boolfn3) {Boolean fn 3}; \&
+			\node [label=right:Fluent 3] (output3) {0}; \\
+		};
+
+		% Output
+		\node [draw, rectangle, gray, inner sep=0pt, fit=(output1) (output3)
+			] (outputs) {};
+
+		% Flow
+		\draw (frame) to (input);
+		\draw [->] (input) edge (encoder1) edge (encoder2);
+		\draw (encoder1) to (encoded1);
+		\draw (encoder2) to (encoded2);
+		\draw [->] (encoded1) edge (boolfn1.west) edge (boolfn2.west);
+		\draw [->] (encoded2) edge (boolfn3.west);
+		\draw [->] (boolfn1) to (output1);
+		\draw [->] (boolfn2) to (output2);
+		\draw [->] (boolfn3) to (output3);
+
+		% Models
+		\begin{pgfonlayer}{below}
+			\node (model) [
+				fit=(input) (encoders) (boolfn1) (boolfn3),
+				draw=blue!40!gray, fill=blue!50!gray!20!white,
+				inner sep=0.2cm, label=above:{\normalsize Model},
+			] {};
+		\end{pgfonlayer}
+
+		% Annotations
+		\coordinate (annotations y) at ($(model.south)+(0,-0.8)$);
+		\begin{pgfonlayer}{below}
+			\node (input-annotation) at (input|-annotations y) {Input};
+			\node (encoding-annotation) at (encoded1|-annotations y) {Encodings};
+			\node (outputs-annotation) at (outputs|-annotations y) {Predictions};
+			\draw [pin line] (input) -- (input-annotation);
+			\draw [pin line] (encoded1) -- (encoding-annotation);
+			\draw [pin line] (outputs) -- (outputs-annotation);
+		\end{pgfonlayer}
+	\end{tikzpicture}
+	\caption{} % TODO
+	\label{fig:model-scheme}
+\end{figure}
+Let's assume that the set~$\fluents$ of fluents to learn is given, along with
+their associated regions. We define an encoder for each region and a Boolean
+function for each symbol in~$\fluents$. There might be less encoders than
+Boolean functions, because multiple fluents can share the same region.
+
+To summarize:
+\begin{enumerate}
+	\item The input frame is cropped according to each region;
+	\item Each small image is transformed with its own encoder;
+	\item Each Boolean function computes the final output from the corresponding
+		encoding vector.
+\end{enumerate}
+
 
 \section{Encoding}
+
+\label{sec:encoding}
 
 Encoder: the model, how it works, what does it learn, size of the encoding.
 
@@ -345,6 +520,7 @@ Training Restricted Boltzmann Machines and Deep Belief Neworks
 
 \subsection{What does it learn}
 
+% TODO: large region for room
 
 \section{Boolean functions}
 
@@ -366,8 +542,8 @@ Representation of boolean functions and training details.
 
 \label{sec:fluents-limitations}
 
-% TODO: improve: maybe also some labels?
-% TODO: over temporal constraints alone
-
+% TODO: strong grounding of few symbols? Supervised?
+% TODO: different rooms?
 % TODO: unsure about representable with conjunction, because DBN is
-% unsupervised
+%		unsupervised
+% TODO: no guarantees but easy to check
