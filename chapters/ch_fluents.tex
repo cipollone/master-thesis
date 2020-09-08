@@ -2,11 +2,13 @@
 
 \label{ch:fluents}
 
-In Chapter~\ref{ch:rl}, we've presented the problem of Deep Reinforcement
-Learning for non-Markovian rewards. We've seen that a construction based on
-temporal logics, that we call Restraining Bolt, is an elegant solution that,
-by producing additional rewards and observations, transforms the original
-problem to a classic MDP. We report the general scheme here, in
+% TODO: par about grounding?
+
+In Chapter~\ref{ch:rl}, we've presented how to apply Deep Reinforcement
+Learning to achieve non-Markovian goals. We've seen that a construction based
+on temporal logics, that we call the Restraining Bolt, is an elegant solution
+that transforms the original problem to a classic MDP, by producing additional
+rewards and observations. We report the general scheme here, in
 Figure~\ref{fig:rb-focus-features}.
 \begin{figure}
 	\centering
@@ -41,18 +43,18 @@ Figure~\ref{fig:rb-focus-features}.
 \end{figure}
 The two blocks at the bottom are our additions, and part of the solution.
 We've thoroughly addressed the Restraining Bolt in Section~\ref{sec:rb},
-already. In this chapter we want to focus on the other essential component:
+already. In this chapter, we want to focus on the other essential component:
 the features extractor.
 
 The purpose of the features extractor is to receive an observation from the
 environment and produce a Boolean valuation for some predefined propositional
 symbols, that we call fluents. We assume that the set of fluents~$\fluents$
 has already been defined, and the truth of every atomic proposition
-in~$\fluents$ can be decided from a single input~$o$~\footnote{If we did
-define a symbol that cannot be decided from one observation, for example a
-generic ``$\const{GoalReached}$'', we need to split that condition into much
-simpler events, and define $\const{GoalReached}$ in terms of the new
-symbols.}.
+in~$\fluents$ can be decided from a single input~$o$. This means that if we
+did define a symbol that cannot be decided from one observation, for example a
+generic ``$\const{GoalReached}$'' condition, we need to split that symbol into
+much simpler events, and define $\const{GoalReached}$ in terms of the new
+fluents.
 
 Usually, the features extractor is not a really interesting component. Once,
 we've defined a fluent~$\fluent \in \fluents$, we could manually program a
@@ -62,7 +64,7 @@ $\set{\false, \true}$.}.  This approach is perfectly fine, when applicable.
 However, the environments used in Deep Reinforcement Learning usually produce
 high-dimensional or noisy observations. As we may imagine, it becomes really
 hard to manually classify such inputs in the two classes. So, in order to
-apply to Deep RL the Restraining Bolt, or any other logic-based method, we
+apply the Restraining Bolt or any other logic-based method to Deep RL, we
 must resort to some Machine Learning model that will help us deciding the
 truth of our atomic propositions.
 
@@ -80,15 +82,15 @@ like to avoid this manual work.
 
 A very promising alternative is unsupervised learning. These models don't
 return predictions. Instead, they memorize patterns and features that the
-training inputs have in common. These models have two representations: the
+training inputs have in common. These models keep two representations: the
 input space, and the latent space. To any input that is presented to the
 model corresponds a compact representation in the latent space. The purpose
 of this representation is to distinguish the specific input among all of the
-training set\footnote{To emphasize this concept: the purpose of the latent
-representation is to identify the input sample with respect to the training
-distribution.}. Since the latent space is much more compact, it may be used in
-other computations in place of the original input. In this case, the latent
-vector is called an \emph{encoding}.
+training set\footnote{To emphasize this concept: the latent vector serves to
+identify the input sample among the training distribution.}. Since the latent
+vector is much more compact, it can be used in other computations in place of
+the original input. In this case, the latent vector is called an
+\emph{encoding}.
 
 Unsupervised learning will be a central part of the solution proposed here.
 However, it may not be the only part, because unsupervised models makes no
@@ -107,8 +109,8 @@ goals that we want to pursue with this work:
 \end{enumerate}
 The second principle means that we first choose the propositions to use in our
 temporal formulae, then we train a model to valuate them. An opposite approach
-could have been to train an extractor of Boolean features, then recognize a
-meaning in those fluents.
+could have been to train an extractor of Boolean features, then trying to
+recognize the meaning of those fluents.
 
 With the general goals~\ref{en:select-fluents} and~\ref{en:generic-model}
 above, in particular, we express that the model should be generalizable to a
@@ -139,10 +141,10 @@ fluents with temporal logics: we write a temporal formula, in \ltl{} or
 define. We don't talk about \emph{desired} trajectories. Instead, we define
 all the \emph{possible} trajectories according to the environment dynamics.
 For example, suppose that two conditions $A$ and $B$, according to their
-desired meaning, cannot be true at the same time. Regardless of what we're
+intended meaning, cannot be true at the same time. Regardless of what we're
 trying to achieve, we can write the following temporal constraint:
-$\lbox{\true^*}(\lnot A \lor \lnot B)$.  This constraint is an invariant
-property because it should hold in every instant, but there are many other
+$\lbox{\true^*}(\lnot A \lor \lnot B)$.  This is a simple propositional
+property that should hold in every instant, but there are many other
 interesting constraints that we may specify with temporal logic. For example,
 $A$ and $\ldiamond{\true^*}(\llast \land A)$ respectively mean: every episode
 starts/ends with an instant where $A$ is true.  Also, $\lbox{\true^*;
@@ -169,12 +171,11 @@ Figure~\ref{fig:response-automa}.
 \end{figure}
 % TODO: note about symbolic transitions?
 Temporal logics like \ldl{} are very expressive and allows to write many
-complex property that the symbols satisfy.
+complex properties that the symbols satisfy.
 
-Usually, we won't be able to write exact constraints or complete definitions
+Usually, we won't be able to write complete constraints or exact definitions
 of the fluents. This is not necessary, though. It is sufficient to exclude as
-many inconsistent trajectories as we can (inconsistent with respect to the
-desired fluents' meaning).
+many inconsistent trajectories as we can, given the symbols available.
 
 \begin{example}
 	Suppose that an agent should open a door that is closed with a key, and
@@ -189,7 +190,7 @@ desired fluents' meaning).
 	which says that the door cannot be opened if, at the previous instant, we
 	don't have a key. Also, initially, the door is closed and the agent has no
 	key.  The associated automaton is shown in Figure~\ref{fig:door-automa}.
-	\begin{figure}
+	\begin{figure}[tb]
 			\centering
 			\begin{tikzpicture}
 			\graph [
@@ -223,7 +224,7 @@ trying to learn the unknown function $f: \obsS \to \B^{\abs{\fluents}}$,
 which, from a single input observation, computes the truth value for all
 fluents. The trace generated must always satisfy the temporal constraint
 defined in~$\constraintS$.
-\begin{figure}
+\begin{figure}[bt]
 	\centering
 	\begin{tikzpicture}[
 			every pin/.style={font=\footnotesize},
@@ -281,11 +282,11 @@ defined in~$\constraintS$.
 \end{figure}
 
 We've just described how temporal constraints work. However, there is one
-important consideration to do: these constraints are a very weak. This means
+important consideration to do: these constraints are very weak. This means
 that there will be lots of fluents' valuations functions that are consistent
 with this specification. Consider Example~\ref{ex:door}, a feature
 extractor~${f(o) \coloneqq \set{}}$ completely ignores the input and always
-predicts that both fluents are false. It is wrong but it is perfectly
+predicts that both fluents are false. It is wrong but it's perfectly
 consistent with the specification. Similarly, many other valuation functions
 that respect the DFA dynamics of Figure~\ref{fig:door-automa} will be
 completely meaningless.  This may not surprise us, as most constraints can
@@ -300,20 +301,20 @@ binding between input observations and desired fluents' output.
 
 \label{sec:fluents-assumptions}
 
-In this section, we'll list the choices and assumptions taken in this work.
-Of course, assumptions like these restrict the range of valuation functions
-that can be learnt. However, they are essential in order to devise a solution.
-The purpose of most of them is to address the issue mentioned in the previous
-section: temporal constraints are only very weak indications of the desired
-meaning of the fluents. Other assumptions, instead, describe the range of
-environments that the proposed model can be applied to.
+In this section, we'll list the initial choices and assumptions taken in this
+work.  Of course, assumptions like these restrict the range of valuation
+functions that can be learnt. However, they are essential in order to devise a
+solution.  The purpose of most of them is to address the issue mentioned in
+the previous section: temporal constraints are only very weak indications of
+the desired meaning of the fluents. Other assumptions, instead, describe the
+range of environments which the proposed model can be applied to.
 
 First, we remember that the environments we're dealing with are video games
 from the Atari collection.  So, the input space is composed of images of size
 $(210, 160)$. In the following, we will always use images from this games,
 because this is how environment's observations look like.
 
-We now assume that each atomic proposition can be decided just from a fixed
+Then, we assume that each atomic proposition can be decided just from a fixed
 region of the input image. In other words, to each fluent, we associate a
 rectangular portion of the input and we assume that an observation of this
 region is sufficient to decide the truth of the symbol. Regions can overlap
@@ -356,45 +357,42 @@ the problem.
 	\end{figure}
 	The region associated to each of these symbols is indicated with an orange
 	box. $\const{PaddleLeft}$ should be true when the paddle is inside the
-	region on the left; $\const{Empty}$ and $\const{Full}$ should be true
-	respectively when all the bricks, or no bricks, have been shot down.
+	area on the left; $\const{Empty}$ and $\const{Full}$ should be true
+	respectively when all the bricks, or no bricks, inside the region have been
+	shot down.
 	\label{ex:assumption-ex-breakout}
 \end{example}
 
 As it may be clear from this example, the regions also help to do something
-that would be impossible in logic: indicate which portion of the input the
-fluents refer to. Also, we should choose each region as a small selection of
+that would be impossible in logic: indicate to which portion of the input the
+fluents refer. Also, we should choose each region as a small selection of
 the image in which the condition we'd like to extract is \emph{visually
 evident}: to different valuations should correspond noticeable differences
 in the region. In the following sections, we'll refine what we mean by
-``noticeable''. Essentially, we mean that the model we're going to define must
-be able to capture and focus on such changes. Unfortunately, this is not
-something that can be described with extreme precision, in machine learning.
-Consider, for example, the region of the fluents $\const{Full}$ and
-$\const{Empty}$ of Figure~\ref{fig:assumption-ex-breakout}. The most evident
-change in that area are the disappearing bricks; we won't be able to learn a
-fluent $\const{BallInside}$ that becomes true when the ball is inside the
-region.
+``noticeable''. Essentially, we mean that the model must be able to learn an
+encoding that captures the properties we're interested in. Unfortunately,
+this is not something that can be described with extreme precision, in machine
+learning. We'll discuss this issue in Section~\ref{sec:encoding-what-learns}.
 
-As a consequence of regions, this method is only applicable to games with a
-static view of the scene. If every object in the image were moving, we
+Due to these fixed regions, this method is only applicable to games with a
+fixed view of the scene. If every object in the image were moving, we
 couldn't apply the simplification of static regions. Few examples of games
 that respect this constraint are: Breakout, Mr.~Pac-Man, Video Pinball, Pong.
 We'll also experiment with Montezuma's Revenge, but we'll limit to the first
 room.
 
 In Section~\ref{sec:fluents-limitations},
-``\nameref{sec:fluents-limitations}'', we'll suggest few ideas about how some
-of these limitations can be relaxed.
+``\nameref{sec:fluents-limitations}'', we'll suggest few ideas about how many
+of these limitations might be relaxed.
 
 
 \section{General structure of the model}
 
 \label{sec:model-structure}
 
-In this section, we introduce the general structure of the model proposed in
-this thesis. The remaining parts of the chapter cover all the details and
-definitions.
+In this section, we introduce the general structure of the model that we
+propose in this thesis. The remaining parts of the chapter will cover all the
+details and definitions.
 
 As we already know, temporal constraints can exclude many inconsistent
 assignments but they are only weak indications about the desired valuation
@@ -406,18 +404,19 @@ pixel values directly. An encoding is a low-dimensional vector that represents
 a more complex input. So, we might use this vector in place of the original
 input in order to simplify the learning process of the valuation function.
 
-An encoding can be viewed as a lossy compression of the input. The meaning
-of the encoding vector depends on the specific model, which will be presented
-in Section~\ref{sec:encoding}. Here we only want to highlight that many input
-images, which are considered similar according to the model, can correspond to
-the same encoding vector. These inputs will produce the same interpretation
-for the fluents. This is certainly a desirable effect: the encoder can extract
-few relevant indicators from which we can compute the fluent value, while
-noises and tiny variations of the input will be ignored.
+An encoding can be viewed as a lossy compression of the input. The meaning of
+the encoding vector depends on the specific model, which will be presented in
+Section~\ref{sec:encoding}. Here, we only want to highlight that all input
+images that are considered similar according to the model will correspond to
+the same encoding vector. Hence, these images will produce the same
+interpretation for the fluents. However, this is certainly a desirable effect:
+the encoder can extract few relevant indicators from which we can compute the
+fluents' values, while noises and tiny variations of the input will be
+ignored.
 
-Therefore, the model that we propose is a function composed of two consecutive
-parts: an array of \emph{encoders} and an array of \emph{Boolean functions}.
-This scheme is illustrated in Figure~\ref{fig:model-scheme}.
+So, the model that we propose is a function composed of two consecutive parts:
+an array of \emph{encoders} and an array of \emph{Boolean functions}.  This
+scheme is illustrated in Figure~\ref{fig:model-scheme}.
 \begin{figure}
 	\centering
 	\begin{tikzpicture}[
@@ -473,7 +472,7 @@ This scheme is illustrated in Figure~\ref{fig:model-scheme}.
 		\begin{pgfonlayer}{below}
 			\node (model) [
 				fit=(input) (encoders) (boolfn1) (boolfn3),
-				draw=blue!40!gray, fill=blue!50!gray!20!white,
+				draw=blue!30!gray, fill=blue!40!gray!20!white,
 				inner sep=0.2cm, label=above:{\normalsize Model},
 			] {};
 		\end{pgfonlayer}
@@ -489,20 +488,25 @@ This scheme is illustrated in Figure~\ref{fig:model-scheme}.
 			\draw [pin line] (outputs) -- (outputs-annotation);
 		\end{pgfonlayer}
 	\end{tikzpicture}
-	\caption{} % TODO
+	\caption{The model is composed by a sequence of encoders and a set of
+	Boolean functions.}
 	\label{fig:model-scheme}
 \end{figure}
 Let's assume that the set~$\fluents$ of fluents to learn is given, along with
-their associated regions. We define an encoder for each region and a Boolean
+their associated regions. We create an encoder for each region and a Boolean
 function for each symbol in~$\fluents$. There might be less encoders than
 Boolean functions, because multiple fluents can share the same region.
+This scheme has two encoders and three Boolean functions (just like the model
+associated to the example in Figure~\ref{fig:assumption-ex-breakout}). Of
+course, that is just a specific instance. There will be as many parts as are
+needed.
 
 To summarize:
 \begin{enumerate}
-	\item The input frame is cropped according to each region;
+	\item The input frame is cropped around each region;
 	\item Each small image is transformed with its own encoder;
-	\item Each Boolean function computes the final output from the corresponding
-		encoding vector.
+	\item Each Boolean function computes the value for one fluent from the
+		corresponding encoding vector.
 \end{enumerate}
 
 
@@ -510,17 +514,86 @@ To summarize:
 
 \label{sec:encoding}
 
-Encoder: the model, how it works, what does it learn, size of the encoding.
+The encoder is a Machine Learning model that is trained in an unsupervised
+way, whose purpose is to convert the input from one region to the associated
+low-dimensional representation. The model selected for this role is the Deep
+Belief Network. As we will see, this choice is mainly motivated by the output
+produced by this model, which is a vector of binary features. In the
+following, we'll thoroughly describe this model, and we'll discuss why a
+binary output is so important.
 
-References:
-Training Restricted Boltzmann Machines and Deep Belief Neworks
-\cite{bib:rbm-training}\cite{bib:ml-book-murphy}.
+Since the layers of a Deep Belief Network are a specific type of Markov Random
+Fields, it is better to quickly review these first. This will allow us to
+better understand the goal and mechanisms of the final encoder.
 
-\subsection{Model: Deep Belief Network}
+
+\subsection{Markov Random Fields}
+
+In the previous chapters, we have sometimes used Directed Graphical Models
+(for example in Figure~\vref{fig:mdp}). These are probabilistic models in
+which directed arcs represent known conditional probabilities between two
+variables. Here, instead, we'll adopt a different kind of formalism:
+\emph{Undirected Graphical Models} (UGMs)\nomenclature{UGM}{Undirected
+Graphical Models}, which are also called \emph{Markov Random Fields}
+(MRFs)\nomenclature{MRF}{Markov Random Fields}.
+
+A UGM is an undirected graph, where variables are represented by nodes, as
+usual, and undirected arcs connect variables which are directly dependent.
+A missing edge means that two variables are conditionally independent given
+the others. For example, in Figure~\ref{fig:mrf}, $x_1$ and $x_4$ are
+dependent, but they are conditionally independent if $x_2$ is observed.
+\begin{figure}
+	\centering
+	\begin{tikzpicture}
+		\graph [
+			spring layout,
+			empty nodes, nodes=node,
+			horizontal=x2 to x4,
+		] {
+			x1 [label=left:$x_1$] -- x2 [label=above:$x_2$] -- 
+				x3 [label=left:$x_3$] -- x1,
+			x2 -- x4 [label=right:$x_4$]
+		};
+	\end{tikzpicture}
+	\caption{A small MRF where: $x_1 \not\perp x_4$ and $x_1 \perp x_4 \given
+	x_2$.}
+	\label{fig:mrf}
+\end{figure}
+In this and the following graphs, we assume that each node represents a scalar
+quantity.
+
+MRFs are very convenient when we what to express that two variables are
+related but we can't establish any causal relation between them. Consider, for
+example, the noisy pixels of an image. The values of neighbouring pixels are
+clearly dependent, as they are related by the subject of the image, but we
+can't establish any useful conditional probability between the two.
+
+% TODO: joint probability (cliques), energy functions, training
+
+
+\subsection{Deep Belief Networks}
+
+% TODO: nomenclature
+
+\label{sec:dbn}
+
+% TODO
+%Encoder: the model, how it works, what does it learn, size of the encoding.
+%
+%References:
+%Training Restricted Boltzmann Machines and Deep Belief Neworks
+%\cite{bib:rbm-training}\cite{bib:ml-book-murphy}.
 
 \subsection{What does it learn}
 
+\label{sec:encoding-what-learns}
+
 % TODO: large region for room
+% Consider, for example, the region of the fluents $\const{Full}$ and
+% $\const{Empty}$ of Figure~\ref{fig:assumption-ex-breakout}. The most evident
+% change in that area are the disappearing bricks; we won't be able to learn a
+% fluent $\const{BallInside}$ that becomes true when the ball is inside the
+% region.
 
 \section{Boolean functions}
 

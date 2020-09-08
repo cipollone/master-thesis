@@ -20,6 +20,7 @@
 \usepackage[noprefix,refpage]{nomencl}
 %\usepackage[color=orange!70!white]{todonotes}
 \usepackage{biblatex}
+\usepackage{xurl}
 \usepackage[hidelinks]{hyperref}
 
 % Bibliography
@@ -117,7 +118,7 @@
 \pgfdeclarelayer{beloww}
 \pgfsetlayers{beloww,below,main}
 
-\usegdlibrary{layered,trees}
+\usegdlibrary{layered,trees,force}
 
 \tikzset{
 	>=stealth',
@@ -165,6 +166,9 @@
 	every axis/.style={font=\scriptsize},
 }
 
+% Suppress useless warnings
+\hfuzz=2pt
+
 % Colors
 \newcommand{\encodingColor}{orange!70!white}
 \newcommand{\boolsColor}{blue!70!white}
@@ -190,8 +194,8 @@
 Cipollone}}
 
 % Thesis info
-\title{Fluents valuation in Deep Reinforcement Learning agents for
-non-Markovian rewards}% TODO: title
+\title{Symbol Grounding in Deep Reinforcement Learning agents for
+non-Markovian rewards}
 \author{Roberto Cipollone}
 \IDnumber{1528014}
 \course{Artificial Intelligence and Robotics}
