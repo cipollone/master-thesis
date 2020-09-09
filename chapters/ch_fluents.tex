@@ -515,19 +515,20 @@ To summarize:
 \label{sec:encoding}
 
 The encoder is a Machine Learning model that is trained in an unsupervised
-way, whose purpose is to convert the input from one region to the associated
-low-dimensional representation. The model selected for this role is the Deep
-Belief Network. As we will see, this choice is mainly motivated by the output
-produced by this model, which is a vector of binary features. In the
-following, we'll thoroughly describe this model, and we'll discuss why a
-binary output is so important.
+way, whose purpose is to convert the input of one region to the associated
+low-dimensional representation. The model we've selected for this role is the
+Deep Belief Network. As we will see, this choice is mainly motivated by the
+output produced by this model, which is a vector of binary features. In the
+following, we'll thoroughly describe this model, and discuss why a binary
+output is so important.
 
 Since the layers of a Deep Belief Network are a specific type of Markov Random
-Fields, it is better to quickly review these first. This will allow us to
-better understand the goal and mechanisms of the final encoder.
+Field, it is better to quickly review these first. This will allow us to
+better understand the goal and properties of the final encoder.
 
 
 \subsection{Markov Random Fields}
+% TODO: ref
 
 In the previous chapters, we have sometimes used Directed Graphical Models
 (for example in Figure~\vref{fig:mdp}). These are probabilistic models in
@@ -541,10 +542,11 @@ A UGM is an undirected graph, where variables are represented by nodes, as
 usual, and undirected arcs connect variables which are directly dependent.
 A missing edge means that two variables are conditionally independent given
 the others. For example, in Figure~\ref{fig:mrf}, $x_1$ and $x_4$ are
-dependent, but they are conditionally independent if $x_2$ is observed.
+dependent variables, but they become conditionally independent if $x_2$ is
+observed.
 \begin{figure}
 	\centering
-	\begin{tikzpicture}
+	\begin{tikzpicture}[semithick]
 		\graph [
 			spring layout,
 			empty nodes, nodes=node,
@@ -555,20 +557,160 @@ dependent, but they are conditionally independent if $x_2$ is observed.
 			x2 -- x4 [label=right:$x_4$]
 		};
 	\end{tikzpicture}
-	\caption{A small MRF where: $x_1 \not\perp x_4$ and $x_1 \perp x_4 \given
+	\caption{A small MRF where: $x_1 \not\perp x_4$, but $x_1 \perp x_4 \given
 	x_2$.}
 	\label{fig:mrf}
 \end{figure}
 In this and the following graphs, we assume that each node represents a scalar
-quantity.
+quantity. Vectorial quantities will be indicated in bold fonts.
 
 MRFs are very convenient when we what to express that two variables are
-related but we can't establish any causal relation between them. Consider, for
-example, the noisy pixels of an image. The values of neighbouring pixels are
-clearly dependent, as they are related by the subject of the image, but we
+related, but we can't establish any causal relation between them. Consider,
+for example, the noisy pixels of an image. The values of neighbouring pixels
+are clearly dependent, as they are related by the subject of the image, but we
 can't establish any useful conditional probability between the two.
 
-% TODO: joint probability (cliques), energy functions, training
+In every MRF, the joint probability of all the variables can be expressed as:
+\begin{equation}
+	p(\x \given \params) \propto
+		\prod_{c \in \setSym{C}} \psi_c(\x_c; \params_c)
+\end{equation}
+where each $c \in \setSym{C}$ is a maximal clique of the graph, and each
+function $\psi_c$ computes how likely is the observation of variables~$\x_c$,
+according to the parameters~$\params_c$. The joint probability is only
+proportional to that quantity, because one normalizer has been omitted. As an
+example, the joint probability for Figure~\ref{fig:mrf} can be written:
+\[
+	p(x_1, x_2, x_3, x_4 \given \params) \propto
+	\psi_1(x_1, x_2, x_3; \params_1) \, \psi_2(x_2, x_4; \params_2)
+\]
+
+Therefore, a model for a MRF is fully defined by two factors: the structure of
+the graph, and the functions~$\psi_c$. While the former strongly depends on
+the process to be modelled, we can present the most common choice for the
+latter. First, let's rewrite each term as:
+\begin{equation}
+	\psi_c(\x_c; \params_c) \coloneqq \exp(-E(\x_c; \params_c))
+	\label{eq:ugm-energy-based}
+\end{equation}
+for some function~$E$. $E$ is called the \emph{energy function}. Since it is
+inversely correlated to the probability, it is high for unlikely
+configurations of variables and low for very probable configurations
+(according to the model parameters, of course). Due to this property, it is
+sometimes a very useful indication of the final probability\footnote{Computing
+the exact probability $p(\x \given \params)$, as many other quantities, is
+intractable for generic UGMs, because often we won't be able to compute the
+normalizer}.  Usually, the energy function is of the simplest kind, a linear
+combination: $E(\x_c; \params_c) \coloneqq -\params_c^T \basisfun_c(\x_c)$,
+for some basis function~$\basisfun_c$. In the following, we'll assume this
+form.
+
+As we may recognize, in a MRF there is no output. We're not trying to learn an
+input--output function. Training a model means to find the optimal parameters
+$\optimal\params$ that maximize the probability of the input samples. The
+trained model should represent the probability distribution of the input data,
+as closely as possible. This is clearly different from supervised learning.
+
+Let's denote with $\dataset$ a dataset of training samples, $\dataset
+\coloneqq \set{\x\group{i}}$, and with $l(\params)$ the log-probability of the
+dataset according to the model, $l(\params) \coloneqq \log p(\dataset \given
+\params)$. The optimal parameters are those maximizing the likelihood
+$l(\params)$. So, we may approach this solution by following the positive
+gradient of the likelihood. The gradient of the likelihood, with respect to
+each group $c$ of parameters, is~\footnote{ The function $\basisfun_c$ only
+receives the values of the clique $c$.  In the following equation, we write
+$\x$ instead of $\x_c$, to ease the notation.}:
+\begin{equation}
+	\frac{\partial l}{\partial \params_c} = \E_{\x' \sim \dataset}
+	\bigl[\basisfun_c(\x') \bigr] - \E_{\x} \bigl[\basisfun_c(\x) \bigr]
+	\label{eq:ugm-gradient}
+\end{equation}
+The two parts compute the expected value of same quantity according to a
+different distribution of~$\x$. The positive term simply stands for the
+average value of that quantity, computed from the samples in the training
+dataset; while in the right-most term, we take an expectation on $\x$
+according to the distribution induced by the model.
+
+We'll end this quick review of MRFs, by discussing the role of latent
+variables. As we already know from the comparison between MDPs and POMDPs,
+probabilistic models that include some unobservable variables can be much more
+expressive than the others. Such variables are referred to as \emph{latent}
+variables, or simply \emph{hidden} variables. The latent variables of a model
+can be a very effective explanation of the visible quantities. For example,
+the states of a POMDPs can explain even very complex observations. Similarly,
+some latent variables that represent the subject of an image are a clear cause
+for the observed pixel values. Connecting the visible units directly would
+require a much more complex model. Latent units in a MRF do not define such
+causal relation, but they allow a very similar expressiveness.
+
+We partition the variables as $\x = (\bv, \bh)$, where $\bv$ and $\bh$ denote
+the visible and hidden variables, respectively.  A model with latent variables
+can be trained very similarly to what we've seen above. The only difference is
+that we need to always take the expectation on $\bh$ according to the model,
+because they will never be observed in the dataset:
+\begin{equation}
+	\frac{\partial l}{\partial \params_c} = \E_{\bv \sim \dataset,\bh}
+	\bigl[\basisfun_c(\bv, \bh)\bigr] - \E_{\bv,\bh} \bigl[\basisfun_c(\bv,
+	\bh)\bigr]
+	\label{eq:ugm-po-gradient}
+\end{equation}
+
+
+\subsubsection*{Restricted Boltzmann Machine}
+
+The specific model that we'll use is the \emph{Restricted Boltzmann Machine}
+(RBM)\nomenclature{RBM}{Restricted Boltzmann Machine}. An RBM is a MRF
+composed of a visible and a hidden layer. Its graph is shown in
+Figure~\ref{fig:rbm}.
+\begin{figure}
+	\centering
+	\begin{tikzpicture}[
+		semithick, node distance=1.2cm and 1.2cm, anchor=center
+	]
+
+	\node [hidden node, label=above:$h_1$] (h1) {};
+	\node [hidden node, label=above:$h_2$, right=of h1] (h2) {};
+	\node [right=of h2] (dots1) {\dots};
+	\node [hidden node, label=above:$h_H$, right=of dots1] (hK) {};
+
+	\node [node, label=below:$v_1$, below=of h1, xshift=-0.7cm] (v1) {};
+	\node [node, label=below:$v_2$, right=of v1] (v2) {};
+	\node [node, label=below:$v_3$, right=of v2] (v3) {};
+	\node [right=of v3] (dots2) {\dots};
+	\node [node, label=below:$v_V$, right=of dots2] (vR) {};
+
+	\graph {{(h1), (h2), (hK)} --[complete bipartite] {(v1), (v2), (v3), (vR)}};
+	\end{tikzpicture}
+	\caption{The UGM of a Restricted Boltzmann Machine. Gray nodes are latent
+	variables.}
+	\label{fig:rbm}
+\end{figure}
+As we can see, there are no connections between variables of the same layer,
+and every clique has two nodes. So, the joint probability is simply:
+\begin{equation}
+	p(\bv, \bh) \propto \prod_{i=1}^{V} \prod_{j=1}^{H} \psi_{ij}(v_i, h_j)
+\end{equation}
+with one function $\psi_{ij}$ for each arc $(v_i, h_j)$. This simplification,
+along with other nice properties, are possible because there is just one
+hidden layer. This is why it is said ``restricted''.
+
+The classic RBM, which is the one we'll use here, assumes that all variables
+are binary: $v_i, h_j \in \set{0,1}$. It defines the following energy
+function:
+\begin{equation}
+	E(\bv,\bh; \params) \coloneqq -( \bv^T \linparmat \bh + \bv^T \bvec{b} +
+	\bh^T \bvec{c})
+\end{equation}
+where the weights $\linparmat$ and biases $\bvec{b}$, $\bvec{c}$ are all the
+model's parameters~$\params$.
+
+% TODO: extend with 1 or maybe leave biases?
+% TODO: conditional probabilities
+% TODO: gradient of the log
+
+
+
+% TODO: training algorithm.
 
 
 \subsection{Deep Belief Networks}
