@@ -88,16 +88,16 @@ Markov assumption.
 			column sep={1cm,between origins}, row sep={1cm,between origins},
 		] {
 			\&
-			\node (am1) [node, label=above:$a_{t-1}$] {};
+			\node (am1) [observed node, label=above:$a_{t-1}$] {};
 			\& \&
-			\node (a) [node, label=above:$a_{t}$] {}; \& \\
-			\node (stm1) [node, label=above:$s_{t-1}$] {};
+			\node (a) [observed node, label=above:$a_{t}$] {}; \& \\
+			\node (stm1) [observed node, label=above:$s_{t-1}$] {};
 			\& \&
-			\node (st) [node, label=above:$s_{t}$] {}; \& \&
-			\node (st1) [node, label=above:$s_{t+1}$] {}; \\
+			\node (st) [observed node, label=above:$s_{t}$] {}; \& \&
+			\node (st1) [observed node, label=above:$s_{t+1}$] {}; \\
 			\& \&
-			\node (r) [node, label=below:$r_{t}$] {}; \& \&
-			\node (r1) [node, label=below:$r_{t+1}$] {}; \\
+			\node (r) [observed node, label=below:$r_{t}$] {}; \& \&
+			\node (r1) [observed node, label=below:$r_{t+1}$] {}; \\
 		};
 		\draw (st1) edge [<-] (st) edge [<-] (a);
 		\draw [->, dotted] (st) -- (a);
@@ -563,17 +563,17 @@ The graphical model of a POMDP is shown in Figure~\ref{fig:pomdp}.
 		\matrix [
 			column sep={1.5cm,between origins}, row sep={1cm,between origins},
 		] {
-			\node (om1) [node, label=above:$o_{t-1}$] {}; \&
-			\node (am1) [node, label=above:$a_{t-1}$] {}; \&
-			\node (o) [node, label=above:$o_{t}$] {}; \&
-			\node (a) [node, label=above:$a_{t}$] {}; \\
-			\node (stm1) [hidden node, label=below left:$s_{t-1}$] {};
+			\node (om1) [observed node, label=above:$o_{t-1}$] {}; \&
+			\node (am1) [observed node, label=above:$a_{t-1}$] {}; \&
+			\node (o) [observed node, label=above:$o_{t}$] {}; \&
+			\node (a) [observed node, label=above:$a_{t}$] {}; \\
+			\node (stm1) [node, label=below left:$s_{t-1}$] {};
 			\& \&
-			\node (st) [hidden node, label=below left:$s_{t}$] {}; \& \&
-			\node (st1) [hidden node, label=below left:$s_{t+1}$] {}; \\
+			\node (st) [node, label=below left:$s_{t}$] {}; \& \&
+			\node (st1) [node, label=below left:$s_{t+1}$] {}; \\
 			\& \&
-			\node (r) [node, label=below:$r_{t}$] {}; \& \&
-			\node (r1) [node, label=below:$r_{t+1}$] {}; \\
+			\node (r) [observed node, label=below:$r_{t}$] {}; \& \&
+			\node (r1) [observed node, label=below:$r_{t+1}$] {}; \\
 		};
 		\draw [->] (stm1) -- (om1);
 		\draw [->] (st) -- (o);
@@ -590,7 +590,7 @@ The graphical model of a POMDP is shown in Figure~\ref{fig:pomdp}.
 		\draw [dashed, gray] (st1) -- +(0.8,0);
 		\draw [dashed, gray] (stm1) -- +(-0.8,0);
 	\end{tikzpicture}
-	\caption{The Directed Graphical Model of a POMDP. Gray nodes are
+	\caption{The Directed Graphical Model of a POMDP. White nodes are
 	unobservable. For simplicity, the rewards in this graph depend just on the
 	current state $s_t$, not on transitions ${(s_t, a_t, s_{t+1})}$.}
 	\label{fig:pomdp}
@@ -663,17 +663,17 @@ Figure~\ref{fig:pomdp-as-mpd} represents this situation.
 		\matrix [
 			column sep={1.6cm,between origins}, row sep={1.3cm,between origins},
 		] {
-			\node (stm1) [hidden node, label=above:$s_{t-1}$] {}; \& \&
-			\node (st) [hidden node, label=above:$s_{t}$] {}; \& \&
-			\node (st1) [hidden node, label=above:$s_{t+1}$] {}; \\
+			\node (stm1) [node, label=above:$s_{t-1}$] {}; \& \&
+			\node (st) [node, label=above:$s_{t}$] {}; \& \&
+			\node (st1) [node, label=above:$s_{t+1}$] {}; \\
 			\&
-			\node (am1) [node, label=above:$a_{t-1}$] {}; \&
-			\node (r) [node, label=left:$r_{t}$] {}; \&
-			\node (a) [node, label=above:$a_{t}$] {}; \&
-			\node (r1) [node, label=left:$r_{t+1}$] {}; \\
-			\node (om1) [node, label=below:$o_{t-1}$] {}; \& \&
-			\node (o) [node, label=below:$o_{t}$] {}; \& \&
-			\node (o1) [node, label=below:$o_{t+1}$] {}; \\
+			\node (am1) [observed node, label=above:$a_{t-1}$] {}; \&
+			\node (r) [observed node, label=left:$r_{t}$] {}; \&
+			\node (a) [observed node, label=above:$a_{t}$] {}; \&
+			\node (r1) [observed node, label=left:$r_{t+1}$] {}; \\
+			\node (om1) [observed node, label=below:$o_{t-1}$] {}; \& \&
+			\node (o) [observed node, label=below:$o_{t}$] {}; \& \&
+			\node (o1) [observed node, label=below:$o_{t+1}$] {}; \\
 		};
 		\draw [hidden arc, bend left] (stm1) to (om1);
 		\draw [hidden arc, bend left] (st) to (o);
@@ -1065,17 +1065,17 @@ and $l \in \highlevelS$. See Figure~\ref{fig:representations}.
 			column sep={2cm,between origins}, row sep={1.2cm,between origins},
 		] {
 			\coordinate (ltrace); \&
-			\node (ltm1) [node, label=above:$l_{t-1}$] {}; \&
-			\node (lt) [node, label=above:$l_t$] {}; \&
-			\node (lt1) [node, label=above:$l_{t+1}$] {}; \\
+			\node (ltm1) [observed node, label=above:$l_{t-1}$] {}; \&
+			\node (lt) [observed node, label=above:$l_t$] {}; \&
+			\node (lt1) [observed node, label=above:$l_{t+1}$] {}; \\
 			\&
-			\node (wtm1) [hidden node, label=above right:$w_{t-1}$] {}; \&
-			\node (wt) [hidden node, label=above right:$w_t$] {}; \&
-			\node (wt1) [hidden node, label=above right:$w_{t+1}$] {}; \\
+			\node (wtm1) [node, label=above right:$w_{t-1}$] {}; \&
+			\node (wt) [node, label=above right:$w_t$] {}; \&
+			\node (wt1) [node, label=above right:$w_{t+1}$] {}; \\
 			\coordinate (strace); \&
-			\node (stm1) [node, label=below:$s_{t-1}$] {}; \&
-			\node (st) [node, label=below:$s_t$] {}; \&
-			\node (st1) [node, label=below:$s_{t+1}$] {}; \\
+			\node (stm1) [observed node, label=below:$s_{t-1}$] {}; \&
+			\node (st) [observed node, label=below:$s_t$] {}; \&
+			\node (st1) [observed node, label=below:$s_{t+1}$] {}; \\
 		};
 		\draw [->] (wtm1) -- (wt);
 		\draw [->] (wt) -- (wt1);

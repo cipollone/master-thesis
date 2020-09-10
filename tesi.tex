@@ -20,6 +20,9 @@
 \usepackage{titlesec}
 \usepackage{varioref}
 \usepackage[noprefix,refpage]{nomencl}
+\usepackage{algorithm}
+\usepackage{algorithmicx}
+\usepackage{algpseudocode}
 %\usepackage[color=orange!70!white]{todonotes}
 \usepackage{biblatex}
 \usepackage{xurl}
@@ -36,6 +39,8 @@
 \DeclarePairedDelimiter{\norm}{\lVert}{\rVert}
 \DeclareMathOperator*{\argmax}{arg\,max}
 \DeclareMathOperator*{\argmin}{arg\,min}
+\DeclareMathOperator{\Ber}{Ber}
+\DeclareMathOperator{\sigm}{sigm}
 \newcommand{\bvec}[1]{\mathbf{#1}}
 \newcommand{\setSym}[1]{\mathcal{#1}}
 \newcommand{\ltl}{$\text{LTL}_f$}
@@ -52,6 +57,11 @@
 \newcommand{\Z}{\mathbb{Z}}
 \newcommand{\B}{\mathbb{B}}
 \newcommand{\E}{\mathbb{E}}
+\newcommand{\indicator}{\mathbb{I}}
+\newcommand{\softmax}{\mathcal{S}}
+\newcommand{\I}{\mathbf{I}}
+\newcommand{\zero}{\mathbf{0}}
+\newcommand{\onevec}{\mathbf{1}}
 \newcommand{\true}{\const{true}}
 \newcommand{\false}{\const{false}}
 \newcommand{\set}[1]{\{#1\}}
@@ -100,6 +110,7 @@
 \newcommand{\slicelayer}[1]{Slice(#1)}
 \newcommand{\constraintS}{\psi}
 \newcommand{\basisfun}{\bm{\phi}}
+\newcommand{\basisfuni}{\phi}
 \newcommand{\dataset}{\setSym{D}}
 \newcommand{\linpar}{\mathbf{w}}
 \newcommand{\linparmat}{\mathbf{W}}
@@ -144,7 +155,7 @@
 	dot/.style={fill, circle, inner sep=0.7pt},
 	node/.style={draw, fill=white, circle, semithick, inner sep=0pt, minimum
 		size=1.7ex},
-	hidden node/.style={node, fill=lightgray},
+	observed node/.style={node, fill=lightgray},
 	%
 	flow/.style={->, thick, >=spaced stealth'},
 	arrow/.style={->, semithick},
@@ -178,6 +189,10 @@
 	compat=1.16,
 	every axis/.style={font=\scriptsize},
 }
+
+% Algorithms
+\algblockdefx{EndlessRepeat}{EndRepeat}{\textbf{repeat}}{}
+\algnotext{EndRepeat}
 
 % Suppress useless warnings
 \hfuzz=2pt

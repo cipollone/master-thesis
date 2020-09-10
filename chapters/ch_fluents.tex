@@ -546,7 +546,7 @@ dependent variables, but they become conditionally independent if $x_2$ is
 observed.
 \begin{figure}
 	\centering
-	\begin{tikzpicture}[semithick]
+	\begin{tikzpicture}
 		\graph [
 			spring layout,
 			empty nodes, nodes=node,
@@ -636,18 +636,19 @@ variables. As we already know from the comparison between MDPs and POMDPs,
 probabilistic models that include some unobservable variables can be much more
 expressive than the others. Such variables are referred to as \emph{latent}
 variables, or simply \emph{hidden} variables. The latent variables of a model
-can be a very effective explanation of the visible quantities. For example,
-the states of a POMDPs can explain even very complex observations. Similarly,
-some latent variables that represent the subject of an image are a clear cause
-for the observed pixel values. Connecting the visible units directly would
-require a much more complex model. Latent units in a MRF do not define such
-causal relation, but they allow a very similar expressiveness.
+can be a very effective explanation of the visible quantities. Just like
+the states of a POMDP explain the visible observations, a latent variable
+representing the subject of an image is a clear motivation for the observed
+pixel values. Connecting the visible units directly would be very hard to do.
+Latent units in a MRF do not define such causal relations, but the added
+expressiveness is the same.
 
-We partition the variables as $\x = (\bv, \bh)$, where $\bv$ and $\bh$ denote
-the visible and hidden variables, respectively.  A model with latent variables
-can be trained very similarly to what we've seen above. The only difference is
-that we need to always take the expectation on $\bh$ according to the model,
-because they will never be observed in the dataset:
+We partition the units of the model as $\x = (\bv, \bh)$, where $\bv$ and
+$\bh$ denote the visible and hidden variables, respectively. A model with
+latent variables can be trained very similarly to what we've seen above. The
+only difference to equation~\eqref{eq:ugm-gradient} is that we need to always
+take the expectation on $\bh$ according to the model, because they will never
+be observed in the dataset:
 \begin{equation}
 	\frac{\partial l}{\partial \params_c} = \E_{\bv \sim \dataset,\bh}
 	\bigl[\basisfun_c(\bv, \bh)\bigr] - \E_{\bv,\bh} \bigl[\basisfun_c(\bv,
@@ -665,57 +666,160 @@ Figure~\ref{fig:rbm}.
 \begin{figure}
 	\centering
 	\begin{tikzpicture}[
-		semithick, node distance=1.2cm and 1.2cm, anchor=center
+		node distance=1.2cm and 1.2cm, anchor=center
 	]
 
-	\node [hidden node, label=above:$h_1$] (h1) {};
-	\node [hidden node, label=above:$h_2$, right=of h1] (h2) {};
+	\node [node, label=above:$h_1$] (h1) {};
+	\node [node, label=above:$h_2$, right=of h1] (h2) {};
 	\node [right=of h2] (dots1) {\dots};
-	\node [hidden node, label=above:$h_H$, right=of dots1] (hK) {};
+	\node [node, label=above:$h_H$, right=of dots1] (hK) {};
 
-	\node [node, label=below:$v_1$, below=of h1, xshift=-0.7cm] (v1) {};
-	\node [node, label=below:$v_2$, right=of v1] (v2) {};
-	\node [node, label=below:$v_3$, right=of v2] (v3) {};
+	\node [observed node, label=below:$v_1$, below=of h1, xshift=-0.7cm] (v1) {};
+	\node [observed node, label=below:$v_2$, right=of v1] (v2) {};
+	\node [observed node, label=below:$v_3$, right=of v2] (v3) {};
 	\node [right=of v3] (dots2) {\dots};
-	\node [node, label=below:$v_V$, right=of dots2] (vR) {};
+	\node [observed node, label=below:$v_V$, right=of dots2] (vR) {};
 
 	\graph {{(h1), (h2), (hK)} --[complete bipartite] {(v1), (v2), (v3), (vR)}};
 	\end{tikzpicture}
-	\caption{The UGM of a Restricted Boltzmann Machine. Gray nodes are latent
-	variables.}
+	\caption{The UGM of a Restricted Boltzmann Machine. Gray nodes are the
+	visible units.}
 	\label{fig:rbm}
 \end{figure}
 As we can see, there are no connections between variables of the same layer,
 and every clique has two nodes. So, the joint probability is simply:
 \begin{equation}
 	p(\bv, \bh) \propto \prod_{i=1}^{V} \prod_{j=1}^{H} \psi_{ij}(v_i, h_j)
+	\label{eq:rbm-joint-psi}
 \end{equation}
 with one function $\psi_{ij}$ for each arc $(v_i, h_j)$. This simplification,
-along with other nice properties, are possible because there is just one
-hidden layer. This is why it is said ``restricted''.
+along with other nice properties, are only possible thanks to its bipartite
+structure. This is why it is said ``restricted''.
 
 The classic RBM, which is the one we'll use here, assumes that all variables
-are binary: $v_i, h_j \in \set{0,1}$. It defines the following energy
-function:
+are binary: $v_i, h_j \in \set{0,1}$. Also, it defines the following energy
+function\footnote{Thanks to the symmetry of equation~\eqref{eq:rbm-joint-psi},
+we can combine the products of all $\psi_{ij}$ and write a single cumulative
+energy in matrix notation.}:
 \begin{equation}
 	E(\bv,\bh; \params) \coloneqq -( \bv^T \linparmat \bh + \bv^T \bvec{b} +
 	\bh^T \bvec{c})
+	\label{eq:rbm-energy}
 \end{equation}
-where the weights $\linparmat$ and biases $\bvec{b}$, $\bvec{c}$ are all the
-model's parameters~$\params$.
+With $\params$, we denote the column vector of all the parameters of the
+model. Namely, the weights $\linparmat$ and the biases $\bvec{b}$, $\bvec{c}$.
 
-% TODO: extend with 1 or maybe leave biases?
-% TODO: conditional probabilities
-% TODO: gradient of the log
+In RBMs, we can easily compute the posterior probability of a layer, given an
+observation of the other. For binary RBMs, this is:
+\begin{equation}
+\begin{aligned}
+	p(\bv \given \bh, \params) &= \prod_{i=1}^V \Ber(v_i;
+	\sigm(\linparmat_{i,:}\, \bh + \bvec{b}_i)) \\
+	p(\bh \given \bv, \params) &= \prod_{j=1}^H \Ber(h_j;
+	\sigm(\bv^T\, \linparmat_{:,j} + \bvec{c}_j))
+\end{aligned}
+\end{equation}
+where $\sigm: \R \to (0, 1)$ is the sigmoid function, $\sigm(x) \coloneqq
+e^x/(e^x+1)$, and $\linparmat_{i,:}, \linparmat_{:,j}$ denote the $i$-th row
+and the $j$-th column of $\linparmat$, respectively. From the previous
+equations, it follows:
+\begin{equation}
+\begin{aligned}
+	\E[\bv\given \bh,\params] &= \sigm(\linparmat\, \bh + \bvec{b}) \\
+	\E[\bh\given \bv,\params] &= \sigm(\linparmat^T\, \bv + \bvec{c})
+\end{aligned}
+\end{equation}
+
+To train a binary RBM, we apply equation~\eqref{eq:ugm-po-gradient} without
+modifications. To obtain the basis function $\basisfun(\x)$ we need, it's
+sufficient to rewrite equation~\eqref{eq:rbm-energy} as $E(\x) = -\params^T\,
+\basisfun(x)$. We would obtain the following training gradient\footnote{The
+third gradient, that of the biases $\bvec{c}$, might seem null. This is not
+true, as different values of $\bv$ also affect the model estimates
+for~$\bh$.}:
+\begin{equation}
+	\begin{aligned}
+		\nabla_{\linparmat}\,l &=
+			\E_{\bv \sim \dataset,\bh} \bigl[ \bv\, \bh^T \bigr] -
+			\E_{\bv,\bh} \bigl[ \bv\, \bh^T \bigr] \\
+		\nabla_{\bvec{b}}\,l &=
+			\E_{\bv \sim \dataset,\bh} \bigl[ \bv \bigr] -
+			\E_{\bv,\bh} \bigl[ \bv \bigr] \\
+		\nabla_{\bvec{c}}\,l &=
+			\E_{\bv \sim \dataset,\bh} \bigl[ \bh \bigr] -
+			\E_{\bv,\bh} \bigl[ \bh \bigr]
+	\end{aligned}
+	\label{eq:rbm-gradients}
+\end{equation}
+
+The last quantity we'll discuss is the \emph{free energy}. As we've noted, the
+energy of a MRF is an useful indication about the \emph{un}-likelihood of an
+observation. However, latent variables do not allow an efficient computation
+of the energy. So, we usually resort to a different measure, called the ``free
+energy'', $F(\bv) \coloneqq - \log\, \sum_{\bh} e^{-E(\bv, \bh)}$, which, for
+binary RBMs, can be efficiently computed as:
+\begin{equation}
+	F(\bv) = - \bvec{b}^T\, \bv - \sum_{j=1}^H \log
+		\bigl(\onevec + \exp(\linparmat^T\, \bv + \bvec{c}) \bigr)_j
+\end{equation}
 
 
+\subsubsection{Training algorithm}
 
-% TODO: training algorithm.
+We already know how RBMs are trained: the parameters are updated according to
+the gradients of equation~\eqref{eq:rbm-gradients}. However, we didn't mention
+how to actually compute the expectations in those expressions. Here, we will
+look at a specific algorithm that computes an approximation to those
+gradients. Even though some topics also apply to different MRFs, we'll only
+discuss the specific case of binary RBMs.
 
+This is not an unusual situation. In Machine Learning, we never have access to
+the optimal gradient. That is why we always apply a stochastic optimization
+algorithm, such as SGD, from the samples of the training dataset. We'll do the
+same here, by approximating:
+\begin{equation}
+	\E_{\x \sim q}[\bv\,\bh^T] \approx \bv'\,\bh'^T
+\end{equation}
+where the vector $(\bv'^T, \bh'^T)^T$ is a sample obtained from the
+distribution~$q$. So, the question is: how to we obtain those samples?
+
+\emph{Persistent Contrastive Divergence}
+(PCD)~\cite{bib:rbm-persistent-cd}\nomenclature{PCD}{Persistent Contrastive
+Divergence} is an algorithm that allows a very efficient sampling of the
+variables in a RBM.  The algorithm implemented in this thesis is a small
+variant of PCD, and it's shown in Algorithm~\ref{alg:pcd}.
+\begin{algorithm}[thb]
+	\centering
+	\begin{algorithmic}
+		\State Initialize $\linparmat, \bvec{b}, \bvec{c}$
+		\State Initialize vectors $\set{\bv_s\group{1}, \dots, \bv_s\group{B}}$
+		\EndlessRepeat
+			\State Collect a batch $\dataset$ of size $B$ from dataset
+			\State Reset batch gradient, $\bvec{g} \gets \zero$
+			\For{each sample in batch, $\bv\group{i} \in \dataset$}
+				\State Compute $\est{\bh}_m = \E[\bh \given \bv_s\group{i}]$
+				\State Sample $\bh_m \sim p(\bh \given \bv_s\group{i})$
+				\State Compute $\est{\bv}_m = \E[\bv \given \bh_m]$
+				\State Sample $\bv_m \sim p(\bv \given \bh_m)$
+				\State Sample $\bh_d \sim p(\bh \given \bv\group{i})$
+			\EndFor
+		\EndRepeat
+	\end{algorithmic}
+	\caption{Persistent Contrastive Divergence variant}
+	\label{alg:pcd}
+\end{algorithm}
+% TODO: input dataset of visible vectors
+% TODO: change symbol for batch. Correct and complete
+
+% TODO: exmplain algorithm. Implicit parameters given
+% TODO: I use expectations here
+
+% TODO: the effect of batches
+
+% TODO: stationary distribution
+% TODO: comparison with other algorithms: catch rare samples
 
 \subsection{Deep Belief Networks}
-
-% TODO: nomenclature
 
 \label{sec:dbn}
 
@@ -725,6 +829,10 @@ model's parameters~$\params$.
 %References:
 %Training Restricted Boltzmann Machines and Deep Belief Neworks
 %\cite{bib:rbm-training}\cite{bib:ml-book-murphy}.
+
+% TODO: nomenclature
+
+% TODO: not necessarily binary RBM
 
 \subsection{What does it learn}
 
