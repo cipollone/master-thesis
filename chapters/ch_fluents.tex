@@ -528,7 +528,6 @@ better understand the goal and properties of the final encoder.
 
 
 \subsection{Markov Random Fields}
-% TODO: ref
 
 In the previous chapters, we have sometimes used Directed Graphical Models
 (for example in Figure~\vref{fig:mdp}). These are probabilistic models in
@@ -536,7 +535,9 @@ which directed arcs represent known conditional probabilities between two
 variables. Here, instead, we'll adopt a different kind of formalism:
 \emph{Undirected Graphical Models} (UGMs)\nomenclature{UGM}{Undirected
 Graphical Models}, which are also called \emph{Markov Random Fields}
-(MRFs)\nomenclature{MRF}{Markov Random Fields}.
+(MRFs)\nomenclature{MRF}{Markov Random Fields}. Most of the topics presented
+in this section are a reorganization of the material
+in~\cite{bib:ml-book-murphy}.
 
 A UGM is an undirected graph, where variables are represented by nodes, as
 usual, and undirected arcs connect variables which are directly dependent.
@@ -712,22 +713,24 @@ model. Namely, the weights $\linparmat$ and the biases $\bvec{b}$, $\bvec{c}$.
 In RBMs, we can easily compute the posterior probability of a layer, given an
 observation of the other. For binary RBMs, this is:
 \begin{equation}
-\begin{aligned}
-	p(\bv \given \bh, \params) &= \prod_{i=1}^V \Ber(v_i;
-	\sigm(\linparmat_{i,:}\, \bh + \bvec{b}_i)) \\
-	p(\bh \given \bv, \params) &= \prod_{j=1}^H \Ber(h_j;
-	\sigm(\bv^T\, \linparmat_{:,j} + \bvec{c}_j))
-\end{aligned}
+	\begin{aligned}
+		p(\bv \given \bh, \params) &= \prod_{i=1}^V \Ber(v_i;
+		\sigm(\linparmat_{i,:}\, \bh + \bvec{b}_i)) \\
+		p(\bh \given \bv, \params) &= \prod_{j=1}^H \Ber(h_j;
+		\sigm(\bv^T\, \linparmat_{:,j} + \bvec{c}_j))
+	\end{aligned}
+	\label{eq:rbm-conditionals}
 \end{equation}
 where $\sigm: \R \to (0, 1)$ is the sigmoid function, $\sigm(x) \coloneqq
 e^x/(e^x+1)$, and $\linparmat_{i,:}, \linparmat_{:,j}$ denote the $i$-th row
 and the $j$-th column of $\linparmat$, respectively. From the previous
 equations, it follows:
 \begin{equation}
-\begin{aligned}
-	\E[\bv\given \bh,\params] &= \sigm(\linparmat\, \bh + \bvec{b}) \\
-	\E[\bh\given \bv,\params] &= \sigm(\linparmat^T\, \bv + \bvec{c})
-\end{aligned}
+	\begin{aligned}
+		\E[\bv\given \bh,\params] &= \sigm(\linparmat\, \bh + \bvec{b}) \\
+		\E[\bh\given \bv,\params] &= \sigm(\linparmat^T\, \bv + \bvec{c})
+	\end{aligned}
+	\label{eq:rbm-expectations}
 \end{equation}
 
 To train a binary RBM, we apply equation~\eqref{eq:ugm-po-gradient} without
@@ -787,56 +790,148 @@ distribution~$q$. So, the question is: how to we obtain those samples?
 (PCD)~\cite{bib:rbm-persistent-cd}\nomenclature{PCD}{Persistent Contrastive
 Divergence} is an algorithm that allows a very efficient sampling of the
 variables in a RBM.  The algorithm implemented in this thesis is a small
-variant of PCD, and it's shown in Algorithm~\ref{alg:pcd}.
+variant of PCD, and we explicitly defined it in Algorithm~\ref{alg:pcd}.
 \begin{algorithm}[thb]
 	\centering
-	\begin{algorithmic}
-		\State Initialize $\linparmat, \bvec{b}, \bvec{c}$
+	\begin{algorithmic}[1]
+		\Require A training dataset $\dataset = \set{\bv\group{i}}$
+		\Ensure Trained model $\set{\linparmat, \bvec{b}, \bvec{c}}$
+		\State Initialize $\linparmat \in \R^{V \times H}$,
+			$\linparmat_{ij} \sim \gauss{0}{\sigma}$
+		\State Initialize $\bvec{b} \gets \zero, \bvec{c} \gets \zero$
 		\State Initialize vectors $\set{\bv_s\group{1}, \dots, \bv_s\group{B}}$
-		\EndlessRepeat
-			\State Collect a batch $\dataset$ of size $B$ from dataset
-			\State Reset batch gradient, $\bvec{g} \gets \zero$
-			\For{each sample in batch, $\bv\group{i} \in \dataset$}
+		\Repeat
+			\State Collect a batch $\mathcal{B}$ of size $B$ from $\dataset$
+			\State Reset batch gradients, $\bvec{g}_w \gets \zero,
+				\quad \bvec{g}_b \gets \zero,
+				\quad \bvec{g}_c \gets \zero$
+			\For{each sample in batch $\bv\group{i} \in \mathcal{B}$}
+				\State Sample $\bh_d \sim p(\bh \given \bv\group{i})$
 				\State Compute $\est{\bh}_m = \E[\bh \given \bv_s\group{i}]$
 				\State Sample $\bh_m \sim p(\bh \given \bv_s\group{i})$
 				\State Compute $\est{\bv}_m = \E[\bv \given \bh_m]$
 				\State Sample $\bv_m \sim p(\bv \given \bh_m)$
-				\State Sample $\bh_d \sim p(\bh \given \bv\group{i})$
+				\State Compute gradients 
+					\Statex[3] $\bvec{g}_w\group{i} \gets
+						\bv\group{i}\, \bh_d^T - \est{\bv}_m\, \est{\bh}_m^T$
+					\Statex[3] $\bvec{g}_b\group{i} \gets \bv\group{i} - \est{\bv}_m$
+					\Statex[3] $\bvec{g}_c\group{i} \gets \bh_d - \est{\bh}_m$
+				\State Accumulate $\bvec{g}_w \gets \bvec{g}_w + \bvec{g}_w\group{i},
+					\quad \bvec{g}_b \gets \bvec{g}_b + \bvec{g}_b\group{i},
+					\quad \bvec{g}_c \gets \bvec{g}_c + \bvec{g}_c\group{i}$
+				\State Save $\bv_s\group{i} \gets \bv_m$
 			\EndFor
-		\EndRepeat
+			\State Update $\linparmat \gets \linparmat + \frac{\mu}{B} \bvec{g}_w,
+				\quad \bvec{b} \gets \bvec{b} + \frac{\mu}{B} \bvec{g}_b,
+				\quad \bvec{c} \gets \bvec{c} + \frac{\mu}{B} \bvec{g}_c$
+		\Until convergence
 	\end{algorithmic}
 	\caption{Persistent Contrastive Divergence variant}
 	\label{alg:pcd}
 \end{algorithm}
-% TODO: input dataset of visible vectors
-% TODO: change symbol for batch. Correct and complete
 
-% TODO: exmplain algorithm. Implicit parameters given
-% TODO: I use expectations here
+Few clarifications are needed. The gradients in
+equation~\ref{eq:rbm-gradients} are composed of two terms. The left-most
+expectation is said ``clamped'' or ``data-driven'', and it's easier to
+compute. We directly approximate it as the product of two samples:
+$\bv\group{i}\, \bh_d^T$. Instead, the ``unclamped'' term on the right is
+harder to compute. So, we repeatedly sample each group of variables in turn,
+$\bv_m \to \bh_m \to \bv_m \to \dots$, until we enter the model ``stationary
+distribution''\footnote{This is known as ``block Gibbs sampling''.}. The last
+pair $(\bv_m, \bh_m)$ from this sequence can be considered as a full sample
+from the model, $p(\x \given \params)$. What PCD does is to abbreviate this
+long process by saving and restoring this chain from the
+variables~$\bv_s\group{i}$.
 
-% TODO: the effect of batches
+In our small variant, we compute the unclamped term from expectations, rather
+than samples. This will reduce the variance of our estimates.
 
-% TODO: stationary distribution
-% TODO: comparison with other algorithms: catch rare samples
+RBMs are frequently trained with simpler algorithms, such as CD-1. They
+converge faster than PCD, but they are often unable to train on very uneven
+distributions (datasets with rare samples). In fact, when the expectations are
+roughly approximated, the model mostly learns to directly reconstruct the
+input, rather than really learning a distribution.
+
 
 \subsection{Deep Belief Networks}
 
 \label{sec:dbn}
 
-% TODO
-%Encoder: the model, how it works, what does it learn, size of the encoding.
-%
-%References:
-%Training Restricted Boltzmann Machines and Deep Belief Neworks
-%\cite{bib:rbm-training}\cite{bib:ml-book-murphy}.
+We're now ready to discuss the complete model of the encoder: the Deep Belief
+Networks. Thanks to our rather in-depth discussion of RBMs, they will be much
+easier to present.
 
-% TODO: nomenclature
+A \emph{Deep Belief Network} (DBN)\nomenclature{DBN}{Deep Belief Network} is a
+machine learning model composed by a stack of RBMs. They are combined such
+that the hidden units of one RBM become the visible units of the next. This
+arrangement is shown in Figure~\ref{fig:dbn}.
+\begin{figure}
+	\centering
+	\begin{tikzpicture}[
+			separator/.style={gray, dashed},
+		]
+		\graph [
+				layered layout, grow=right,
+				sibling distance=0.4cm, level distance=2cm,
+				empty nodes, nodes=node,
+			] {
+			subgraph I_n [name=input, n=7, nodes=observed node]
+					-- [complete bipartite]
+				subgraph I_n [name=hone, n=4]
+					-- [complete bipartite]
+				subgraph I_n [name=htwo, n=2];
+		};
+		\node [below=0.2cm of input 1, outer sep=3pt] (bv-label) {$\bv$};
+		\node [outer sep=3pt] (bh1-label) at (bv-label -| hone 1)
+			{$\layernum{1}{\bh}$};
+		\node [outer sep=3pt] (bh2-label) at (bv-label -| htwo 1)
+			{$\layernum{2}{\bh}$};
+		\coordinate (top left) at ($(input 7.north)+(0,0.3cm)$);
+		\coordinate (top mid) at (bh1-label |- top left);
+		\coordinate (top right) at (bh2-label |- top left);
+		\draw [separator] (bv-label) -- (top left);
+		\draw [separator] (bh1-label) -- (bh1-label |- top left);
+		\draw [separator] (bh2-label) -- (bh2-label |- top left);
+		%
+		\node at ($0.5*(top left)+0.5*(top mid)$) {\scriptsize RBM 1};
+		\node at ($0.5*(top mid)+0.5*(top right)$) {\scriptsize RBM 2};
+	\end{tikzpicture}
+	\caption{Scheme of a Deep Belief Network.}
+	\label{fig:dbn}
+\end{figure}
+Because of this structure, we will efficiently train this model greedily one
+layer at the time. Assume we have a training dataset as usual, $\dataset =
+\set{\bv\group{i}}$. Initially, we train RBM 1 with our
+Algorithm~\ref{alg:pcd} from~$\dataset$. Then, before proceeding to the next
+layer, we leave these parameters fixed for the rest of the process. RBM 2 is
+trained exactly in the same way but from a dataset composed of samples
+generated from RBM 1: $\layernum{1}{\bh}\group{i} \sim p(\layernum{1}{\bh}
+\given \bv)$. We repeat this process for each additional hidden layer.
 
-% TODO: not necessarily binary RBM
+The model in Figure~\ref{fig:dbn} doesn't represent a UGM as we've done
+previously. If that graph would be considered a single MRF we couldn't apply
+this greedy training procedure. However, proceeding by layer can be regarded
+as an approximation of the unified model~\cite{bib:dbn-learning}.
+
+We can now look at the general picture of how the encoder operates. As we've
+seen from the general structure of Figure~\vref{fig:model-scheme}, we define
+one encoder, that is one DBN, for each region. Each of them receives, as
+training samples, the pixels inside the associated region. Their purpose is to
+discover patterns in that area so to extract a meaningful encoding. The
+encoding is the deep-most hidden layer of this model. Once a DBN is fully
+trained, we predict the encoding vector $\layernum{D}\bh$ associated
+to an input $\bv$ through the following chain of samples: $\bv \to
+\layernum{1}\bh \to \dots \to \layernum{D}\bh$.
+
 
 \subsection{What does it learn}
 
 \label{sec:encoding-what-learns}
+
+% TODO: how hidden units work. Why they can be considered an encoding
+
+% TODO: not necessarily binary RBM
+%Encoder: the model, how it works, what does it learn, size of the encoding.
 
 % TODO: large region for room
 % Consider, for example, the region of the fluents $\const{Full}$ and
@@ -844,6 +939,7 @@ variant of PCD, and it's shown in Algorithm~\ref{alg:pcd}.
 % change in that area are the disappearing bricks; we won't be able to learn a
 % fluent $\const{BallInside}$ that becomes true when the ball is inside the
 % region.
+% TODO: model bias with more layers
 
 \section{Boolean functions}
 
