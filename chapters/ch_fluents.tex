@@ -695,7 +695,8 @@ and every clique has two nodes. So, the joint probability is simply:
 \end{equation}
 with one function $\psi_{ij}$ for each arc $(v_i, h_j)$. This simplification,
 along with other nice properties, are only possible thanks to its bipartite
-structure. This is why it is said ``restricted''.
+structure. This is why it is said ``restricted''. Useful RBMs have strictly
+less hidden than visible units.
 
 The classic RBM, which is the one we'll use here, assumes that all variables
 are binary: $v_i, h_j \in \set{0,1}$. Also, it defines the following energy
@@ -789,7 +790,7 @@ distribution~$q$. So, the question is: how to we obtain those samples?
 \emph{Persistent Contrastive Divergence}
 (PCD)~\cite{bib:rbm-persistent-cd}\nomenclature{PCD}{Persistent Contrastive
 Divergence} is an algorithm that allows a very efficient sampling of the
-variables in a RBM.  The algorithm implemented in this thesis is a small
+variables in an RBM.  The algorithm implemented in this thesis is a small
 variant of PCD, and we explicitly defined it in Algorithm~\ref{alg:pcd}.
 \begin{algorithm}[thb]
 	\centering
@@ -829,6 +830,7 @@ variant of PCD, and we explicitly defined it in Algorithm~\ref{alg:pcd}.
 	\caption{Persistent Contrastive Divergence variant}
 	\label{alg:pcd}
 \end{algorithm}
+% TODO: note about originality of the formulation?
 
 Few clarifications are needed. The gradients in
 equation~\ref{eq:rbm-gradients} are composed of two terms. The left-most
@@ -836,12 +838,12 @@ expectation is said ``clamped'' or ``data-driven'', and it's easier to
 compute. We directly approximate it as the product of two samples:
 $\bv\group{i}\, \bh_d^T$. Instead, the ``unclamped'' term on the right is
 harder to compute. So, we repeatedly sample each group of variables in turn,
-$\bv_m \to \bh_m \to \bv_m \to \dots$, until we enter the model ``stationary
-distribution''\footnote{This is known as ``block Gibbs sampling''.}. The last
-pair $(\bv_m, \bh_m)$ from this sequence can be considered as a full sample
-from the model, $p(\x \given \params)$. What PCD does is to abbreviate this
-long process by saving and restoring this chain from the
-variables~$\bv_s\group{i}$.
+$\bv_m \mapsto \bh_m \mapsto \bv_m \mapsto \dots$, until we enter the model
+``stationary distribution''\footnote{This is known as ``block Gibbs
+sampling''.}. The last pair $(\bv_m, \bh_m)$ from this sequence can be
+considered as a full sample from the model, $p(\x \given \params)$. What PCD
+does is to abbreviate this long process by saving and restoring this chain
+from the variables~$\bv_s\group{i}$.
 
 In our small variant, we compute the unclamped term from expectations, rather
 than samples. This will reduce the variance of our estimates.
@@ -893,69 +895,201 @@ arrangement is shown in Figure~\ref{fig:dbn}.
 		\draw [separator] (bh1-label) -- (bh1-label |- top left);
 		\draw [separator] (bh2-label) -- (bh2-label |- top left);
 		%
-		\node at ($0.5*(top left)+0.5*(top mid)$) {\scriptsize RBM 1};
-		\node at ($0.5*(top mid)+0.5*(top right)$) {\scriptsize RBM 2};
+		\node at ($0.5*(top left)+0.5*(top mid)$) {\scriptsize RBM~1};
+		\node at ($0.5*(top mid)+0.5*(top right)$) {\scriptsize RBM~2};
 	\end{tikzpicture}
-	\caption{Scheme of a Deep Belief Network.}
+	\caption{Diagram of a Deep Belief Network.}
 	\label{fig:dbn}
 \end{figure}
-Because of this structure, we will efficiently train this model greedily one
-layer at the time. Assume we have a training dataset as usual, $\dataset =
-\set{\bv\group{i}}$. Initially, we train RBM 1 with our
-Algorithm~\ref{alg:pcd} from~$\dataset$. Then, before proceeding to the next
-layer, we leave these parameters fixed for the rest of the process. RBM 2 is
-trained exactly in the same way but from a dataset composed of samples
-generated from RBM 1: $\layernum{1}{\bh}\group{i} \sim p(\layernum{1}{\bh}
-\given \bv)$. We repeat this process for each additional hidden layer.
+Because of this structure, we will efficiently train this model in a greedy
+way, one layer at the time. Assume we have a training dataset as usual,
+$\dataset = \set{\bv\group{i}}$. Initially, we train RBM~1 from $\dataset$,
+with our Algorithm~\ref{alg:pcd}. Then, before proceeding to the next layer,
+we keep these parameters fixed for the rest of the process. RBM~2 is trained
+exactly in the same way but from a dataset composed of samples generated from
+RBM~1: $\layernum{1}{\bh}\group{i} \sim p(\layernum{1}{\bh} \given
+\bv\group{i})$. We repeat this process for each additional hidden layer of the
+network.
 
-The model in Figure~\ref{fig:dbn} doesn't represent a UGM as we've done
-previously. If that graph would be considered a single MRF we couldn't apply
-this greedy training procedure. However, proceeding by layer can be regarded
-as an approximation of the unified model~\cite{bib:dbn-learning}.
+The graph in Figure~\ref{fig:dbn} does not represent a UGM as the previous
+figures. If that graph would be really considered a single MRF, we would have
+to train the model as a whole, with a much less efficient procedure. So, we
+should consider it just a composition of RBMs. Still, it has been
+shown~\cite{bib:dbn-learning} that this training procedure computes indeed
+an approximation to the unified model.
 
 We can now look at the general picture of how the encoder operates. As we've
-seen from the general structure of Figure~\vref{fig:model-scheme}, we define
-one encoder, that is one DBN, for each region. Each of them receives, as
-training samples, the pixels inside the associated region. Their purpose is to
-discover patterns in that area so to extract a meaningful encoding. The
-encoding is the deep-most hidden layer of this model. Once a DBN is fully
-trained, we predict the encoding vector $\layernum{D}\bh$ associated
-to an input $\bv$ through the following chain of samples: $\bv \to
-\layernum{1}\bh \to \dots \to \layernum{D}\bh$.
+seen from the structure of Figure~\vref{fig:model-scheme}, we define one
+encoder, that is one DBN, for each region. Then, the sequence of RBMs is
+trained from observations of this portion of the input frame. We consider as
+encoding vector the values of the deep-most hidden layer of the DBN. Once a
+DBN is fully trained, we predict the encoding vector $\layernum{D}\bh$
+associated to an input $\bv$ through the following chain of samples: $\bv
+\mapsto \layernum{1}\bh \mapsto \dots \mapsto \layernum{D}\bh$.
 
 
 \subsection{What does it learn}
 
 \label{sec:encoding-what-learns}
 
-% TODO: how hidden units work. Why they can be considered an encoding
+The model of the encoder has been fully defined already. In this section, we
+look at its operation from a more general perspective. We try to answer these
+questions:
+\begin{itemize}[nosep]
+	\item Why can latent variables be considered an encoding?
+	\item Why DBN / RBM?
+	\item What does the encoding represent?
+\end{itemize}
+\bigskip
 
-% TODO: not necessarily binary RBM
-%Encoder: the model, how it works, what does it learn, size of the encoding.
+We said that the values assumed by the hidden layer of an RBM can be
+considered an encoding of the input vector. This is not obvious, because it
+depends on the meaning of those units. We observe the following: training an
+RBM means to find a mapping $\bh \mapsto \bv$ such that each training sample
+$\bv\group{i}$ is a \emph{very probable} input, given the hidden units
+associated to $\bv\group{i}$ (the dependency is cyclic, but we focus on the
+reconstruction $\bh\group{i} \mapsto \bv\group{i}$). Thus, the hidden units
+allow a reconstruction of the visible units.
 
-% TODO: large region for room
-% Consider, for example, the region of the fluents $\const{Full}$ and
-% $\const{Empty}$ of Figure~\ref{fig:assumption-ex-breakout}. The most evident
-% change in that area are the disappearing bricks; we won't be able to learn a
-% fluent $\const{BallInside}$ that becomes true when the ball is inside the
-% region.
-% TODO: model bias with more layers
+So, the latent vector is an encoding, but how is it composed? In unsupervised
+models, we can never answer to this question in advance. This is the strength
+of these models, after all: they automatically assign a meaning to those
+units, as convenient for the optimization. In binary RBMs, we can move one
+step further. Since each unit is binary, we know it contains exactly one bit
+of information. In other words, each of them acts as an independent feature
+detector that is associated to a specific pattern of the input. They become
+active, assuming a value of 1, when the input respects their constraint. So,
+each entry of the encoding vector indicates the presence or the absence of
+some patterns that the model has learnt to recognize.
+
+This leads us to motivate the choice of RBM and DBN rather than other types of
+encoders: the RBM achieves the maximum level of decoupling in the encoding
+vector. This allows to understand more easily the meaning of each encoding the
+model produces (for humans). More importantly, it allows to decide the truth
+of our fluents by reasoning in terms of \emph{present and absent patterns} on
+the input vector (for machines). We'll talk about this last possibility in
+Section~\ref{sec:bool-fn}.
+
+The RBM is an universal approximator: any input distribution on $\set{0, 1}^V$
+can be approximated arbitrarily well with an RBM with enough hidden
+units~\cite{bib:rbm-universality}. This is just a theoretical result, we're
+interested in approximate reconstructions, in practice. This discussion
+seems to motivate just the RBM, not the DBN. However, even though both models
+are universal approximators, a DBN can produce the same distribution as an RBM
+with much less parameters. In fact, there exists cases where a two-layers DBN
+requires exponentially less parameters than a comparable RBM. So, the DBN is
+much more efficient. So, by adding layers to a DBN we can reduce the size of
+the latent vector, which is our encoding, while maintaining the same accuracy.
+Because, given the same output size, a DBN can recognize much more complex
+patterns.
+
+The last topic to discuss is the appropriate size of the encoding. Initially,
+we might think that the number of latent variables should depend on the size
+of the input space. This is not true, instead. This number only depends on two
+factors: the complexity of the input distribution, and the desired level of
+accuracy. The dimensions of the encoding should be \emph{at least} the
+$\log_2$ of the number of configurations that we want our model to recognize
+and encode. Such minimal encoding might not exists or may not be reachable
+during training. So, it's always better to use a larger number of units. This
+size also determines a boundary between the relevant features and those that
+are treated as noise and will be ignored\footnote{The size determines the
+number of relevant features, not which are relevant.}.
+
+\begin{example}
+	Consider the region of the fluents $\const{Full}$ and $\const{Empty}$ of
+	Figure~\ref{fig:assumption-ex-breakout}. The minimum size of the encoding
+	is the number of bricks inside that area, because we may use each bit to
+	detect the presence of one brick. This optimal result might not be
+	reachable. So, we could use slightly more units than this minimum.
+	We know that the units will indicate the presence of bricks, because that is
+	the most evident change in that region. With this meaning, the model is able
+	to reconstruct as many pixels as possible. This also means that, regardless
+	of the size of the encoding, we probably won't be able to detect the
+	presence of the ball, passing through the region. The DBN focus on the most
+	evident changes of that group of pixels.
+\end{example}
+
+In Machine Learning, the depth and width of the network, which is a DBN in
+this case, are hyper-parameters that needs to be tuned. The considerations
+above will only help to start from a reasonable model size.
+
+A final side note. A consequence of using binary RBMs is that the continuous
+intensity of each pixel needs to be converted to a binary value. In this work,
+we set a threshold to transform each pixel to either black~(0), or white~(1).
+However, we don't consider this a real limitation for our model. We've
+selected binary RBM for simplicity, but there also exists Gaussian-binary
+RBMs, which handle continuous values for visible units, and binary for hidden
+units as usual.
+
 
 \section{Boolean functions}
 
-The fluents are true in a set of those configurations.
+\label{sec:bool-fn}
 
-\subsection{Learning with genetic algorithms}
+Each encoder transforms the pixels of one region to a vector of few binary
+indicators. This sensibly reduces the complexity of the problem, by extracting
+the relevant quantities, but the problem is still there: how do we map inputs
+(encodings) to truth values for the fluents? If we consider an encoding vector
+$\bh \in \B^H$ and a propositional symbol $\fluent \in \fluents$, this means
+to find the appropriate Boolean function $f_\fluent: \B^H \to \B$, that
+captures the desired concept for~$p$.
+
+A solution, which is now viable, is to manually define this function. 
+To do so, we first need to understand which pattern of the input each unit of
+the encoding represents. Let's denote with $\bvec{e}_i$ a vector of zeros
+except for a 1 at the $i$-th position. It's possible to discover the meaning
+associated to each unit by reconstructing the expected input as $\E[\bv \given
+\bh=\bvec{e}_i]$. Thanks to the separation of features, we don't need to
+visualize all the other combinations of hidden units.
+
+% TODO: elements of matrices and vectors in bold?
+
+\subsection{Searching monomials}
+
+Since each element of the vector~$\bh$ detects a feature of the input, we may
+now define the truth of a symbol $\fluent$ as: ``$\fluent$ is true when the
+feature $h_1$ is present and $h_3$ is not''. We can conveniently express such
+Boolean functions with with formulae of Propositional logic: $h_1 \land \lnot
+h_3$. As usual, a formula is a concise definition for the set of inputs that
+satisfy it. So, we've successfully defined those images in which the symbol
+is true (we only talk about the set of positive inputs, because we assume it
+negative otherwise).
+
+We may be quite satisfied with this solution already. Writing a propositional
+formula is much easier than collecting a dataset of input-output samples for
+supervised learning. Yet, in the following part of this section, we'll
+investigate how we could learn even this final part.
+
+Our goal is to find the appropriate propositional formula among the set of
+all formulae over $H$ symbols. Unfortunately, this search space is huge: there
+are $2^H$ interpretations for $H$ propositions, among which we should choose
+the set assigned to a true output. There are $2^{2^H}$ of these sets. Since
+we'll train from very weak temporal constraints, we'll reduce the search space
+with the following assumption. We assume that the target concept of the fluent
+can be expressed with a conjunction of literals, which are positive or
+negative atoms. This type of formula is called a \emph{monomial}. Since each
+symbol $h_i$ can be positive, negative or absent, there are $3^H$ monomials.
+This is a much more tractable search space.
+
+By applying a sequence of logical equivalences, any formula of propositional
+logic can be converted to the \emph{Disjunctive Normal Form}
+(DNF)\nomenclature{DNF}{Disjunctive Normal Form}. A formula is in DNF if is a
+disjunction of monomials. Thanks to this property, any complex concept can be
+split into a group of monomials $M_1, \dots, M_m$ which respect our
+assumption. Then we can learn one symbol $A_i$ for each monomial~$M_i$. Once
+these have been learnt, we can write $(A_1 \lor \dots \lor A_m)$ in place of
+the original symbol, in every place it appears.
+
+
+\subsection{Learning Boolean rules with genetic algorithms}
+
+% TODO: thanks to limitation of booleans
 
 Ideas from concept learning; genetic algorithm.
 
 References:
 Genetic Algorithms for Concept learning\cite{bib:ga-for-concepts},
 Genetic Algorithms review\cite{bib:ga-mutations-review}.
-
-\subsection{Boolean rules}
-
-Representation of boolean functions and training details.
 
 \section{Limitations and improvements}
 
