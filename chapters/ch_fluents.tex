@@ -2,6 +2,7 @@
 
 \label{ch:fluents}
 
+% TODO: name Symbol grounding in games
 % TODO: par about grounding?
 
 In Chapter~\ref{ch:rl}, we've presented how to apply Deep Reinforcement
@@ -597,14 +598,14 @@ latter. First, let's rewrite each term as:
 for some function~$E$. $E$ is called the \emph{energy function}. Since it is
 inversely correlated to the probability, it is high for unlikely
 configurations of variables and low for very probable configurations
-(according to the model parameters, of course). Due to this property, it is
-sometimes a very useful indication of the final probability\footnote{Computing
-the exact probability $p(\x \given \params)$, as many other quantities, is
-intractable for generic UGMs, because often we won't be able to compute the
-normalizer}.  Usually, the energy function is of the simplest kind, a linear
-combination: $E(\x_c; \params_c) \coloneqq -\params_c^T \basisfun_c(\x_c)$,
-for some basis function~$\basisfun_c$. In the following, we'll assume this
-form.
+(according to the model parameters, of course). Due to this property, the
+energy is sometimes a very useful indication of the final
+probability\footnote{Computing the exact probability $p(\x \given \params)$,
+as many other quantities, is intractable for generic UGMs, because often we
+won't be able to compute the normalizer}.  Usually, the energy function is of
+the simplest kind, a linear combination: $E(\x_c; \params_c) \coloneqq
+-\params_c^T \basisfun_c(\x_c)$, for some basis function~$\basisfun_c$. In the
+following, we'll assume this form.
 
 As we may recognize, in a MRF there is no output. We're not trying to learn an
 input--output function. Training a model means to find the optimal parameters
@@ -733,6 +734,7 @@ equations, it follows:
 	\end{aligned}
 	\label{eq:rbm-expectations}
 \end{equation}
+% TODO: elements are not bold
 
 To train a binary RBM, we apply equation~\eqref{eq:ugm-po-gradient} without
 modifications. To obtain the basis function $\basisfun(\x)$ we need, it's
@@ -1027,20 +1029,20 @@ units as usual.
 \label{sec:bool-fn}
 
 Each encoder transforms the pixels of one region to a vector of few binary
-indicators. This sensibly reduces the complexity of the problem, by extracting
+indicators. This sensibly reduces the complexity of the problem by extracting
 the relevant quantities, but the problem is still there: how do we map inputs
-(encodings) to truth values for the fluents? If we consider an encoding vector
-$\bh \in \B^H$ and a propositional symbol $\fluent \in \fluents$, this means
-to find the appropriate Boolean function $f_\fluent: \B^H \to \B$, that
+(now, encodings) to truth values for the fluents? If we consider an encoding
+vector $\bh \in \B^H$ and a propositional symbol $\fluent \in \fluents$, this
+means to find the appropriate Boolean function $f_\fluent: \B^H \to \B$, that
 captures the desired concept for~$p$.
 
-A solution, which is now viable, is to manually define this function. 
-To do so, we first need to understand which pattern of the input each unit of
-the encoding represents. Let's denote with $\bvec{e}_i$ a vector of zeros
-except for a 1 at the $i$-th position. It's possible to discover the meaning
-associated to each unit by reconstructing the expected input as $\E[\bv \given
-\bh=\bvec{e}_i]$. Thanks to the separation of features, we don't need to
-visualize all the other combinations of hidden units.
+A solution, which is now viable, is to define it manually.  To do so, we first
+need to understand which pattern of the input each unit of the encoding
+represents. Let's denote with $\bvec{e}_i$ a vector of zeros except for a 1 at
+the $i$-th position. It's possible to discover the meaning associated to each
+unit by reconstructing the expected input with $\E[\bv \given \bh=\bvec{e}_i]$.
+Thanks to the separation of features, we don't need to visualize all the other
+combinations of hidden units.
 
 % TODO: elements of matrices and vectors in bold?
 
@@ -1048,48 +1050,198 @@ visualize all the other combinations of hidden units.
 
 Since each element of the vector~$\bh$ detects a feature of the input, we may
 now define the truth of a symbol $\fluent$ as: ``$\fluent$ is true when the
-feature $h_1$ is present and $h_3$ is not''. We can conveniently express such
+feature $h_1$ is present and $h_3$ is not''. We will conveniently express such
 Boolean functions with with formulae of Propositional logic: $h_1 \land \lnot
 h_3$. As usual, a formula is a concise definition for the set of inputs that
-satisfy it. So, we've successfully defined those images in which the symbol
-is true (we only talk about the set of positive inputs, because we assume it
-negative otherwise).
+satisfy it. So, by writing this expression, we've successfully defined those
+images in which the symbol should be assigned to true (we only talk about the
+set of positive inputs, because we assume it negative otherwise).
 
 We may be quite satisfied with this solution already. Writing a propositional
 formula is much easier than collecting a dataset of input-output samples for
 supervised learning. Yet, in the following part of this section, we'll
-investigate how we could learn even this final part.
+investigate how we could learn even this final valuation function.
 
-Our goal is to find the appropriate propositional formula among the set of
-all formulae over $H$ symbols. Unfortunately, this search space is huge: there
-are $2^H$ interpretations for $H$ propositions, among which we should choose
-the set assigned to a true output. There are $2^{2^H}$ of these sets. Since
-we'll train from very weak temporal constraints, we'll reduce the search space
-with the following assumption. We assume that the target concept of the fluent
-can be expressed with a conjunction of literals, which are positive or
-negative atoms. This type of formula is called a \emph{monomial}. Since each
-symbol $h_i$ can be positive, negative or absent, there are $3^H$ monomials.
-This is a much more tractable search space.
+Our goal is to find the appropriate propositional formula among the set of all
+formulae over $H$ atoms. Unfortunately, this search space is huge: there are
+$2^H$ interpretations for $H$ propositions, among which we should choose the
+set of those associated to the true fluent value. There are $2^{2^H}$ of those
+sets. Since we train from very weak temporal constraints, we'll reduce the
+search space with the following assumption: we assume that the target
+concept\footnote{The word ``concept'' is used as a synonym for the desired
+fluent valuation, that is the set of inputs the symbol should represent.} of
+the fluent can be expressed with a conjunction of literals, which are positive
+or negative atoms. This type of formula is called a \emph{monomial}. Since in
+this formula each symbol $h_i$ can be positive, negative or absent, there are
+at most $3^H$ different monomials from $H$ atoms. This is a much more
+tractable search space.
 
 By applying a sequence of logical equivalences, any formula of propositional
-logic can be converted to the \emph{Disjunctive Normal Form}
-(DNF)\nomenclature{DNF}{Disjunctive Normal Form}. A formula is in DNF if is a
-disjunction of monomials. Thanks to this property, any complex concept can be
-split into a group of monomials $M_1, \dots, M_m$ which respect our
-assumption. Then we can learn one symbol $A_i$ for each monomial~$M_i$. Once
-these have been learnt, we can write $(A_1 \lor \dots \lor A_m)$ in place of
-the original symbol, in every place it appears.
+logic can be converted in \emph{Disjunctive Normal Form}
+(DNF)\nomenclature{DNF}{Disjunctive Normal Form}. A formula is in DNF if it is
+a disjunction of monomials. Thanks to this property, any complex concept can
+be split into a group of monomials $M_1, \dots, M_m$, each respecting our
+assumption. So, we can define $m$ fluents $A_i$ whose valuation functions are
+$M_i$. Once these monomials have been learnt, we can write $(A_1 \lor \dots
+\lor A_m)$ in place of the original symbol, in every place it appears. This
+shows how this procedure may be generalized. However, as we'll see in
+Section~\ref{sec:fluents-limitations} we should restrict to very simple
+concepts from the beginning.
 
 
 \subsection{Learning Boolean rules with genetic algorithms}
 
-% TODO: thanks to limitation of booleans
+We've defined both a search space, which is the space of monomials over the
+entries of the encoding vector, and an objective, that is the satisfaction of
+the temporal constraints. These constraints are expressed in a single \ldl{}
+formula~$\constraintS$, written from the atoms in~$\fluents$. So, we formulate
+the learning problem as: finding a set of functions, $f \coloneqq
+\set{f_\fluent \given \fluent \in \fluents}$ with $f_\fluent: \B^H \to \B$,
+such that the trace of assignments produced from observations of any episode
+satisfies the temporal constraint~$\constraintS$. Each function~$f_\fluent$
+receives in input the encoding vector~$\bh \in \B^H$ computed from the region
+where $\fluent$ is defined. A solution for this problem is the entire set of
+functions, because consistency is a property of the group, not the single
+valuation function.
 
-Ideas from concept learning; genetic algorithm.
+Clearly, we can't verify that the constraint is satisfied for any episode. For
+the moment, we assume to approximate this test by running a large number of
+episodes, instead. By checking that $\constraintS$ is satisfied for each of
+these traces, we're able to assess whether some $f$ is a solution. However,
+this test doesn't give any indication about how to \emph{reach} such solution.
+Satisfaction is a binary test: it doesn't tell us how far we are.  On the
+other hand, for a large dimension $H$, exhaustive search may be unfeasible.
+These considerations lead us to prefer search methods based on sampling: the
+idea is to repeatedly sample a candidate from the space of monomials, then
+verify it against the constraint.
 
-References:
-Genetic Algorithms for Concept learning\cite{bib:ga-for-concepts},
+Even stochastic algorithms struggle in high-dimensional spaces. So, we still
+need to guide the search of new candidates through some heuristic function
+$\heuristicfn: \mathcal{M} \to \R^+$, where $\mathcal{M}$ is the space of
+monomials to rank. This heuristic can be a \emph{very approximate} metric, as
+it just needs to slightly guide the sampling process. We'll define this
+function later.
+
+
+\subsubsection{Genetic Algorithms}
+
+The search algorithm we've selected is a Genetic Algorithm
+(GA)\nomenclature{GA}{Genetic Algorithm}. It is a local search algorithm which
+repeatedly samples batches of candidates that are modifications of the
+previous ones. The motivation for this choice is that, with respect to other
+local search algorithms, GAs allow to easily control both nondeterminism and
+parallelization, as we will see. The idea of applying GAs to learn
+propositional sentences has also been confirmed by previous works that applied
+them for Concept Learning~\cite{bib:ga-for-concepts}. This is, in fact, a
+concept learning scenario, in which the target concept is described through
+temporal constraints rather than positive examples.
+
+In GAs, the batch of candidates is called a \emph{population} of individuals,
+and the heuristic function is called the \emph{fitness function}. We'll denote
+the population with $\mathcal{P} \coloneqq \set{(\x\group{i})_{i=1}^N}$ for an
+even size~$N$. Each individual is represented with a sequence of fixed length,
+$\x\group{i} = \langle x_1\group{i}, \dots, x_L\group{i} \rangle$, composed of
+symbols $x_j$ called chromosomes. A GA initially samples an initial population
+$\mathcal{P}$ of size~$N$. Then, it repeatedly follows these steps:
+\begin{description}
+	\item [Fitness] Compute the fitness value for each individual: $v_i \gets
+		\heuristicfn(\x\group{i}), \, \forall\, \x\group{i} \in \mathcal{P}$.
+		The probability of reproduction for individual~$i$ is $r_i \gets v_i /
+		\sum_j v_j$.
+	\item [Reproduction] Sample a new generation, $\mathcal{P} \gets
+		\set{({\x'}\group{i})_{i=1}^N}$, where each individual is assigned as:
+		${\x'}\group{i} \gets \x\group{k}$ for $k \sim \Cat(\bvec{r})$. The
+		categorical distribution, $\Cat(\bvec{r})$, generates an index $k$ with
+		probability $r_k$.  So, the fittest individuals are more likely to
+		reproduce.
+	\item [Crossover] Sample $N/2$ crossover points with a uniform discrete
+		distribution: ${c_i \sim U(1, L-1)}$. For each pair of parents
+		$(\x\group{2i-1}, \x\group{2i})$ with $i=1, \dots, N/2$, apply a crossover
+		with probability~$p_c$. A crossover is an exchange the first $c_i$
+		chromosomes between $\x\group{2i-1}$ and $\x\group{2i}$.
+	\item [Mutation] For every individual $\x\group{i} \in \mathcal{P}$ and
+		chromosome $x_j\group{i} \in \x\group{i}$, apply a mutation to
+		$x_j\group{i}$ with probability~$p_m$. A mutation is a substitution of a
+		chromosome with a new one, randomly sampled.
+\end{description}
+
+We've said that GAs allow to regulate the desired amount of nondeterminism and
+parallelization. For the latter, we can increase the population size~$N$.
+The additional step time required by the larger number of individuals, may be
+strongly compensated by the minor number of steps required for convergence.
+Furthermore, modern parallel computing libraries will show a very little
+overhead each additional individual.
+
+The randomness of the search can be tuned by selecting the parameters $p_c$
+and $p_m$, which are the crossover and mutation probabilities. High values
+correspond to a mostly random search, while low values correspond to steady
+increases toward promising candidates. Some nondeterminism is clearly
+desirable in presence of very approximated heuristics as those that we have to
+define.
+
+During initialization we've asked to randomly sample a population. Since the
+individuals are composed of chromosomes, it all comes to being able to sample
+chromosomes, just like during the Mutation phase. We assume samples can be
+easily sampled with an uniform distribution. Usually, this is indeed easy
+because the unknowns of many problems can be formulated as sequences of number
+from small domains. Also, we can note that individuals do not need to be
+defined with a homogeneous sequence, every chromosome position might use a
+different domain.
+
+
+\subsubsection{Boolean rules}
+
+The learning algorithm is ready. We just need to formulate our search space as
+in terms of fixed-length sequences of symbols. Our candidates are propositions
+over the $H$ Boolean features in the encoding vector. Since we assumed that
+the target concept is representable with a monomial, this representation is
+easy to define. Given a monomial $M$ whose atoms are the entries of a vector
+$\bh \in \B^H$, we define the associated individual as the sequence $\x
+\coloneqq \set{-1, 0, 1}^H$, where each chromosome $x_i$ is 1 if the atom
+$h_i$ appears positive in $M$, 0 if $h_i$ is negative, and $-1$ if is absent.
+For example, the sequence $\langle 1, -1, 0 \rangle$ represents $h_1 \land
+\lnot h_3$.
+
+The assumption of monomials was introduced both to reduce the search space and
+to allow this encoding of fixed length. At a negligible cost, that is by
+introducing an additional chromosome, we can extend this representation to
+include both monomials and negations of monomials. We call these new functions
+\emph{Boolean rules}. They are explained in Figure~\ref{fig:boolean-rules}.
+\begin{figure}
+	\centering
+	\begin{tikzpicture}
+	\end{tikzpicture}
+	\caption{} % TODO
+	\label{fig:boolean-rules}
+\end{figure}
+% TODO
+A 1-rule simply stands for a monomial, as before. A 0-rule instead produces
+the opposite output; it is true, if the constraint on $\bh$ is \emph{not}
+satisfied.
+
+Any concept, either positive or negative, that can be expressed with a
+monomial is representable with a Boolean rule. This extension can be
+considered a very restricted form of disjunction. Boolean rules should be very
+useful because the encoding vector is generated by the encoder. We've said
+that an entry is 1 if the pattern associated to that entry has been detected
+on the input. However, we can't anticipate what this means. A pattern might be
+the presence of an object, as well as it's absence.
+
+% TODO: array of boolean functions
+% TODO: all with H entries?
+
+\subsubsection{Heuristic function and nondeterminism}
+
+
+% TODO: where crossovers make sense
+% TODO: how to vary nondeterminism
 Genetic Algorithms review\cite{bib:ga-mutations-review}.
+
+\section{Training and incremental learning}
+
+Every trace, but which trace? Observation traces are generated by our actions.
+
+% TODO: learning scheme, exploration policies, incremental
 
 \section{Limitations and improvements}
 
