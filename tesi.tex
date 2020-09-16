@@ -181,6 +181,17 @@
 		.. controls +(160:1) and +(200:1) .. (\tikztotarget) \tikztonodes}},
 	self loop below/.style={to path={
 		.. controls +(250:1) and +(290:1) .. (\tikztotarget) \tikztonodes}},
+	%
+	encoding vector/.style={
+		matrix of nodes, nodes in empty cells,
+		row sep=-\pgflinewidth, column sep=-\pgflinewidth,
+		nodes={anchor=center, draw, minimum width=1.3em, minimum height=1.3em,
+			inner sep=0pt, font=\footnotesize, fill=white},
+		cells={draw},
+	},
+	rule box/.style={
+		fill=gray!30!white,
+	}
 }
 % Automaton graph style
 \pgfkeys{

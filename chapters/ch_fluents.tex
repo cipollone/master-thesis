@@ -1,4 +1,5 @@
-\chapter{Learning to valuate fluents in games}
+\chapter{Models for symbol grounding in games}
+% TODO: title
 
 \label{ch:fluents}
 
@@ -59,15 +60,15 @@ fluents.
 
 Usually, the features extractor is not a really interesting component. Once,
 we've defined a fluent~$\fluent \in \fluents$, we could manually program a
-function, $f_p: \obsS \to \B$, that predicts when that event occurs or that
-condition is verified\footnote{$\B$ is the set $\set{0, 1}$, which represents
-$\set{\false, \true}$.}.  This approach is perfectly fine, when applicable.
-However, the environments used in Deep Reinforcement Learning usually produce
-high-dimensional or noisy observations. As we may imagine, it becomes really
-hard to manually classify such inputs in the two classes. So, in order to
-apply the Restraining Bolt or any other logic-based method to Deep RL, we
-must resort to some Machine Learning model that will help us deciding the
-truth of our atomic propositions.
+function, $f_\fluent: \obsS \to \B$, that predicts when that event occurs or
+that condition is verified\footnote{$\B$ is the set $\set{0, 1}$, which
+represents $\set{\false, \true}$.}.  This approach is perfectly fine, when
+applicable.  However, the environments used in Deep Reinforcement Learning
+usually produce high-dimensional or noisy observations. As we may imagine, it
+becomes really hard to manually classify such inputs in the two classes. So,
+in order to apply the Restraining Bolt or any other logic-based method to Deep
+RL, we must resort to some Machine Learning model that will help us deciding
+the truth of our atomic propositions.
 
 Any Deep RL agent processes the input observation with a Neural Network. A
 reasonable choice would be to use a NN also as model for the features
@@ -572,7 +573,11 @@ for example, the noisy pixels of an image. The values of neighbouring pixels
 are clearly dependent, as they are related by the subject of the image, but we
 can't establish any useful conditional probability between the two.
 
-In every MRF, the joint probability of all the variables can be expressed as:
+In every MRF, the joint probability of all the variables can be expressed
+as\footnote{In this chapter, vectors are denoted with bold lower-case letters.
+So, the entries of a vector~$\x$ are~$x_i$. Similarly, matrices are indicated
+with bold upper-case letters. A matrix~$\bvec{A}$ has columns~$\bvec{a}_{:j}$
+and entries~$a_{ij}$.}:
 \begin{equation}
 	p(\x \given \params) \propto
 		\prod_{c \in \setSym{C}} \psi_c(\x_c; \params_c)
@@ -583,7 +588,7 @@ according to the parameters~$\params_c$. The joint probability is only
 proportional to that quantity, because one normalizer has been omitted. As an
 example, the joint probability for Figure~\ref{fig:mrf} can be written:
 \[
-	p(x_1, x_2, x_3, x_4 \given \params) \propto
+	p(\x \given \params) \propto
 	\psi_1(x_1, x_2, x_3; \params_1) \, \psi_2(x_2, x_4; \params_2)
 \]
 
@@ -602,7 +607,7 @@ configurations of variables and low for very probable configurations
 energy is sometimes a very useful indication of the final
 probability\footnote{Computing the exact probability $p(\x \given \params)$,
 as many other quantities, is intractable for generic UGMs, because often we
-won't be able to compute the normalizer}.  Usually, the energy function is of
+won't be able to compute the normalizer.}.  Usually, the energy function is of
 the simplest kind, a linear combination: $E(\x_c; \params_c) \coloneqq
 -\params_c^T \basisfun_c(\x_c)$, for some basis function~$\basisfun_c$. In the
 following, we'll assume this form.
@@ -717,16 +722,16 @@ observation of the other. For binary RBMs, this is:
 \begin{equation}
 	\begin{aligned}
 		p(\bv \given \bh, \params) &= \prod_{i=1}^V \Ber(v_i;
-		\sigm(\linparmat_{i,:}\, \bh + \bvec{b}_i)) \\
+		\sigm(\linpar_{i:}\, \bh + b_i)) \\
 		p(\bh \given \bv, \params) &= \prod_{j=1}^H \Ber(h_j;
-		\sigm(\bv^T\, \linparmat_{:,j} + \bvec{c}_j))
+		\sigm(\bv^T\, \linpar_{:j} + c_j))
 	\end{aligned}
 	\label{eq:rbm-conditionals}
 \end{equation}
 where $\sigm: \R \to (0, 1)$ is the sigmoid function, $\sigm(x) \coloneqq
-e^x/(e^x+1)$, and $\linparmat_{i,:}, \linparmat_{:,j}$ denote the $i$-th row
-and the $j$-th column of $\linparmat$, respectively. From the previous
-equations, it follows:
+e^x/(e^x+1)$, and $\linpar_{i:}, \linpar_{:j}$ denote the $i$-th row and the
+$j$-th column of $\linparmat$, respectively.  From the previous equations, it
+follows:
 \begin{equation}
 	\begin{aligned}
 		\E[\bv\given \bh,\params] &= \sigm(\linparmat\, \bh + \bvec{b}) \\
@@ -734,7 +739,6 @@ equations, it follows:
 	\end{aligned}
 	\label{eq:rbm-expectations}
 \end{equation}
-% TODO: elements are not bold
 
 To train a binary RBM, we apply equation~\eqref{eq:ugm-po-gradient} without
 modifications. To obtain the basis function $\basisfun(\x)$ we need, it's
@@ -800,7 +804,7 @@ variant of PCD, and we explicitly defined it in Algorithm~\ref{alg:pcd}.
 		\Require A training dataset $\dataset = \set{\bv\group{i}}$
 		\Ensure Trained model $\set{\linparmat, \bvec{b}, \bvec{c}}$
 		\State Initialize $\linparmat \in \R^{V \times H}$,
-			$\linparmat_{ij} \sim \gauss{0}{\sigma}$
+			$\linpari_{ij} \sim \gauss{0}{\sigma}$
 		\State Initialize $\bvec{b} \gets \zero, \bvec{c} \gets \zero$
 		\State Initialize vectors $\set{\bv_s\group{1}, \dots, \bv_s\group{B}}$
 		\Repeat
@@ -1086,7 +1090,7 @@ $M_i$. Once these monomials have been learnt, we can write $(A_1 \lor \dots
 \lor A_m)$ in place of the original symbol, in every place it appears. This
 shows how this procedure may be generalized. However, as we'll see in
 Section~\ref{sec:fluents-limitations} we should restrict to very simple
-concepts from the beginning.
+concepts in the first place.
 
 
 \subsection{Learning Boolean rules with genetic algorithms}
@@ -1101,26 +1105,25 @@ such that the trace of assignments produced from observations of any episode
 satisfies the temporal constraint~$\constraintS$. Each function~$f_\fluent$
 receives in input the encoding vector~$\bh \in \B^H$ computed from the region
 where $\fluent$ is defined. A solution for this problem is the entire set of
-functions, because consistency is a property of the group, not the single
-valuation function.
+functions, because consistency with $\constraintS$ is a property of the group,
+not the single valuation function.
 
 Clearly, we can't verify that the constraint is satisfied for any episode. For
 the moment, we assume to approximate this test by running a large number of
-episodes, instead. By checking that $\constraintS$ is satisfied for each of
+episodes, instead. By checking that $\constraintS$ is satisfied in each of
 these traces, we're able to assess whether some $f$ is a solution. However,
-this test doesn't give any indication about how to \emph{reach} such solution.
-Satisfaction is a binary test: it doesn't tell us how far we are.  On the
-other hand, for a large dimension $H$, exhaustive search may be unfeasible.
-These considerations lead us to prefer search methods based on sampling: the
-idea is to repeatedly sample a candidate from the space of monomials, then
-verify it against the constraint.
+satisfaction is a binary test: it doesn't give any indication about how to
+\emph{reach} such solution. On the other hand, an exhaustive search may be
+unfeasible, for a large~$H$.  These considerations lead us to prefer search
+methods based on sampling: the idea is to repeatedly sample a candidate set of
+functions from the space of monomials, then verify it against the constraint.
 
-Even stochastic algorithms struggle in high-dimensional spaces. So, we still
-need to guide the search of new candidates through some heuristic function
-$\heuristicfn: \mathcal{M} \to \R^+$, where $\mathcal{M}$ is the space of
-monomials to rank. This heuristic can be a \emph{very approximate} metric, as
-it just needs to slightly guide the sampling process. We'll define this
-function later.
+Even random sampling struggles in high-dimensional spaces. For this reason,
+stochastic search algorithms assume that some heuristic function is available
+${\heuristicfn: \mathcal{X} \to \R^+}$. The purpose of this heuristic is to
+provide a very approximate ranking over candidates, so that most samples are
+drawn from the most promising portions of the candidates space~$\mathcal{X}$.
+Let's leave aside our definition of $\heuristicfn$, for a moment.
 
 
 \subsubsection{Genetic Algorithms}
@@ -1131,23 +1134,24 @@ repeatedly samples batches of candidates that are modifications of the
 previous ones. The motivation for this choice is that, with respect to other
 local search algorithms, GAs allow to easily control both nondeterminism and
 parallelization, as we will see. The idea of applying GAs to learn
-propositional sentences has also been confirmed by previous works that applied
-them for Concept Learning~\cite{bib:ga-for-concepts}. This is, in fact, a
-concept learning scenario, in which the target concept is described through
-temporal constraints rather than positive examples.
+propositional sentences has also been confirmed by previous works, which
+applied them for Concept Learning~\cite{bib:ga-for-concepts}. This is, in
+fact, a concept learning scenario, in which the target concept is described
+through temporal constraints rather than positive examples.
 
-In GAs, the batch of candidates is called a \emph{population} of individuals,
-and the heuristic function is called the \emph{fitness function}. We'll denote
-the population with $\mathcal{P} \coloneqq \set{(\x\group{i})_{i=1}^N}$ for an
-even size~$N$. Each individual is represented with a sequence of fixed length,
-$\x\group{i} = \langle x_1\group{i}, \dots, x_L\group{i} \rangle$, composed of
-symbols $x_j$ called chromosomes. A GA initially samples an initial population
+In the context of GAs, the batch of candidates is called a \emph{population}
+of individuals, and the heuristic function is called the \emph{fitness
+function}. We'll denote the population with $\mathcal{P} \coloneqq
+\set{(\x\group{i})_{i=1}^N}$, for an even size~$N$. Each individual is
+represented with a sequence of fixed length, $\x\group{i} = \langle
+x_1\group{i}, \dots, x_L\group{i} \rangle$, composed of symbols $x_j$ called
+\emph{chromosomes}. A GA starts by sampling an initial population
 $\mathcal{P}$ of size~$N$. Then, it repeatedly follows these steps:
 \begin{description}
 	\item [Fitness] Compute the fitness value for each individual: $v_i \gets
 		\heuristicfn(\x\group{i}), \, \forall\, \x\group{i} \in \mathcal{P}$.
-		The probability of reproduction for individual~$i$ is $r_i \gets v_i /
-		\sum_j v_j$.
+		The probability of reproduction for individual~$i$ is defined as $r_i
+		\gets v_i / \sum_j v_j$.
 	\item [Reproduction] Sample a new generation, $\mathcal{P} \gets
 		\set{({\x'}\group{i})_{i=1}^N}$, where each individual is assigned as:
 		${\x'}\group{i} \gets \x\group{k}$ for $k \sim \Cat(\bvec{r})$. The
@@ -1166,74 +1170,237 @@ $\mathcal{P}$ of size~$N$. Then, it repeatedly follows these steps:
 \end{description}
 
 We've said that GAs allow to regulate the desired amount of nondeterminism and
-parallelization. For the latter, we can increase the population size~$N$.
-The additional step time required by the larger number of individuals, may be
-strongly compensated by the minor number of steps required for convergence.
-Furthermore, modern parallel computing libraries will show a very little
-overhead each additional individual.
+parallelization. For the latter, we can increase the population size~$N$.  The
+additional time required by each cycle, may be strongly compensated by the
+minor number of cycles required for convergence.  Furthermore, modern parallel
+computing libraries will show a very little overhead each additional
+individual.
 
 The randomness of the search can be tuned by selecting the parameters $p_c$
 and $p_m$, which are the crossover and mutation probabilities. High values
 correspond to a mostly random search, while low values correspond to steady
-increases toward promising candidates. Some nondeterminism is clearly
-desirable in presence of very approximated heuristics as those that we have to
+convergences toward the fittest candidates. Some nondeterminism is clearly
+desirable in presence of very approximated heuristics as those that we'll
 define.
 
-During initialization we've asked to randomly sample a population. Since the
+During initialization, we've asked to randomly sample a population. Since the
 individuals are composed of chromosomes, it all comes to being able to sample
 chromosomes, just like during the Mutation phase. We assume samples can be
-easily sampled with an uniform distribution. Usually, this is indeed easy
-because the unknowns of many problems can be formulated as sequences of number
-from small domains. Also, we can note that individuals do not need to be
-defined with a homogeneous sequence, every chromosome position might use a
-different domain.
+easily sampled with an uniform distribution. Usually, this is indeed easy,
+because, in many problems, the elements of the search space can be formulated
+as sequences of numbers from small domains. Also, we can note that individuals
+do not need to be defined with a homogeneous sequence, every chromosome
+position might span a different domain.
 
 
 \subsubsection{Boolean rules}
 
-The learning algorithm is ready. We just need to formulate our search space as
-in terms of fixed-length sequences of symbols. Our candidates are propositions
-over the $H$ Boolean features in the encoding vector. Since we assumed that
-the target concept is representable with a monomial, this representation is
-easy to define. Given a monomial $M$ whose atoms are the entries of a vector
-$\bh \in \B^H$, we define the associated individual as the sequence $\x
-\coloneqq \set{-1, 0, 1}^H$, where each chromosome $x_i$ is 1 if the atom
-$h_i$ appears positive in $M$, 0 if $h_i$ is negative, and $-1$ if is absent.
-For example, the sequence $\langle 1, -1, 0 \rangle$ represents $h_1 \land
-\lnot h_3$.
+The learning algorithm is ready. We just need to formulate elements of our
+search space in terms of fixed-length sequences of symbols. Since our goal is
+to find a set of functions $f = \set{f_\fluent \given \fluent \in \fluents}$,
+we need to express $f$ with chromosomes. For the moment, let's focus on
+each~$f_\fluent$.
+
+We represent each function with a propositional sentence over the $H$ Boolean
+features in the encoding vector. Since we assumed that each target concept is
+expressible with a monomial, a fixed-length representation is easy to define.
+Given a monomial $M$, whose atoms are the entries of a vector $\bh \in \B^H$,
+we define the associated individual as the sequence $\x \in \set{-1, 0, 1}^H$,
+where each chromosome $x_i$ is 1 if the atom $h_i$ appears positive in $M$, 0
+if $h_i$ is negative, and $-1$ if it's absent. For example, the sequence
+$\langle 1, -1, 0, 1 \rangle$ represents $h_1 \land \lnot h_3 \land h_4$.
 
 The assumption of monomials was introduced both to reduce the search space and
 to allow this encoding of fixed length. At a negligible cost, that is by
 introducing an additional chromosome, we can extend this representation to
 include both monomials and negations of monomials. We call these new functions
-\emph{Boolean rules}. They are explained in Figure~\ref{fig:boolean-rules}.
+\emph{Boolean rules}. We explain them through the examples of
+Figure~\ref{fig:boolean-rules}.
 \begin{figure}
 	\centering
-	\begin{tikzpicture}
+	\begin{tikzpicture}[
+			node distance=1cm,
+			proposition/.style={outer sep=3pt},
+			arrow node/.style={
+				isosceles triangle, fill=lightgray, draw=gray,
+				inner sep=0pt, minimum size=4pt,
+			},
+		]
+		\node (1 rule) {1-rule};
+		\matrix [encoding vector, right=of 1 rule] (1 vector) {
+			|[rule box]| 1\& 1\& 0\& -1\\
+		};
+		\node (1 prop) [proposition, right=of 1 vector] {$(h_1 \land \neg h_2)$};
+		\node [below=0.8cm of 1 rule] (0 rule) {0-rule};
+		\matrix [encoding vector, right=of 0 rule] (0 vector) {
+			|[rule box]| 0\& -1\& 1\& 0\\
+		};
+		\node (0 prop) [proposition, right=of 0 vector]
+			{$\neg(h_2 \land \neg h_3)$};
+		%
+		\node [arrow node, right=0.5cm of 1 vector] {};
+		\node [arrow node, right=0.5cm of 0 vector] {};
+		%
+		\begin{pgfonlayer}{below}
+			\draw [decoration=brace, decorate, draw, pin line]
+				([yshift=-3pt]0 vector-1-4.south east) --
+					node (body label link) [midway] {}
+				([yshift=-3pt]0 vector-1-2.south west);
+			\node [below=0.25cm of body label link] (body label) {body};
+			\node [base left=4pt of body label] (header label) {header};
+			\draw [pin line] (0 vector-1-1.south) --
+				(0 vector-1-1.south |- header label.north);
+		\end{pgfonlayer}
 	\end{tikzpicture}
-	\caption{} % TODO
+	\caption{A 0-rule negates the output of the conjunction.}
 	\label{fig:boolean-rules}
 \end{figure}
-% TODO
-A 1-rule simply stands for a monomial, as before. A 0-rule instead produces
-the opposite output; it is true, if the constraint on $\bh$ is \emph{not}
-satisfied.
+A 1-rule simply stands for a monomial, as before. Instead, a 0-rule produces
+the opposite output: it is true, if the constraint on the input $\bh$ is
+\emph{not} satisfied. The negation of a monomial is a clause (a disjunction of
+literals). So, this extension can be considered a very restricted form
+of disjunction.
 
-Any concept, either positive or negative, that can be expressed with a
-monomial is representable with a Boolean rule. This extension can be
-considered a very restricted form of disjunction. Boolean rules should be very
-useful because the encoding vector is generated by the encoder. We've said
-that an entry is 1 if the pattern associated to that entry has been detected
-on the input. However, we can't anticipate what this means. A pattern might be
-the presence of an object, as well as it's absence.
+We're now ready to define a fixed-length encoding for the whole set of
+functions. Assign any order to the fluents in~$\fluents$, so to indicate with
+$f_i$ the valuation function for a symbol $\fluent_i \in \fluents$. Given a
+set $f \coloneqq \set{f_i \given i=1, \dots, \abs{\fluents}}$ with $f_i: \B^H
+\to \B$, we define the individual associated to $f$ as the sequence $\x
+\coloneqq \x_1 \x_2 \dots \x_{\abs{\fluents}}$ obtained by concatenation of
+the Boolean rules~$\x_i$ representing each function~$f_i$. This arrangement is
+shown in Figure~\ref{fig:ga-encoding}.
+\begin{figure}
+	\centering
+	\begin{tikzpicture}[
+			every node/.style={font=\scriptsize},
+			crossover point/.style={draw=brown, thick},
+		]
+		\matrix (array) [encoding vector] {
+			|[rule box]|1\& 1\& 0\& -1\&
+			|[rule box]|0\& 1\& -1\& 0\&
+			|[rule box]|1\& 0\& 0\& -1\\
+		};
+		\begin{scope}[decoration=brace]
+			\draw [decorate] ([yshift=-3pt]array-1-4.south east) --
+				coordinate (brace1) ([yshift=-3pt]array-1-1.south west);
+			\draw [decorate] ([yshift=-3pt]array-1-8.south east) --
+				coordinate (brace2) ([yshift=-3pt]array-1-5.south west);
+			\draw [decorate] ([yshift=-3pt]array-1-12.south east) --
+				coordinate (brace3) ([yshift=-3pt]array-1-9.south west);
+		\end{scope}
+		\node [yshift=-2ex] at (brace1) {Fluent 1};
+		\node [yshift=-2ex] at (brace2) {Fluent 2};
+		\node [yshift=-2ex] at (brace3) {Fluent 3};
+		%
+		\path [crossover point] (array-1-1.south west) -- +(0, 4ex);
+		\path [crossover point] (array-1-5.south west) -- +(0, 4ex);
+		\path [crossover point] (array-1-9.south west) -- +(0, 4ex);
+	\end{tikzpicture}
+	\caption{The example of an individual for a problem with three fluents and
+	an encoding size of 3.}
+	\label{fig:ga-encoding}
+\end{figure}
+Each entry in the vector $\x$ is a chromosome. As such, mutations can happen
+at the level of single digits of the sequence. The head of any rule (gray
+block) is sampled from $\set{0, 1}$, while positions in the body are sampled
+from $\set{-1, 0, 1}$.
 
-% TODO: array of boolean functions
-% TODO: all with H entries?
+Genetic algorithms are a type of local search because they modify single
+chromosomes. This means that how individuals are represented is important
+because it influences the search. In our case, preliminary experiments have
+shown that the crossover operation was detrimental to convergence, rather than
+helpful. This is probably due to Boolean rules: the body of a 1-rule may be
+completely wrong if joined with the header 0, and vice versa. So, we slightly
+modify the GA algorithm to restrict the sampling of crossover points to
+indices that leave rules intact (the brown bars of
+Figure~\ref{fig:ga-encoding}). Now, crossovers can only modify candidate
+sets~$f$ by exchanging entire functions~$f_i$ between them.
+
+In this discussion, every function $f_i$ assumes a domain with the same number
+of dimensions~$H$. This means that all regions are encoded to binary vectors
+with $H$ entries. This restriction is not needed by any part of the algorithm,
+and it may be convenient to use the appropriate encoding size, based on the
+complexity of each region. However, the implementation provided assumes a
+common size~$H$, for simplicity.
+
 
 \subsubsection{Heuristic function and nondeterminism}
 
+We conclude this presentation of the learning algorithm by defining the
+heuristic function $\heuristicfn: \mathcal{X} \to \R^+$. This is used by the
+GA to compute the fitness value that determines the probability of survival
+for each candidate, $f \in \mathcal{X}$. The heuristic function should have a
+global maximum in correspondence of a solution of the problem, so to
+converge to the desired target. So, in our problem, the maximum value must be
+returned for a candidate set~$f$ whose output always satisfies the temporal
+constraint~$\constraintS$. We can't verify ``always'', but we can test that
+the trace produced from $f$ satisfies $\constraintS$ in a large number of
+episodes~$E$.
 
-% TODO: where crossovers make sense
+A first possibility would be to define the heuristic in the following way:
+over $E$ episodes, the value of $\heuristicfn(f)$ is the fraction of episodes
+in which $\trace\group{i} \models \constraintS$, where $\trace\group{i}$ is
+the trace produced by $f$ from the sequence encoded observations of
+episode~$i$. For a very large $E$, the maximum value is 1 and it's assigned to
+a solution\footnote{A solution is one that respects the temporal constraint.
+This do not necessarily mean that the valuations represent the desired
+concepts.}.
+
+The heuristics need to be computed at every cycle of the Genetic Algorithm.
+Clearly, running a large number of episodes each time is unfeasible. So, we'll
+only test on a much smaller number of episodes. As a consequence of the
+small~$E$, the fraction of tests passed becomes only an approximation to the
+true heuristic.  What is important, however, is that \emph{on average} these
+values will be correct. Since the reproduction step is a stochastic update of
+the model, to guarantee the convergence of the algorithm, it is sufficient
+that $\E[\heuristicfn(f)] = 1$ if~$f$, is a solution. This is a similar
+concept to Stochastic Gradient Descent, where each update is performed on an
+approximate gradient computed from a small batch. The expected value of these
+corrections still point toward the correct direction.
+
+Since each result of the heuristic function is less accurate, we should prefer
+a soft update of the model. In a GA, we can do this by producing fitness
+values that are never null. For example, we might define $\heuristicfn: f
+\mapsto [0.3, 1]$ by linearly mapping the output to the appropriate
+range\footnote{The global scale factor is irrelevant; only the proportion
+between the outputs contributes to probabilities.}. By slightly uniforming the
+reproduction probabilities, convergence becomes slower but the ``averaging''
+effect of different cycles is stronger. This leads to better outcomes. This is
+the same effect as those obtained with a low learning rate in supervised
+learning.
+
+There are still two problems to address with the definition of $\heuristicfn$
+above: discretization and degenerate solutions. Let's discuss discretization
+first.
+
+An heuristic function define a partial ordering over candidates. Higher values
+are associated to better individuals.  When this function assumes few discrete
+values, the ordering becomes very weak and it may not be sufficient to
+guarantee convergence. This is indeed the case with the definition above, in
+the case of few episodes~$E$ (for one episode, it just returns 0 or 1). It's
+always better to prefer continuous values, instead. For this purpose we
+define a metric $m_c$ that we call ``consistency''. For a candidate $f$ and an
+episode, $m_c$ is defined as the fraction of time instants in which the
+automaton $\automa_\constraintS$ associated to $\constraintS$ was on a final
+state. This creates a rather arbitrary ordering among functions. What is
+really important is that the maximum of this function is the same. For generic
+constraints, the answer is no. However, if we restrict to \emph{safety}
+properties, this is the case. A safety constraint is any formula that
+expresses that ``something bad never happens'': $\constraintS =
+\lbox{\true^*}\lnot\constraintS'$. If the temporal constraint is a safety
+property, and the trace of valuations satisfies $\constraintS$, the automaton
+$\automa_\constraintS$ never reaches a non-final state, and $m_c =
+1$\footnote{Actually, we can write any prefix-closed property. This is a
+slightly larger class than safety properties. Initial conditions are allowed,
+for example.}.
+
+The second issue to tackle are degenerate solutions. Even without the
+restriction above, safety properties are very common properties. They say what
+should not happen but not what should happen.
+% TODO: nothing is fine -> sensitivity
+
+% TODO: example
+
 % TODO: how to vary nondeterminism
 Genetic Algorithms review\cite{bib:ga-mutations-review}.
 
@@ -1242,6 +1409,7 @@ Genetic Algorithms review\cite{bib:ga-mutations-review}.
 Every trace, but which trace? Observation traces are generated by our actions.
 
 % TODO: learning scheme, exploration policies, incremental
+
 
 \section{Limitations and improvements}
 
@@ -1252,3 +1420,4 @@ Every trace, but which trace? Observation traces are generated by our actions.
 % TODO: unsure about representable with conjunction, because DBN is
 %		unsupervised
 % TODO: no guarantees but easy to check
+% TODO: consistency
