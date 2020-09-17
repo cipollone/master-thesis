@@ -1326,87 +1326,203 @@ common size~$H$, for simplicity.
 
 \subsubsection{Heuristic function and nondeterminism}
 
-We conclude this presentation of the learning algorithm by defining the
-heuristic function $\heuristicfn: \mathcal{X} \to \R^+$. This is used by the
-GA to compute the fitness value that determines the probability of survival
-for each candidate, $f \in \mathcal{X}$. The heuristic function should have a
-global maximum in correspondence of a solution of the problem, so to
-converge to the desired target. So, in our problem, the maximum value must be
-returned for a candidate set~$f$ whose output always satisfies the temporal
-constraint~$\constraintS$. We can't verify ``always'', but we can test that
-the trace produced from $f$ satisfies $\constraintS$ in a large number of
-episodes~$E$.
+We conclude this presentation of the learning algorithm by discussing the
+heuristic function and few other details. The heuristic function
+$\heuristicfn: \mathcal{X} \to \R^+$ is used by the GA to compute the fitness
+values that determine the probability of survival for each candidate, $f \in
+\mathcal{X}$. The heuristic should have a global maximum in correspondence of
+a solution of the problem, so to converge to the desired target. So, in our
+problem, the maximum value must be returned for a candidate set~$f$ whose
+output always satisfies the temporal constraint~$\constraintS$.  We can't
+verify ``always'', but we can test that the trace produced from $f$ satisfies
+$\constraintS$ in a large number of episodes.
 
 A first possibility would be to define the heuristic in the following way:
 over $E$ episodes, the value of $\heuristicfn(f)$ is the fraction of episodes
 in which $\trace\group{i} \models \constraintS$, where $\trace\group{i}$ is
-the trace produced by $f$ from the sequence encoded observations of
-episode~$i$. For a very large $E$, the maximum value is 1 and it's assigned to
-a solution\footnote{A solution is one that respects the temporal constraint.
-This do not necessarily mean that the valuations represent the desired
-concepts.}.
+the trace produced by $f$ from the sequence of encoded observations of
+episode~$i$. The maximum value is 1 and, for a very large $E$, it is assigned
+to a solution\footnote{A solution is one that respects the temporal
+constraint.  This do not necessarily mean that the valuations represent the
+desired concepts.}.
 
 The heuristics need to be computed at every cycle of the Genetic Algorithm.
-Clearly, running a large number of episodes each time is unfeasible. So, we'll
-only test on a much smaller number of episodes. As a consequence of the
-small~$E$, the fraction of tests passed becomes only an approximation to the
-true heuristic.  What is important, however, is that \emph{on average} these
-values will be correct. Since the reproduction step is a stochastic update of
-the model, to guarantee the convergence of the algorithm, it is sufficient
-that $\E[\heuristicfn(f)] = 1$ if~$f$, is a solution. This is a similar
-concept to Stochastic Gradient Descent, where each update is performed on an
-approximate gradient computed from a small batch. The expected value of these
-corrections still point toward the correct direction.
+Clearly, running many episodes each time is unfeasible. So, we'll only test on
+an much smaller number of episodes.  As a consequence of the small~$E$, the
+fraction of tests passed becomes only an approximation to the true heuristic.
+What is really important, however, is that \emph{on average} these values will
+be correct. Since the reproduction step is a stochastic update of the model,
+to guarantee the convergence of the algorithm, it is sufficient that
+$\E[\heuristicfn(f)] = 1$, if~$f$ is a solution. This is a similar concept to
+Stochastic Gradient Descent, where each update is performed on an approximate
+gradient computed from a small batch. The expected value of these corrections
+still point toward the correct direction.
 
 Since each result of the heuristic function is less accurate, we should prefer
-a soft update of the model. In a GA, we can do this by producing fitness
-values that are never null. For example, we might define $\heuristicfn: f
-\mapsto [0.3, 1]$ by linearly mapping the output to the appropriate
-range\footnote{The global scale factor is irrelevant; only the proportion
-between the outputs contributes to probabilities.}. By slightly uniforming the
-reproduction probabilities, convergence becomes slower but the ``averaging''
-effect of different cycles is stronger. This leads to better outcomes. This is
-the same effect as those obtained with a low learning rate in supervised
-learning.
+soft updates of the model. In a GA, we can do this by producing fitness values
+that are never null. For example, we might define $\heuristicfn: f \mapsto
+[0.3, 1]$ by linearly mapping the output to the appropriate range\footnote{The
+global scale factor is irrelevant; only the proportion between the outputs
+contributes to probabilities.}. This slightly uniforms the reproduction
+probabilities. As a consequence, convergence becomes slower but the
+``averaging'' effect of different cycles is stronger, which allow to reach
+better solutions. This is the same effect as that obtained with a low
+learning rate in supervised learning.
 
 There are still two problems to address with the definition of $\heuristicfn$
 above: discretization and degenerate solutions. Let's discuss discretization
 first.
 
-An heuristic function define a partial ordering over candidates. Higher values
-are associated to better individuals.  When this function assumes few discrete
-values, the ordering becomes very weak and it may not be sufficient to
-guarantee convergence. This is indeed the case with the definition above, in
-the case of few episodes~$E$ (for one episode, it just returns 0 or 1). It's
-always better to prefer continuous values, instead. For this purpose we
+An heuristic function defines a partial ordering over candidates. Higher
+values are associated to better individuals.  When this function assumes few
+discrete values, the ordering becomes very weak and it may not be sufficient
+to guarantee convergence. This is indeed the case with the definition above,
+in the case of few episodes~$E$ (for one episode, it just returns 0 or 1).
+It's always better to prefer continuous values, instead. For this purpose we
 define a metric $m_c$ that we call ``consistency''. For a candidate $f$ and an
-episode, $m_c$ is defined as the fraction of time instants in which the
-automaton $\automa_\constraintS$ associated to $\constraintS$ was on a final
-state. This creates a rather arbitrary ordering among functions. What is
-really important is that the maximum of this function is the same. For generic
-constraints, the answer is no. However, if we restrict to \emph{safety}
-properties, this is the case. A safety constraint is any formula that
-expresses that ``something bad never happens'': $\constraintS =
-\lbox{\true^*}\lnot\constraintS'$. If the temporal constraint is a safety
-property, and the trace of valuations satisfies $\constraintS$, the automaton
-$\automa_\constraintS$ never reaches a non-final state, and $m_c =
-1$\footnote{Actually, we can write any prefix-closed property. This is a
-slightly larger class than safety properties. Initial conditions are allowed,
-for example.}.
+episode~$i$, $m_c\group{i}$ is defined as the fraction of time instants in
+which the automaton $\automa_\constraintS$ associated to $\constraintS$ is on
+a final state. We may now define the heuristic as:
+\begin{equation}
+	\heuristicfn(f) \coloneqq \frac{1}{E}\,\sum_{i=1}^E m_c\group{i}
+\end{equation}
+This creates a really dense, even though rather arbitrary, ordering among
+functions. What is important, however, is that the maximum of this function is
+still associated to a solution. For generic constraints, the answer is no.
+However, this is the case if we restrict to \emph{safety} properties. A safety
+constraint is any formula that expresses that ``something bad never happens'':
+$\constraintS = \lbox{\true^*}\lnot\constraintS'$. If the temporal constraint
+is a safety property, and the trace of valuations satisfies $\constraintS$,
+then the automaton $\automa_\constraintS$ never reaches a non-final state, and
+$m_c = 1$. Actually, we can write any prefix-closed property, which is
+a slightly larger class of properties than safety. Initial conditions are
+allowed, for example. A formula~$\constraintS$ is prefix-closed if the
+corresponding minimal automaton~$\automa_\constraintS$ has a single non-final
+state which is a sink.
 
 The second issue to tackle are degenerate solutions. Even without the
-restriction above, safety properties are very common properties. They say what
-should not happen but not what should happen.
-% TODO: nothing is fine -> sensitivity
+restriction above, safety properties often arise when talking about
+constraints and illegal trajectories. Since these are prefix-closed
+properties, valuation functions that don't predict any change of the fluent at
+all always respect the constraint. We'll illustrate this with an example.
+\begin{example}
+	Let's consider Example~\vref{ex:door}. The associated automaton is shown in
+	Figure~\ref{fig:door-automa}. Since the only rejecting state is a sink, the
+	temporal constraint~$\constraintS$ is a prefix-closed property. As we've
+	already pointed out, a set of valuation functions $f(\bh) \coloneqq \set{}$,
+	which predicts that both fluents are always false, satisfies~$\constraintS$.
+	The constraint excludes illegal trajectories but doesn't say that something
+	should eventually happen (the agent might think that the door is always
+	closed, so to avoid mistakes).
+\end{example}
+Constraints intentionally do not force specific trajectories, in fact.
+Because the agent might not be able to achieve the task yet. So, to address
+this issue, we define a second metric, the ``sensitivity''~$m_s$. We define
+$m_s\group{i}$ as the fraction of visited final states of the minimal
+automaton~$\automa_\constraintS$ during episode~$i$. As the name suggests,
+this metric is an incentive to be sensitive to input changes, and reflect
+those variations to the output. Clearly, we're not guaranteed that the
+transitions of $\automa_\constraintS$ will be traversed in response to
+meaningful changes of the input, but we argue that from a restricted input
+space and the appropriate constraint, suboptimal valuations functions may not
+be able to explore the whole graph without never reaching a rejecting state.
+Consistency and sensitivity work in opposition: the latter is an incentive for
+exploration, while the former is a restriction. The only restriction due to
+the sensitivity metric is that we shouldn't try to learn fluents which remain
+constant, for example because it cannot influence them, even by change.
+Because the valuation functions have incentives to induce a change in all of
+them.
 
-% TODO: example
+The final definition of the heuristic function is:
+\begin{equation}
+	\heuristicfn(f) \coloneqq \frac{1}{E}\,\sum_{i=1}^E m_c\group{i}
+	\, \cdot \, \max_{i=1,\dots,E} m_s\group{i} \, + \text{const}
+\end{equation}
+where $\text{const}$ is a minimum constant value that allows a minimum
+probability of reproduction. Consistency is not averaged but maximized,
+because its purpose is just to exclude degenerate solutions: we only want to
+observe a change in at least one of the $E$ episode. This is not the true goal
+to achieve, which is indicated by consistency.
 
-% TODO: how to vary nondeterminism
-Genetic Algorithms review\cite{bib:ga-mutations-review}.
+So, the algorithm proceeds as follows. Initially, $E$ is set to a low number,
+as required by the speed of the machine. We'll start to observe that the
+distribution of heuristic values for each individual slowly drift toward the
+maximum. At the latest stages of the algorithm, we increase the number $E$ of
+episodes, so that tiny corrections can be applied to refine the solution.
+At convergence, we select as best individual the set of functions that achieve
+$100\%$ of consistency with the highest sensitivity. This is taken as final
+solution~$\optimal{f}$.
+
+In order to validate the solution extracted, we analyze whether each function
+$f_\fluent \in \optimal{f}$ represents the desired concept for $\fluent \in
+\fluents$. To do so, we define the set of encoding vectors in which the fluent
+is true: $\setSym{H} \coloneqq \set{ \bh \given \bh \models f_\fluent
+}$\footnote{We're using the notation with some flexibility here. By ignoring
+the specific representations, we can consider $\bh$ as an interpretation for
+the propositional symbols $h_i$ that appear in $f_\fluent$.}.  Then, we
+reconstruct the input images by computing their approximate expectation with
+$n$ samples:
+\begin{equation}
+	\E[\bv \given \bh \models f_\fluent] \simeq 
+		\frac{1}{n} \sum_{i=1}^n \bv\group{i} \quad
+		\begin{array}{rl}
+			\text{with} & 
+			\bv\group{i} \sim p(\bv \given \bh\group{i}) \\
+			\text{and} & 
+			\bh\group{i} \sim U(\setSym{H}) \\
+		\end{array}
+\end{equation}
+$U(\setSym{H})$ represent the uniform distribution over the elements
+of~$\setSym{H}$.
+
+We won't discuss the remaining parameters of the algorithm: the mutation
+probability $p_m$, the crossover probability $p_c$, and the population size.
+The requirements on these are not really strict, and we can consider them as
+hyper-parameters simple to tune. For a detailed discussion about their effect
+in GAs, the reader should refer to~\cite{bib:ga-mutations-review}.
+
 
 \section{Training and incremental learning}
 
-Every trace, but which trace? Observation traces are generated by our actions.
+The model has been described completely already. We can now take a broader
+view on the various steps of learning, from an inexpert agent to a complete
+restrained Deep RL agent with learnt features. Thus, combining every technique
+we've discussed until now. In the following, ``agent'' refers to the Deep
+Reinforcement Learning agent defined in Section~\ref{sec:model-atari}, while a
+``restrained agent'' is the variant of Section~\ref{sec:model-atari-rb} that
+is combined to a Restraining Bolt.
+
+Figure~\ref{fig:training-steps} shows the steps in general terms.
+\begin{figure}
+	\centering
+	\begin{tikzpicture}[
+			step node/.style={circle, draw, inner sep=0pt, minimum size=0.7cm, thick},
+			node distance=0.7cm,
+		]
+		\matrix (steps) [matrix of nodes, nodes=step node, column sep=1.7cm] {
+			1\& 2\& 3\& 4\\
+		};
+		%
+		\node (label 1) [below=of steps-1-1] {train\\the agent};
+		\node (label 2) [above=of steps-1-2] {train the\\ RB features extractor};
+		\node (label 3) [below=of steps-1-3] {train the\\ restrained agent};
+		\node (label 4) [above=of steps-1-4] {expert play};
+		%
+		\draw [pin line] (label 1) edge (steps-1-1)
+		                 (label 2) edge (steps-1-2)
+		                 (label 3) edge (steps-1-3)
+		                 (label 4) edge (steps-1-4);
+		\draw [flow] (steps-1-1) -- (steps-1-2);
+		\draw [flow] (steps-1-2) -- (steps-1-3);
+		\draw [flow] (steps-1-3) -- (steps-1-4);
+		\draw [flow] (steps-1-4.east) -- +(0.5,0);
+		\draw [flow, dashed, gray] (steps-1-4) -- ++(0,-2.3) -| (steps-1-2);
+	\end{tikzpicture}
+	\caption{The general steps of the training procedure.}
+	\label{fig:training-steps}.
+\end{figure}
+
+% TODO: Every trace, but which trace? Observation traces are generated by our actions.
 
 % TODO: learning scheme, exploration policies, incremental
 
