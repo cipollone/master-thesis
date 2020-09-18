@@ -220,6 +220,8 @@ latter.
 
 \subsection{Exploration policies}
 
+\label{sec:exploration-policies}
+
 If $\optimal{q}$ were know, equation~\eqref{eq:opt-policy-q} would be enough
 to always select the optimal action. Generalizing for any $q$, we call that
 the \emph{greedy policy}, because it always selects the best action according
@@ -230,7 +232,7 @@ to $q$:
 \end{equation}
 Unfortunately, while learning, we only have a rough estimate of the optimal
 function, ${\est{q} \approx \optimal{q}}$. Being greedy with respect to
-sub-optimal values is dangerous, because the agent may deterministically
+sub-optimal policies is dangerous, because the agent may deterministically
 select actions that repeatedly lead to dead-ends.  To mitigate this issue, we
 can choose some actions at random. The \emph{\eps-greedy policy} is defined
 as:
@@ -303,12 +305,50 @@ both cases \eps{} never becomes zero, because that would effectively terminate
 the learning process. The rate of this decrease is a hyperparameter that
 can be tuned.
 
-The most important policies are those just described. They can be directly
-used in a RL algorithm or combined to create more complex policies.  The
-variants designed in this thesis will be presented in the next chapters.  With
+The most common policies are those just described. They can be directly
+used in a RL algorithm or combined to create more complex policies. With
 ``exploration policy'' we refer to any policy that has a strong component of
 nondeterminism and it's suitable to drive the agent's behaviour during
 training.
+
+
+\subsubsection*{Custom exploration policies}
+
+% TODO: read again
+
+We'll now define few other policies which are proposed and used in this
+thesis.  Of course, there is no better policy in general. The policies defined
+here might be suitable for the environments we face, but will be inappropriate
+in many others.
+
+The first one is an $\epsilon$-greedy policy with action repetition. It
+chooses between random and deterministic actions just like the
+$\epsilon$-greedy. However, consecutive random moves always execute the same
+action. The sequence of repetitions can be interrupted by a deterministic
+mode or by the threshold of maximum repetitions. This policy may be useful in
+environments where the effect of a single action is minimal. This is the case,
+for example, for the exploration of mazes and corridors. The random policy
+don't allow the player to cover large distances, because of the uniform
+sampling between left and right.
+
+The second policy is an $\epsilon$-greedy with random~$\epsilon$. As we will
+see in Section~\ref{sec:training-incremental}, when we need to observe the
+environment dynamics, instead of training the agent behaviour, we need to see
+how observations respond to many different stimuli. However, when we apply
+$\epsilon$-greedy to a capable agent we see the following pattern: $\epsilon$
+determines the skills of the agent. The cumulative rewards achieved tends to
+be very similar. Following this intuition, we define a policy that samples a
+random $\epsilon$ for each episode.
+
+The last policy we define addresses the same problem as the previous,
+producing very diverse trajectories, but in environments with sparse rewards.
+When the reward is sparse, we can read it as successful completion of some
+sub-task. In this policy, for each episode, we sample a random natural number,
+that we call ``checkpoint''. When the number of rewards collected is lower
+than the checkpoint, the agent behaves mostly in a deterministic way, because
+the purpose is just to go proceed. When the number of rewards reaches the
+checkpoint number, we act according to a random policy. The idea is to explore
+at different depths of the environment state space.
 
 
 \section{Deep Reinforcement Learning}
@@ -1058,8 +1098,6 @@ and $l \in \highlevelS$. See Figure~\ref{fig:representations}.
 	\centering
 	\begin{tikzpicture}[
 			every node/.append style={font=\small},
-			box/.style={rounded corners=5pt, inner sep=1.8ex, draw=#1!50,
-				fill=#1!20},
 		]
 		\matrix [
 			column sep={2cm,between origins}, row sep={1.2cm,between origins},
