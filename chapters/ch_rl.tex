@@ -314,41 +314,41 @@ training.
 
 \subsubsection*{Custom exploration policies}
 
-% TODO: read again
-
-We'll now define few other policies which are proposed and used in this
-thesis.  Of course, there is no better policy in general. The policies defined
-here might be suitable for the environments we face, but will be inappropriate
-in many others.
+We'll now define few other policies which we proposed and used in this
+thesis. Of course, there is no better policy in general. The policies defined
+here might be suitable for the environments we face, but may be inappropriate
+in many others. They just happen to be useful for one class of environments.
 
 The first one is an $\epsilon$-greedy policy with action repetition. It
 chooses between random and deterministic actions just like the
 $\epsilon$-greedy. However, consecutive random moves always execute the same
-action. The sequence of repetitions can be interrupted by a deterministic
-mode or by the threshold of maximum repetitions. This policy may be useful in
-environments where the effect of a single action is minimal. This is the case,
-for example, for the exploration of mazes and corridors. The random policy
-don't allow the player to cover large distances, because of the uniform
-sampling between left and right.
+action. This sequence of repetitions can be interrupted by a deterministic
+move or by the threshold of maximum repetitions. This policy may be useful in
+environments where the effect of a single action is very small. This is the
+case, for example, for the exploration of mazes and corridors. The random
+policy wouldn't allow the player to cover large distances, because of the
+uniform sampling between left and right.
 
 The second policy is an $\epsilon$-greedy with random~$\epsilon$. As we will
 see in Section~\ref{sec:training-incremental}, when we need to observe the
-environment dynamics, instead of training the agent behaviour, we need to see
-how observations respond to many different stimuli. However, when we apply
-$\epsilon$-greedy to a capable agent we see the following pattern: $\epsilon$
-determines the skills of the agent. The cumulative rewards achieved tends to
-be very similar. Following this intuition, we define a policy that samples a
-random $\epsilon$ for each episode.
+environment dynamics, we need to see the observations received in response to
+many different stimuli. However, when we apply $\epsilon$-greedy to a capable
+agent, we see the following pattern: $\epsilon$ determines the agent's
+ability. To a fixed $\epsilon$ corresponds some average ability, and the
+cumulative rewards achieved tend to be very similar. Following this intuition,
+we define a policy that samples a random $\epsilon$ for each episode.
+So, at different episodes, the agent can explore both the early stages and
+more distant environment states.
 
-The last policy we define addresses the same problem as the previous,
+The last policy we define addresses the same problem as the previous one,
 producing very diverse trajectories, but in environments with sparse rewards.
 When the reward is sparse, we can read it as successful completion of some
 sub-task. In this policy, for each episode, we sample a random natural number,
 that we call ``checkpoint''. When the number of rewards collected is lower
 than the checkpoint, the agent behaves mostly in a deterministic way, because
-the purpose is just to go proceed. When the number of rewards reaches the
+the purpose is just to proceed. When the number of rewards reaches the
 checkpoint number, we act according to a random policy. The idea is to explore
-at different depths of the environment state space.
+the environment state space at different depths.
 
 
 \section{Deep Reinforcement Learning}

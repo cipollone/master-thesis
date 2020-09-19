@@ -1,10 +1,6 @@
-\chapter{Models for symbol grounding in games}
-% TODO: title
+\chapter{Models for symbol grounding}
 
 \label{ch:fluents}
-
-% TODO: name Symbol grounding in games
-% TODO: par about grounding?
 
 In Chapter~\ref{ch:rl}, we've presented how to apply Deep Reinforcement
 Learning to achieve non-Markovian goals. We've seen that a construction based
@@ -27,11 +23,11 @@ Figure~\ref{fig:rb-focus-features}.
 			\node (features) [block, fill=lightgray] {Features\\extractor}; \&
 			\node (rb) [block] {Restraining\\Bolt}; \& \\
 		};
-		\coordinate (a1) at ($(agent.west)+(0,0.5)$);
+		\coordinate (a1) at ($(agent.west)+(0,0.6)$);
 		\draw [arrow] (a1) -- node [near start, above] {$a$} (env.east |- a1);
-		\coordinate (w1) at ($(env.east)+(0,-0.2)$);
+		\coordinate (w1) at ($(env.east)+(0,-0.0)$);
 		\draw [arrow] (w1) -- node [near start, above] {$r$} (agent.west |- w1);
-		\coordinate (w2) at ($(env.east)+(0,-0.5)$);
+		\coordinate (w2) at ($(env.east)+(0,-0.4)$);
 		\draw [arrow] (w2) -- node [near start, below] {$o$} (agent.west |- w2);
 		\draw [arrow] (w2) ++(0.5,0) |- (features.west);
 		\draw [arrow] (features) -- node [near start, above] {$l$} (rb);
@@ -43,20 +39,25 @@ Figure~\ref{fig:rb-focus-features}.
 	\caption{In this chapter, we focus on the features extractor.}
 	\label{fig:rb-focus-features}
 \end{figure}
-The two blocks at the bottom are our additions, and part of the solution.
+The two blocks at the bottom are the additions, and part of the solution.
 We've thoroughly addressed the Restraining Bolt in Section~\ref{sec:rb},
 already. In this chapter, we want to focus on the other essential component:
 the features extractor.
 
 The purpose of the features extractor is to receive an observation from the
 environment and produce a Boolean valuation for some predefined propositional
-symbols, that we call fluents. We assume that the set of fluents~$\fluents$
-has already been defined, and the truth of every atomic proposition
-in~$\fluents$ can be decided from a single input~$o$. This means that if we
-did define a symbol that cannot be decided from one observation, for example a
-generic ``$\const{GoalReached}$'' condition, we need to split that symbol into
-much simpler events, and define $\const{GoalReached}$ in terms of the new
-fluents.
+symbols, that we call fluents. The problem of creating a sensible connection
+between the true state of the outside world and the agent's atomic
+propositions is called \emph{grounding}. This process is essential, because it
+ensured that any decision that is appropriate for the agent's abstract
+representation is also appropriate in the real scenario.
+
+We assume that the set of fluents~$\fluents$ has already been defined, and the
+truth of every atomic proposition in~$\fluents$ can be decided from a single
+input~$o$. If we did define a symbol that cannot be decided from one
+observation, for example a generic ``$\const{GoalReached}$'' condition, we
+need to split that symbol into much simpler events, and define
+$\const{GoalReached}$ in terms of the new fluents.
 
 Usually, the features extractor is not a really interesting component. Once,
 we've defined a fluent~$\fluent \in \fluents$, we could manually program a
@@ -127,6 +128,8 @@ an initial study in this direction.
 
 
 \section{Temporal constraints}
+
+\label{sec:temporal-constraints}
 
 In this section, we illustrate the concept of ``temporal constraints''. This
 is an important idea introduced with this work, that will help us pursue the
@@ -796,8 +799,11 @@ distribution~$q$. So, the question is: how to we obtain those samples?
 \emph{Persistent Contrastive Divergence}
 (PCD)~\cite{bib:rbm-persistent-cd}\nomenclature{PCD}{Persistent Contrastive
 Divergence} is an algorithm that allows a very efficient sampling of the
-variables in an RBM.  The algorithm implemented in this thesis is a small
-variant of PCD, and we explicitly defined it in Algorithm~\ref{alg:pcd}.
+variables in an RBM. The algorithm implemented in this thesis is a small
+variant of PCD, that we define in Algorithm~\ref{alg:pcd}.  This explicit
+formulation has been obtained elaborating previous algorithms (Contrastive
+Divergence) and the description provided by the
+authors~\cite{bib:rbm-persistent-cd}.
 \begin{algorithm}[thb]
 	\centering
 	\begin{algorithmic}[1]
@@ -836,7 +842,6 @@ variant of PCD, and we explicitly defined it in Algorithm~\ref{alg:pcd}.
 	\caption{Persistent Contrastive Divergence variant}
 	\label{alg:pcd}
 \end{algorithm}
-% TODO: note about originality of the formulation?
 
 Few clarifications are needed. The gradients in
 equation~\ref{eq:rbm-gradients} are composed of two terms. The left-most
@@ -952,7 +957,7 @@ We said that the values assumed by the hidden layer of an RBM can be
 considered an encoding of the input vector. This is not obvious, because it
 depends on the meaning of those units. We observe the following: training an
 RBM means to find a mapping $\bh \mapsto \bv$ such that each training sample
-$\bv\group{i}$ is a \emph{very probable} input, given the hidden units
+$\bv\group{i}$ is a \emph{very probable} observation, given the hidden units
 associated to $\bv\group{i}$ (the dependency is cyclic, but we focus on the
 reconstruction $\bh\group{i} \mapsto \bv\group{i}$). Thus, the hidden units
 allow a reconstruction of the visible units.
@@ -1048,7 +1053,6 @@ unit by reconstructing the expected input with $\E[\bv \given \bh=\bvec{e}_i]$.
 Thanks to the separation of features, we don't need to visualize all the other
 combinations of hidden units.
 
-% TODO: elements of matrices and vectors in bold?
 
 \subsection{Searching monomials}
 
@@ -1471,6 +1475,7 @@ $n$ samples:
 			\text{and} & 
 			\bh\group{i} \sim U(\setSym{H}) \\
 		\end{array}
+		\label{eq:backprop-input-features}
 \end{equation}
 $U(\setSym{H})$ represent the uniform distribution over the elements
 of~$\setSym{H}$.
@@ -1527,36 +1532,37 @@ maker, so to discuss the features extractor separately.
 \subsubsection*{1 -- Train the agent}
 
 The first step is to train an agent with Deep RL. The environment is one of
-the Atari games and the training algorithm is Double DQN~\cite{bib:double-q},
-described in Section~\ref{sec:deep-q-agents}. The agent model is the Deep
+the Atari games, the training algorithm is Double DQN~\cite{bib:double-q},
+described in Section~\ref{sec:deep-q-agents}, and the agent model is the Deep
 Q-Network defined in Section~\ref{sec:model-atari}.
 
-The only rewards and observations the agent receives during this phase are
-those generated by the environment. This training produces an agent that, with
-some success, tries to maximize the environment rewards. As we've discussed in
-the previous chapter, the agent's performances may be really low in presence
-of partial observations. In some environments, the agent may not learn
-anything at all (this is the case for Montezuma's Revenge game, for example).
-This is fine, as we don't need specific capabilities to proceed to the next
-phase.
+During this phase, the agent only receives observations and rewards generated
+from the environment. The outcome of this training is an agent that, with some
+success, tries to maximize the environment rewards. As we've discussed in the
+previous chapter, the agent's performances may be really low in presence of
+partial observations and, in some environments, the agent may not learn
+anything at all (this is the case of the game Montezuma's Revenge, for
+example). These low performances are equally fine, as we don't need specific
+capabilities to proceed to the next step.
 
 
 \subsubsection*{2 -- Train the RB features extractor}
 
 Either if the agent should achieve some temporally-extended goal
-(Section~\ref{sec:tempoal-goals}) or improve its performances on partial
-observations (Section~\ref{sec:partial-obs}), we can apply the Restraining
-Bolt. First, we need to select a set of fluents $\fluents$, useful in the
-definition of some \ltl{}/\ldl{} temporal specification.
+(Section~\ref{sec:tempoal-goals}) or should improve its performances on
+partial observations (Section~\ref{sec:partial-obs}), we'll apply the
+Restraining Bolt. First, we need to select a set of fluents $\fluents$ that
+are useful in the definition of some \ltl{}/\ldl{} temporal specification.
 
 In the definition of $\fluents$, we must restrict to symbols that respect the
 assumptions listed in this chapter. In fact, their intended valuation function
-must be learnable with the complete model we've described here. One of the
+must be learnable by the complete model we've described here. One of the
 assumptions, for example, is that the truth of each of these propositions
-change, at least sometimes. This means that we cannot learn symbols that the
-agent obtained from step 1 is not able to influence (consider for example a
-symbol $\const{AgentAtEnd}$, where End is a position in a maze, that the agent
-is unable to reach, yet).
+should change, at least sometimes. This means that we cannot learn symbols
+that the agent obtained from step 1 is not able to influence at all, even by
+chance (consider for example a symbol $\const{AgentAtEnd}$, where
+$\const{End}$ is a position in a maze, that the agent is unable to reach,
+yet).
 
 Now that the fluents have been selected, we can train the complete model of
 the RB feature extractor that we developed in this Chapter. This is done
@@ -1607,55 +1613,167 @@ Figure~\ref{fig:step2-encoder}.
 	\caption{Training step 2 -- the encoder.}
 	\label{fig:step2-encoder}
 \end{figure}
-On the left, there is the agent obtained from the previous phase that
-continuously acts (plays) with the environment. The agent is not trained here,
-its only purpose is to produce the stream of observations~$\bvec{o}_t$. These
-observations are cropped to the region of this encoder and collected in a
-dataset. This is then used as training set for the Deep Belief Network of this
-encoder. For efficiency, we don't need to store every observation. Instead,
-the dataset contains just the most recent $n$ samples, for a $n$ large enough.
-Then, at each training step, we sample a random batch $\set{\bv\group{i}}$
-from it.
+On the left, the agent obtained from the previous phase continuously interacts
+(plays) with the environment. The agent is not trained here, its only purpose
+is to produce the stream of observations~$\bvec{o}_t$. These observations are
+cropped to the region of each encoder and collected in a dataset. This is then
+used as training set for the Deep Belief Network. For efficiency, we don't
+need to store every observation. Instead, the dataset contains just the most
+recent $n$ samples, for a $n$ large enough.  Then, at each training step, we
+sample a random batch $\set{\bv\group{i}}$ from it.
 
 The role of the agent is not to achieve high rewards. Instead, it should
-explore the environment states as thoroughly as possible. Varied observations
-are needed to train a good encoder, because every input should have a
-meaningful encoding vector assigned. For this reason, it's always better to
-prefer exploration policies, which usually include a good amount of
-stochastic actions. We use a combination of classic and custom exploration
-policies from Section~\ref{sec:exploration-policies}.
+explore the environment states as thoroughly as possible. In fact, to train a
+good encoder we need varied observations, because every image received for
+prediction should have a meaningful encoding vector assigned.  For this
+reason, it's always better to prefer exploration policies during training,
+because they usually include a good amount of stochastic actions. We use a
+combination of classic and custom exploration policies from
+Section~\ref{sec:exploration-policies}.
 
-Once we've trained all the encoders, we can move on to the Boolean function.
-As we know, they are learnt with a Genetic Algorithm which estimate the
-all the valuation function at the same time. We take as best valuations, the
+Once we've trained all the encoders, we can move on to the Boolean functions.
+As we know, they are learnt with a Genetic Algorithm which learns all the
+valuation functions at the same time. We take as result of this training the
 set $\optimal{f}$ that is fully consistent with the specification, with the
 highest ``sensitivity'' metric. The main difference with the training shown in
 Figure~\ref{fig:step2-encoder} is that the heuristic function computes the
 metrics on episodes, not single observations. So, instead of collecting an
 unordered dataset of images, now we need to receive the exact sequence
-produced.
+produced. Also in this case, exploration policies are needed to observe as
+many different behaviours as possible.
 
 
 \subsubsection*{3 -- Train the restrained agent}
 
-% TODO: In the following, ``agent'' refers to the
-% Deep Reinforcement Learning agent defined in Section~\ref{sec:model-atari},
-% while a ``restrained agent'' is the variant of
-% Section~\ref{sec:model-atari-rb} which is meant to be combined with a
-% Restraining Bolt. 
+Step 2 produces a trained features extractor, able to valuate all fluents that
+we use in the temporal specification. It predicts the Boolean value that they
+assume in each observation.
 
-% TODO: Every trace, but which trace? Observation traces are generated by our actions.
+The next step is to train a ``restrained'' agent, that is an agent with the
+Restraining Bolt applied. We use the Double DQN algorithm, just like in step
+1. However, the Q-Network we use here has been defined in
+Section~\ref{sec:model-atari-rb}, which is slightly different. The general
+setup of a restrained agent has been shown in Figure~\vref{fig:rb-schema}.  At
+the end of this step, we obtain a Deep RL agent that achieves the goal induced
+by the rewards generated by environment and the Restraining Bolt. Its actions
+are decided from observations~$(\bvec{o}_t, \vec{q}_t)$.
 
-% TODO: learning scheme, exploration policies, incremental
+
+\subsubsection*{4 -- Expert play}
+
+If, with the fluents available, we've been able to write a temporal
+specification that guides the agent to the final goal, the process should be
+now complete. The agent obtained at the previous step is an expert player,
+able to achieve the temporal specification.
+
+However, it is possible that we don't have a satisfactory set of fluents
+available, especially if the agent's performances from step 1 were poor.
+In this case, it's possible to train an agent for a partial goal. For example,
+in an exploration game, we might train the agent just to leave the first room
+of a labyrinth because we can't say anything about parts of the environment
+that have never been reached.
+
+A possibility is to proceed iteratively. We can use the agent obtained from
+the previous step to train a new feature extractor for a more complete set of
+fluents. As shown by the dashed arrow in Figure~\ref{fig:training-steps}, we
+can continue from step 2, and repeat as needed. Every time, the agent will be
+more capable, allowing to observe new regions of the state space.
 
 
 \section{Limitations and improvements}
 
 \label{sec:fluents-limitations}
 
-% TODO: strong grounding of few symbols? Supervised?
-% TODO: different rooms?
-% TODO: unsure about representable with conjunction, because DBN is
-%		unsupervised
-% TODO: no guarantees but easy to check
-% TODO: consistency
+In this whole chapter, we've proposed an innovative way to train an extractor
+of Boolean features whose meaning is assigned by the designer. The approach
+has some interesting properties, such as defining the desired valuations with
+temporal logics, and avoiding the manual work required by labelled datasets.
+However, this thesis is a first study in about this possibility. Due to the
+simplifications and assumptions we've taken in this work, we'll be able to
+apply these ideas just to a specific class of fluents and observations. The
+purpose of this section is to review many of these limitations and to suggest
+how to overcome them.
+
+\subsubsection*{Fixed regions}
+
+The first limitation is the assumption that the truth of each fluent can be
+decided from a fixed portion of the input image. This implicitly assumes that
+the relevant region of the input is always in the same position. This is only
+applicable to environment with observations of the scene that don't move. In
+very simple games, such as Pong, Breakout, Mr.Pac Man this is the case, but in
+other games this may not be the case.
+
+Regions are a reasonable simplification; their fixed position may be not.
+Instead of defining regions by their position, we may find the relevant
+location based on some other informations.  For example, we could associate
+visual feature to each region. By applying object detection techniques, when
+that feature is found inside the image, the portion of pixels surrounding it
+is selected as input for the encoding.
+
+\subsubsection*{Weak constraints}
+
+Many assumptions and heuristics aim at solving a fundamental issue with
+temporal constraints: they are very weak descriptions of the desired concepts.
+As we've already observed in Section~\ref{sec:temporal-constraints}, there may
+exist many sets of functions which are related by the same temporal behaviour
+but don't represent the desired meanings of the fluents. This is due to the
+weak input--output association these constraints create. We can imagine two
+possible ways to create a stronger grounding of the symbols to the intended
+meanings.
+
+The first is an hybrid approach. We collect a small set of diverse input
+images, and we manually label them with the desired truth value for all
+fluents. This creates a dataset for supervised learning, $\dataset_\fluents =
+\set{(\bvec{o}\group{i}, v\group{i})}$ with $v\group{i} \in 2^\fluents$.
+Encoders are trained in an unsupervised way, as usual. Instead, the
+Boolean functions can be trained from a conjunction of both the temporal
+constraints and prediction error on this dataset. They may be combined into a
+single heuristic function, for example. We argue that even few labelled
+samples can be a huge hint about some important associations. Also,
+thanks to temporal constraints, this dataset can be really small, which
+would be impossible with supervised learning.
+
+A second possibility is the following. Suppose that the meaning of some
+fluents is already known and don't need to be leant. These constitute are set
+of grounded symbols. By relating the fluents to learn with those already
+grounded, we can write much more meaningful temporal constraints. Grounded
+symbols may arise from conditions that are easy to detect, or maybe because we
+have some ad-hoc sensor or trained model already available. Other grounded
+fluents are those that the agent knows as facts. For example, we could define
+the set of symbols $a_j$ which are valuated true if the agent has just
+performed action~$j$. This may allow to encode in temporal constraints how the
+environment evolves as a consequence of actions.
+
+A final issue with temporal constraints is that, because of the consistency
+metric, we had to limit ourselves to prefix-closed properties. This class of
+temporal properties may be enough in most cases, but if we want to exploit the
+full expressiveness of the logic, we should abandon the consistency metric.
+With some additional hints, such as those discussed here, we may use only
+satisfaction as criterion, instead of some other heuristic.
+
+
+\subsubsection*{Guarantees of learnable fluents}
+
+It is perfectly normal that Machine Learning models give little convergence
+guarantees. Provided that the architecture is expressive enough, convergence
+depends on many other factors, such as initialization, learner biases,
+training input. Just like the results of supervised learning depend on the
+dataset, the features extractor we learn depends on the observation it has
+received for training from the player. Fortunately, thanks to the compression
+operated by the encoder, it's really easy to visualize the result of training,
+either by predicting the fluents on test data, or by visualizing the input
+pattern that the function detects (see
+Equation~\ref{eq:backprop-input-features}).
+
+Instead, a more serious uncertainty comes from the fact that the target
+concept may not be representable with a Boolean rule over the entries of the
+encoding vector.  If we knew that some symbol cannot be expressed with a
+monomial, we could simply divide it into simpler fluents. Unfortunately, we
+don't know if that is the case. The encoder is an unsupervised model that is
+free to assign any meaning to the units of the latent vector. We can't know in
+advance whether the set of encoding vectors we're interested in is
+representable with a monomial. Fortunately, when the intended meaning of a
+fluent is to to detect a single input image (regardless of some small noise
+filtered by the encoder), there is just one encoding vector associated,
+which is certainly expressible as a conjunction of terms.
+
