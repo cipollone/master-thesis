@@ -2,24 +2,101 @@
 
 \label{ch:atarieyes}
 
-Intro to the software.
-What we can do:
+In this Chapter, we'll discuss the software realized in this thesis, called
+``AtariEyes''. Its purpose is to implement the ideas that have been presented
+until this point. Every experiment of Chapter~\ref{ch:experiments} has been
+obtained with this software.
+
+Apart from the important aspect of realizing the models we've defined, this
+software has some interesting qualities:
+\begin{description}
+	\item [Clarity] Because it includes a complete documentation of methods
+		and structures.
+	\item [Efficiency] Thanks to an heavy use of parallel computing libraries
+		for GPU acceleration.
+	\item [User friendly] The extensive command line interface allows to
+		experiment with the package as it is, or, thanks to its modular design,
+		individual structures can be reused in future developments.
+\end{description}
+
+Regarding the general functionality of the package, through the commands
+provided, the user can:
 \begin{itemize}
-	\item Train a Reinforcement Learning agent.
-	\item Train the features extraction.
-	\item Run a Restraining Bolt while training and playing an agent.
+	\item Choose any \emph{environment} from the Atari~2600 collection.
+	\item Train a Deep Reinforcement Learning \emph{agent}. The algorithm is
+		Double DQN and the agent's model can be either the original Atari model
+		(Section~\ref{sec:model-atari}) or the restricted agent
+		(Section~\ref{sec:model-atari-rb}).
+	\item Train the \emph{feature extractor}. This implements the whole model
+		presented in Chapter~\ref{ch:fluents}.
+	\item \emph{Play}, \emph{visualize} and \emph{record} any of these
+		agents while they interact with the environment.
 \end{itemize}
+
+This chapter contains two sections: Section~\ref{sec:how-to-use} documents
+how the software can be used from a user perspective;
+Section~\ref{sec:implementation} is a larger part that explains some of the
+most interesting details about the implementation.
+
 
 \section{How to use the software}
 
+\label{sec:how-to-use}
+
 \subsection{Tools and setup}
 
+The software \texttt{AtariEyes} is a Python package. It is publicly available
+at the GitHub repository:
+\href{https://github.com/cipollone/atarieyes}{\texttt{cipollone/atarieyes}}.
+As any other Python package, it can be installed with the \texttt{pip}
+command; we just need to point to this git repository. The installation
+command is:
+\begin{lstlisting}[style=bash]
+pip install git+https://github.com/cipollone/atarieyes
+\end{lstlisting}
+This installs this package from the master branch. If we need to work on some
+specific revision, for example on the \texttt{develop} branch, we can append
+\verb!@develop! or any other commit to the previous command.
+
+Dependencies are automatically installed by \texttt{pip}.  In Python, it is
+common to run applications inside virtual environments. Just run this
+installation command from a container to avoid dependency conflicts with
+other applications. One rather particular dependency is TensorFlow, which is a
+famous Machine Learning library that allows parallel computing. Following the
+instructions of the specific container application, we can link to some
+preexisting system installation if we need it. Currently, the supported
+version is only 2.1, but future versions might also be compatible.
+
+The package is written in Python~3 and the minimum version required for the
+interpreter is 3.7. This requirement should be met by most modern operating
+systems. If that's not the case, we suggest to use \texttt{pyenv}, which
+allows environment-specific Python installations.
+
+This procedure installs the \texttt{atarieyes} package. As we will see, we
+usually use this module through its command line interface. If we want to
+include some structures in future developments, we can
+\lstinline[style=inlinepy]|import atarieyes|, as usual. However, for
+development, it might be useful to look at the source code, by cloning it:
+\begin{lstlisting}[style=bash]
+git clone https://github.com/cipollone/atarieyes.git
+\end{lstlisting}
+This is also useful if, for any reason, some updated dependency is no longer
+compatible with this package. What we can do is to \texttt{cd} to this cloned
+directory, then run \texttt{poetry install}. Poetry is the container
+application used for development. When we run this command, it will install
+the exact dependency versions that have been used during development.
+
+
 \subsection{Commands}
+
+The package provides
 
 Small user reference.
 
 
 \section{Implementation}
+
+\label{sec:implementation}
 
 \subsection{\texttt{agent} Module}
 
@@ -33,3 +110,6 @@ Small user reference.
 \subsubsection{\texttt{models} Module}
 \subsubsection{\texttt{genetic} Module}
 \subsubsection{\texttt{temporal} Module}
+
+% TODO: I've contributed to flloat
+

@@ -23,6 +23,7 @@
 \usepackage{algorithm}
 \usepackage{algorithmicx}
 \usepackage{algpseudocode}
+\usepackage{listings}
 \usepackage{biblatex}
 \usepackage{xurl}
 \usepackage[hidelinks]{hyperref}
@@ -224,6 +225,17 @@
   \setlength\@tempdima{\algorithmicindent}%
   \OldStatex\hskip\dimexpr#1\@tempdima\relax}
 \makeatother
+
+% Listings
+\lstdefinestyle{python}{language=Python, basicstyle=\small\ttfamily,
+	tabsize=2, keywordstyle=\color{blue!50!black}\bfseries,
+	commentstyle=\color{gray}, numbers=left, numberstyle=\tiny,
+	escapeinside={/*_}{_*/}}
+\lstdefinestyle{bash}{language=bash, basicstyle=\small\ttfamily,
+	tabsize=2, keywordstyle=\bfseries, commentstyle=\color{gray},
+	numbers=none, escapeinside={/*_}{_*/}}
+\lstdefinestyle{inlinepy}{style=python, basicstyle=\ttfamily}
+\lstdefinestyle{inlinesh}{style=bash, basicstyle=\ttfamily}
 
 % Suppress useless warnings
 \hfuzz=2pt
