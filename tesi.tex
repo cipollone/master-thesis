@@ -227,15 +227,17 @@
 \makeatother
 
 % Listings
+\lstset{language={}, basicstyle=\small\ttfamily, basewidth=0.53em}
 \lstdefinestyle{python}{language=Python, basicstyle=\small\ttfamily,
 	tabsize=2, keywordstyle=\color{blue!50!black}\bfseries,
 	commentstyle=\color{gray}, numbers=left, numberstyle=\tiny,
 	escapeinside={/*_}{_*/}}
 \lstdefinestyle{bash}{language=bash, basicstyle=\small\ttfamily,
 	tabsize=2, keywordstyle=\bfseries, commentstyle=\color{gray},
-	numbers=none, escapeinside={/*_}{_*/}}
+	numbers=none, escapeinside={/*_}{_*/}, xleftmargin=3ex}
 \lstdefinestyle{inlinepy}{style=python, basicstyle=\ttfamily}
 \lstdefinestyle{inlinesh}{style=bash, basicstyle=\ttfamily}
+% note. default language may be changed in document
 
 % Suppress useless warnings
 \hfuzz=2pt
