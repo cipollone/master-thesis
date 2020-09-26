@@ -15,6 +15,8 @@
 \usepackage{comment}
 \usepackage{enumitem}
 \usepackage{tikz}
+\usepackage{forest}
+\usepackage{caption}
 \usepackage{subfig}
 \usepackage{pgfplots}
 \usepackage{titlesec}
@@ -194,7 +196,11 @@
 	},
 	rule box/.style={
 		fill=gray!30!white,
-	}
+	},
+	%
+	command text/.style={
+		font=\small\ttfamily, outer sep=1ex,
+	},
 }
 % Automaton graph style
 \pgfkeys{
@@ -203,6 +209,32 @@
         edge quotes={font={\small}, inner ysep=0.5ex, inner xsep=0.2ex,
 					auto=right, pos=0.5}
     }
+}
+% Forest styles
+\forestset{
+	dirtree/.style = {
+		for tree={
+			font=\ttfamily,
+			grow'=0,
+			child anchor=west,
+			parent anchor=south,
+			anchor=west,
+			calign=first,
+			edge path={
+				\noexpand\path [draw, \forestoption{edge}]
+				(!u.south west) +(7.5pt,0) |- node[dot] {}
+				(.child anchor)\forestoption{edge label};
+			},
+			before typesetting nodes={
+				if n=1
+					{insert before={[,phantom]}}
+					{}
+			},
+			fit=band,
+			before computing xy={l=15pt},
+			s sep=4pt,
+		}
+	}
 }
 
 % pgfplots
@@ -227,17 +259,18 @@
 \makeatother
 
 % Listings
-\lstset{language={}, basicstyle=\small\ttfamily, basewidth=0.53em}
-\lstdefinestyle{python}{language=Python, basicstyle=\small\ttfamily,
-	tabsize=2, keywordstyle=\color{blue!50!black}\bfseries,
-	commentstyle=\color{gray}, numbers=left, numberstyle=\tiny,
-	escapeinside={/*_}{_*/}}
-\lstdefinestyle{bash}{language=bash, basicstyle=\small\ttfamily,
-	tabsize=2, keywordstyle=\bfseries, commentstyle=\color{gray},
-	numbers=none, escapeinside={/*_}{_*/}, xleftmargin=3ex}
+\lstset{
+	language={}, basicstyle=\small\ttfamily, keywordstyle={},
+	commentstyle=\color{gray}, basewidth=0.53em, tabsize=2, numbers=none,
+	numberstyle=\tiny, escapeinside={/*_}{_*/}, xleftmargin=3ex,
+}
+\lstdefinestyle{python}{
+	language=Python, keywordstyle=\color{blue!50!black}\bfseries,
+}
+\lstdefinestyle{bash}{basicstyle=\ttfamily, language=bash}
 \lstdefinestyle{inlinepy}{style=python, basicstyle=\ttfamily}
-\lstdefinestyle{inlinesh}{style=bash, basicstyle=\ttfamily}
-% note. default language may be changed in document
+\lstdefinestyle{inlinesh}{style=bash}
+\lstdefinestyle{nomargin}{xleftmargin=0ex}
 
 % Suppress useless warnings
 \hfuzz=2pt
