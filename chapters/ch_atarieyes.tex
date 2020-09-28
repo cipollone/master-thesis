@@ -552,46 +552,218 @@ the most interesting.
 
 This module allows the various instances of the program to communicate. It
 defines a communication protocol and the format of the messages to exchange.
-The program communicates through sockets. So, the RL agent and the Restraining
-Bolt could even be on separate machines. Furthermore, this allows our
-implementation of the features extractor and the Restraining Bolt to
+The instances communicate through sockets. So, the RL agent and the
+Restraining Bolt could even be on separate machines. Furthermore, this allows
+our implementation of the features extractor and the Restraining Bolt to
 communicate with any kind of RL agent, even implemented with some other
 library. It's sufficient that the agent program does
 \lstinline[style=inlinepy]|import atarieyes.streaming| to use this module
 interface for exchanging messages with the Restraining Bolt.
 
 This file defines two base classes: \texttt{Sender} and \texttt{Receiver}.
-The sender is a TCP server that waits the incoming connection from the
-receiver. They realize the basic functionality. Instead, the specific messages
-format is defined in subclasses.
+The sender is a TCP server that waits for an incoming connection from the
+receiver. They only realize the basic functionality, because the specific
+messages format is defined in subclasses.
 
 \texttt{AtariFramesSender} and \texttt{AtariFramesReceiver} is a pair of
-subclasses that are used to send images of the Atari games, when the
+subclasses that are used to send images of the Atari games when the
 \verb|--stream| option is present. Similarly, \texttt{StateRewardSender} and
 \texttt{StateRewardReceiver} transmit the pair $(\vec{q}, r')$ of automaton
 state and reward from the RB back to the agent.
 
-The base classes provide transmit and receive buffers for an asynchronous
-exchange. Users can send and receive data with \texttt{send} and
-\texttt{receive} methods of the respective classes.
+Users can send and receive data with \texttt{send} and \texttt{receive}
+methods of the respective instances in each pair.  The base classes also
+provide transmit and receive buffers for an asynchronous exchange. 
 
 
 \subsubsection*{\texttt{automata} module}
 
+This module only contains one class that realizes a DFA. There are many
+automata libraries available. The motivation behind this class is that we need
+to be very efficient in our specific use case: running many copies of the same
+automaton. In the following, let's denote with $\automa_\constraintS$ the
+DFA associated to the temporal constraint.
+
 The final layer of the features extractor model is composed by an array of
 Boolean functions. As we've seen, this part is trained with a Genetic
-Algorithm, which is essentially a stochastic search. This requires to maintain
-a population of candidates and check all of them against the temporal
-constraint. To do so, we continuously predict the fluents values with each
-candidate. Then, after the 
+Algorithm, which maintains a population of candidates (each individual is an
+array of functions). Computing the fitness function for each individual
+requires to do predictions with all of them and check the generated traces
+against the temporal constraint. To do so, we continuously predict the fluents
+values with each candidate, and we move each copy of $\automa_\constraintS$
+accordingly. At the end of the episodes we combine the metrics to compute the
+total fitness function for each candidate. Since the population can contain
+thousands of candidates, it's important to have an implementation that allows
+an efficient execution of thousands of parallel copies of the same DFA. 
 
-Since the population can contain thousands of candidates, we implemented a
+The class \texttt{TfSymbolicAutomaton} stores the edges of the graph into a
+Hash table. Each key is a pair containing the current state and the input
+symbol; each value is the next state for that key. Moving through the
+automaton is a simple lookup from this table. To realize both the table and
+the lookup mechanism we've used the vectorial calculus of the TensorFlow
+library. So, with just one call, it's possible to receive the next states for
+any number of state--symbol input pairs.
+
+The methods are:
+\begin{lstlisting}[style=python]
+def initial_states(self, n_instances):   # ...
+
+def is_final(self, states):   # ...
+
+def successors(self, states, symbols):
+	# Lookup
+	keys = self._to_keys(states, symbols)
+	next_states = self.transitions.lookup(keys)
+	
+	return next_states
+\end{lstlisting}
+The automaton instance is state-less. The caller should maintain a vector of
+states, created from \verb|initial_states| and transformed each time with
+\texttt{successors}.
+
+The input \texttt{symbols} is a vector of predictions, one for each candidate.
+The symbols alphabet is the set of Boolean interpretations of the fluents.
+This means that the space occupied by the lookup table is exponential in the
+number of fluents. This is not an issue, because the \ldl{} to DFA conversion
+has a double-exponential time cost, which is often a much stronger requirement
+on the number of usable fluents.
 
 
+\subsubsection*{\texttt{layers} module}
+
+In Keras, TensorFlow and any modern library, Neural Networks are implemented
+as a composition of layers. Although we're not required to use layers, they
+allow a better organization of our models. This module defines the basic
+functionality related to layers and the specific definitions of layers that
+will be used in our networks.
+
+\texttt{BaseLayer} is the base class of any layer that will be defined.
+Its main role is to set some defaults and enclose the subclasses' operations
+in isolated namespaces. Every layer also appears as an isolated block in the
+TensorBoard graph visualization.
+
+This module also contains an utility called \texttt{layerize}. This is a
+function decorator that can be applied to functions of TensorFlow
+computations. The result is a new layer class that executes the same function.
+This is a very quick way of converting simple state-less computations to
+layers. For example, suppose we have a simple function
+\lstinline[style=inlinepy]|scale_to(inputs, in_range, out_range)| that
+linearly scales the values \texttt{inputs} from the \verb|in_range| to
+\verb|out_range|. Applying the decorator,
+\begin{lstlisting}[style=python]
+@layerize("ScaleTo")
+def scale_to(inputs, in_range, out_range):
+	# ...
+\end{lstlisting}
+defines a new class \texttt{ScaleTo}, subclass of \texttt{BaseLayer}. We can
+now instantiate from this layer class:
+\begin{lstlisting}[style=python]
+	rescaling = ScaleTo(in_range=(0, 255), out_range=(-1, 1))
+\end{lstlisting}
+The layer instance, \texttt{rescaling}, can be used as an atomic operation
+inside other layers. Calling \lstinline[style=inlinepy]|rescaling(x)| is
+equivalent to \lstinline[style=inlinepy]|scale_to(x, (0, 255), (-1, 1))|.
+
+This module also defines:
+\begin{itemize}
+	\item Image preprocessing layer: scaling, cropping, resizing.
+	\item Convolution block: optional padding, 2D convolution, activation
+		function.
+\end{itemize}
 
 \subsection{\texttt{agent} package}
 
 \label{sec:impl-agent}
+
+The content of the \verb|atarieyes.agent| package is used by any
+\verb|atarieyes agent| command. It contains three modules: \texttt{training},
+\texttt{playing} and \texttt{models}.
+
+The Deep RL library we've selected is called Keras-RL (GitHub
+\href{https://github.com/keras-rl/keras-rl}{\texttt{keras-rl/keras-rl}})
+which implements the most common algorithms using the Keras deep learning
+library. The specific version used here is a slightly modified version (GitHub
+\href{https://github.com/cipollone/keras-rl}{\texttt{cipollone/keras-rl}})
+that uses TensorFlow~2 instead of Keras\footnote{In this version, only DQN
+algorithm was completely migrated to TensorFlow. The other algorithms are not
+supported.}.
+
+
+\subsubsection*{\texttt{models} package}
+
+This file contains all the necessary definitions to create a \texttt{keras-rl}
+agent. Since we'll instantiate a DQN agent, the most important part is
+the definition of the agent's Q-Network.
+
+The \texttt{QAgentDef} is just an abstract class that represents a definition
+of a DQN agent. Subclasses should instantiate two attributes:
+\texttt{model}, which is the Q-Network of that agent, and \texttt{processor},
+which allows to transform the data exchanged between the agent and the
+environment.  Subclasses also define a list of metrics that allow to follow
+the training process of each agent, but we mainly care about the model and
+processor.
+
+Two agents are defined in this module:
+\begin{lstlisting}[style=python]
+class AtariAgent(QAgentDef): # ...
+
+class RestrainedAtariAgent(AtariAgent): # ...
+\end{lstlisting}
+
+The first of the two, \texttt{AtariAgent}, has the same structure as that of
+the original DQN paper~\cite{bib:atari-deeprl}. The \texttt{model} is a
+TensorFlow \texttt{Model} with the composition of layers that we've
+illustrated in Section~\ref{sec:model-atari}. Essentially, it contains by a
+stack of convolutional layers, followed by a final dense layer.
+
+The \texttt{processor} is a \verb|keras-rl| structure that can transform the
+observations produced by the environment, before the agent processes it. It is
+used to combine a stack of the 4 most recent images into a single observation
+(see the discussion on non-Markovian rewards due to moving bodies. It also
+apples reward clipping and terminates episodes when the first life is lost.
+
+The second agent, \texttt{RestrainedAtariAgent}, is used in place of
+\texttt{AtariAgent} when a RB is applied (\verb|--rb| option). The
+\texttt{model} of the restrained agent is a Q-Network of two inputs: the image
+and the RB state. The structure of the net has been provided in
+Section~\ref{sec:model-atari-rb}. The \texttt{processor} of the restrained
+agent, other than performing the same operations as that of
+\texttt{AtariAgent}, sends and receives data from the Restraining Bolt. Every
+time the environment produces a new image, it sends this observation to the
+RB and receives a new pair of state and reward in response. These inputs are
+then combined with those of the environment, before passing them to the agent.
+
+The last definitions of this modules are the three exploration policies of
+Section~\ref{sec:exploration-policies}: \texttt{RepeatEpsPolicy},
+\texttt{EpisodeRandomEpsPolicy} and \texttt{ExplorationPolicy}.
+
+
+\subsubsection*{\texttt{training} and \texttt{playing} packages}
+
+The \texttt{Trainer} class contained in this module is executed for an
+\lstinline[style=python]|agent train| command. On initialization, it collects
+all the command line parameters and the definitions from \texttt{models} to
+instantiate a Keras-RL agent. The specific class is the \texttt{DQNAgent},
+which is the \texttt{keras-rl} implementation of the DQN algorithm. The
+function \verb|Trainer.train| enters the training loop, which is the agent's
+\texttt{fit} function.
+
+Keras uses a very interesting concept: callbacks. Callbacks are used to insert
+inside the training loop some computations at regular intervals. We define two
+callbacks: \texttt{CheckpointsSaver} that exports the parameters values after
+a number of episodes, and \texttt{TensorboardLogger} which saves all the
+metrics to the log directories in a format that can be visualized by
+TensorBoard.
+
+The \texttt{playing} module follows a similar idea. It contains a
+\texttt{Player} class with a \texttt{play} function. This method enters the
+agent's \texttt{test} method, which is the loop of repeated play. The
+callbacks defined in this module are \texttt{Streamer} to send the images
+through a \texttt{AtariFramesSender}, and \texttt{Recorder} to save a video
+from the frames.
+
+
+\subsection{\texttt{features} package}
 
 % TODO: I've contributed to flloat
 
