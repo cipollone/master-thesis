@@ -808,6 +808,11 @@ environment. The callbacks defined in this module are \texttt{Streamer} to
 send the images through an \texttt{AtariFramesSender}, and \texttt{Recorder}
 to save a video from these frames.
 
+The parts of the whole software regarding features are the most efficient.
+We've observed that the Atari game simulator and the DQN implementation of
+Keras-RL are the bottlenecks of the whole training loop. We could investigate
+the use of other RL libraries in the future.
+
 
 \subsection{\texttt{features} package}
 
@@ -832,7 +837,7 @@ in Listing~\ref{lst:runner-run}.
 	caption={Infinite loop of \texttt{Runner.run} in the \texttt{rb} module.}]
 while True:
 		# Receive an observation
-		frame, termination = self.frames_receiver.receive(wait=True)
+		frame, _ = self.frames_receiver.receive(wait=True)
 
 		# Make a prediction for all fluents
 		predicted = self.fluents.predict(inputs)
@@ -855,20 +860,20 @@ of the \texttt{rb} object at line~\ref{lst:run-rb-line}). The only important
 detail is that it can either create a new automaton or load one previously
 used. We'll see why this is important.
 
-When creating a new DFA\footnote{The command \texttt{atarieyes features rb}
-has a \texttt{-{}-new} option.}, it combines the fields \texttt{constraints}
-and \texttt{restraining\_bolt} into a single formula. Then, it uses the
-\texttt{flloat} library to transform it into the corresponding DFA. This
-automaton is saved in the current \texttt{logs} directory as a file called
-\verb|rb.pickle|. In future runs, if both formulae didn't change, it's
-important to let this class load the saved automaton.
+When the \verb|--new| option is added to an \verb|atarieyes features rb|
+command, this class creates a new DFA, by combining the fields
+\texttt{constraints} and \texttt{restraining\_bolt} into a single formula.
+Then, it uses the \texttt{flloat} library to transform it into the
+corresponding DFA. This automaton is saved in the current \texttt{logs}
+directory as a file called \verb|rb.pickle|. In future runs, if both formulae
+didn't change, it's important to let this class load the saved automaton.
 
 The fist reason is efficiency, because \ldl{} to DFA is a very costly
 operation. Even more important is that, if the RL agent has trained with one
 automaton, it should use exactly the same automaton when testing or for
 continued trainings. The reason is that the agent has learnt to associate a
 state ID to a configuration of the environment. Any other permutation of the
-automaton IDs would be meaningless to the agent.
+automaton IDs would be misinterpreted by the agent.
 
 
 \subsubsection*{\texttt{training} module}
@@ -877,14 +882,14 @@ Just like for the agent, a training command, in this case
 \verb|atarieyes features train|, executes a \verb|Trainer.train()| method.
 Its role is to instantiate a features extractor model according to the
 parameters supplied (net structure, layer to train, etc), optionally
-initialize the parameters from a checkpoint and execute the training loop.
-At each iteration it receives a new observation from the agent instance,
-samples a new random batch and performs one optimization step with the Adam
-optimizer.
+initialize the parameters from a checkpoint, and start executing the training
+loop.  At each iteration it receives a new observation from the agent
+instance, samples a new random batch and performs one optimization step with
+the Adam optimizer.
 
-Just like for the agent, at regular intervals, a \texttt{CheckpointsSaver}
+Also in this training loop, at regular intervals, a \texttt{CheckpointsSaver}
 saves the current model parameters, and a \texttt{TensorboardLogger} exports
-the metrics for visualization. We cared this original part more than the agent
+the metrics for visualization. We care this original part more than the agent
 training loop. So, the metrics are particularly detailed in this case. Also,
 they only talk about quantities that are relevant for the layer currently
 trained. When we train the Boolean functions, we can visualize consistency,
@@ -897,9 +902,313 @@ model definition. We'll follow a bottom up description with the few remaining.
 
 \subsubsection*{\texttt{temporal} module}
 
+Training the features requires to evaluate ``how much'' each candidate set of
+Boolean functions satisfies the temporal constraints. For this purpose, this
+module computes the ``consistency'' and ``sensitivity'' metrics from the
+received traces of predicted values.
+
+The only class is called \texttt{TemporalConstraints}. On initialization, it
+converts the constraint formula to its equivalent DFA, or loads one previously
+computed. It's interface is composed of just two other methods:
+\texttt{observe} and \texttt{compute}. The former must be called at each time
+step. As argument it receives a matrix of Boolean values, where each row is
+one candidate's prediction of the fluents values. This serves to update the
+relevant quantities for computing the two metrics. The latter,
+\texttt{compute}, must called at the end of each episode. It has no arguments,
+but returns two arrays, the value of consistency and sensitivity for each
+candidate set of Boolean functions.
+
+Both functions have been implemented with TensorFlow operations, so to
+ensure a parallel computation for each candidate. The time required is weakly
+dependent of the number of candidate functions.
+
+
 \subsubsection*{\texttt{genetic} module}
 
-\subsubsection*{\texttt{model} module}
+This module contains the implementation of the Genetic Algorithm described in
+Section~\ref{sec:ga-for-bools}, i.e. GA applied to Boolean functions. The file
+is structured as follows. The abstract class \texttt{GeneticAlgorithm} is a
+implements most of the algorithm. All the subclasses that inherit from it
+just complete the algorithm with the few missing parts which are problem
+dependent.
 
-% TODO: diagram come in slides
+The outer interface of any \texttt{GeneticAlgorithm} is composed of two
+functions. Since they are relatively simple, we report their code in
+Listing~\ref{lst:ga-methods}.
+\begin{lstlisting}[style=floatpy, label=lst:ga-methods,
+	caption={The public interface of any \texttt{GeneticAlgorithm}.}]
+def compute_train_step(self, population, fitness):
+
+		# Compute
+		population = self.reproduce((population, fitness))
+		population = self.crossover(population)
+		population = self.mutate(population)
+		fitness = self.compute_fitness(population)
+
+		return population, fitness
+
+def apply(self, population, fitness):
+
+		self.population.assign(population)
+		self.fitness.assign(fitness)
+		self._update_best()
+\end{lstlisting}
+The first, \verb|compute_train_step|, receives the current pair of population
+of candidates and fitness values, and computes a new pair after one cycle of
+the algorithm. We can clearly recognize the 4 basic steps: reproduction,
+crossover, mutation, and fitness. \verb|apply| receives a pair of newly
+computed population and fitness values and stores them into
+\verb|self.population| and \verb|self.fitness|. Instead, \verb|_update_best|
+saves the individual with the highest fitness value to the variable
+\verb|self.best|. To execute the algorithm, the called could simply loop
+over the two instructions:
+\begin{lstlisting}[style=python]
+population, fitness = ga.compute_train_step(ga.population, ga.fitness)
+ga.apply(population, fitness)
+\end{lstlisting}
+
+The base class already defines \texttt{reproduce}, \texttt{crossover} and
+\texttt{mutate}, because most operations can be executed independently of the
+problem. Instead, subclasses are required to implement three functions:
+\verb|initial_population|, which returns the initial population;
+\verb|compute_fitness|, because is clearly problem-dependent; and
+\verb|sample_symbols|, that is used when the algorithm needs to sample new
+symbols (chromosomes).
+
+For a greatest efficiency, every operation in this module has been implemented
+with TensorFlow operations. In fact, reproduction, sampling, crossovers can be
+implemented as parallel operations, with leads to a scalable algorithm for a
+large number of individuals. This is also the reason of the separation into
+\verb|compute_train_step| and \verb|apply|: keeping them separate leads to a
+more efficient computation and a clearer visualization.
+
+Every function in this class, even those defined by the subclasses, are
+transformed to TensorFlow layers, thanks to \texttt{layerize}. This keeps the
+model organized and simplifies the TensorBoard graph. We can see the general
+structure in Figure~\ref{fig:tb-graph-ga}. The blocks we see are layers and
+their content can be inspected.
+\begin{figure}
+	\centering
+	\includegraphics[height=0.40\textheight]{./imgs/ga-graph.png}
+	\caption{The TensorBoard visualization of the computation graph for GA.}
+	\label{fig:tb-graph-ga}
+\end{figure}
+
+We can now proceed to apply this algorithm to learning the Boolean functions,
+just like we've discussed in Section~\ref{sec:ga-for-bools}.
+The class \texttt{BooleanFunctionsArrayGA} is a subclass of
+\texttt{GeneticAlgorithm} that defines the missing methods for the problem of
+learning the Boolean functions.
+
+This class defines, through \verb|initial_population| and
+\verb|sample_symbols|, a population composed of arrays of Boolean rules,
+exactly those shown in Figure~\vref{fig:boolean-rules}. Essentially, each
+individual is composed by the concatenation of encoded Boolean rules. We don't
+need to look much at the details.
+
+What is important is that it defines a function \verb|compute_fitness| which
+runs a number of episodes, computes the vector of predictions according to
+each individual, and uses the \texttt{TemporalConstraints} class to compute
+the final metrics. Then, the vector of fitness values is computed as:
+\begin{lstlisting}[style=python]
+# Combine metrics
+avg_consistency = tf.math.reduce_mean(consistencies, axis=0)
+max_sensitivity = tf.math.reduce_max(sensitivities, axis=0)
+
+# Compute fitness and scale
+fitness = avg_consistency * max_sensitivity
+fmin, fmax = self._fitness_range
+fitness = fmin + (fmax - fmin) * fitness
+\end{lstlisting}
+
+The class also overrides the \verb|_update_best| function, because the best
+individual is not that with the highest fitness, but the one with maximum
+consistency (hard constraint) with the highest sensitivity (soft constraint).
+
+When we call the public method \texttt{predict} the class computes the most
+likely value for every fluent using just \verb|self.best|. The population is
+only used for training.
+
+
+\subsubsection*{\texttt{models} module}
+
+We've discussed both the outer training loop in the \verb|features.training|
+module, and most of the necessary parts such as \texttt{temporal} and
+\texttt{genetic} module. We complete this description with \texttt{models},
+which defines the complete structure of the features extractor model.
+
+This file contains many classes, because the outer model is just a composition
+of the others inside. This should be the cleanest way to handle such a complex
+structure. The outer model, the only that we directly train, is called
+\texttt{Fluents}, which realizes the end-to-end behaviour of the features
+extractor both for prediction and training.
+
+Every class in this file is a subclass of \texttt{Model}. This is an abstract
+interface that just indicates what we need to define, much like we've done
+with \texttt{QAgentDef}. We can see its structure in
+Listing~\ref{lst:model-interface}.
+\begin{lstlisting}[style=floatpy, label=lst:model-interface,
+	caption={The interface of every model definition.}]
+class Model(ABC2):
+
+    # This is the main model
+    model = AbstractAttribute()
+
+    # Custom training?
+    computed_gradient = AbstractAttribute()
+    train_step = AbstractAttribute()
+
+    @abstractmethod
+    def predict(self, inputs):
+        # ...
+
+    @abstractmethod
+    def compute_all(self, inputs):
+        # ...
+\end{lstlisting}
+On initialization, every subclass must instantiate the three abstract
+attributes. The most important is \verb|self.model| which stores any container
+of TensorFlow operations such as \verb|tf.Module| or \verb|tf.keras.Model|.
+The other attributes can be used if we need to define a custom training loop.
+\verb|computed_gradient| is a Boolean flag that indicates can't be computed
+automatically from some loss function. Similarly, \verb|train_step| should be
+assigned to a callable, when we need to redefine the training phase entirely.
+The function \texttt{predict} is used to make a prediction for a model
+(whatever that means for a specific subclass), while \verb|compute_all|
+performs all operations required both for prediction and for training (see the
+class docstring for more details).
+
+The smallest model in the whole hierarchy is the \texttt{BinaryRBM}, which
+represents a Restricted Boltzmann Machine with binary units. Its
+\texttt{model} attribute is just a layer called \texttt{BernoulliPair}, which
+is composed by the visible and hidden units. RBMs are not trained from some
+loss function, but with Persistent CD. So, \verb|computed_gradient| is set to
+\lstinline[style=inlinepy]|true| and \verb|compute_all| returns both a
+prediction for the binary units, and the gradient computed with the algorithm.
+More precisely, at each call, it performs a single pass of the ``repeat'' loop
+of the Algorithm~\vref{alg:pcd}\footnote{The gradient also includes two
+optional regularizations: $l_2$ loss and a sparsity-promoting term.}.
+
+It's now easy to proceed by composition: the \texttt{model} of
+\texttt{DeepBeliefNetwork} contains a stack of \texttt{BinaryRBM}s, and the
+class \texttt{LocalFeatures} combines a preprocessing layer and a
+\texttt{DeepBeliefNetwork}. \texttt{LocalFeatures} represents the encoder
+model.
+
+On the other hand, the \texttt{GeneticModel} encapsulates any
+\texttt{GeneticAlgorithm} as any other model definition, so to use them
+together. \verb|self.model| is, in this case, the population of individuals.
+Since the training procedure of GAs is so different, we override the training
+loop by defining a simple \verb|train_step| that simply calls
+\verb|compute_train_step| and \verb|apply|.
+
+Now that every model has been defined we can combine them in the final
+arrangement. \texttt{Fluents} is the outer container for all other models.
+Figure~\ref{fig:fluents-classes} shows how the various models are composed
+inside the \texttt{Fluents} class. This figure directly corresponds to the
+scheme shown in Figure~\vref{fig:model-scheme}.
+\begin{figure}
+	\centering
+	\begin{tikzpicture}[
+			node distance=1cm,
+			every label/.style={font=\scriptsize},
+		]
+		% Input
+		\node [image] (frame)
+			{\includegraphics[height=2cm]{./imgs/br0.png}};
+		\node [dot, right=0.7cm of frame] (input) {};
+
+		% Encoders
+		\matrix [
+			right=of input, row sep=1cm, column sep=0.5cm, nodes={anchor=center},
+		] (encoders) {
+			\node [block] (encoder1) {Encoder \\ (region 1)}; \&
+			\node [dot] (encoded1) {}; \\
+			\node [block] (encoder2) {Encoder \\ (region 2)}; \&
+			\node [dot] (encoded2) {}; \\
+		};
+
+		% Boolean functions & output
+		\matrix [
+			right=of encoders, nodes={anchor=center},
+			row sep=0.3cm, column sep=1.6cm, label distance=0.4cm,
+		] (boolfns) {
+			\node [block] (boolfn1) {Boolean fn 1}; \&
+			\node [label=right:Fluent 1] (output1) {0}; \\
+			\node [block] (boolfn2) {Boolean fn 2}; \&
+			\node [label=right:Fluent 2] (output2) {1}; \\
+			\node [block] (boolfn3) {Boolean fn 3}; \&
+			\node [label=right:Fluent 3] (output3) {0}; \\
+		};
+
+		% Output
+		\node [
+			draw, rectangle, gray, inner sep=0pt, fit=(output1) (output3)
+			] (outputs) {};
+
+		% Flow
+		\draw (frame) to (input);
+		\draw [->] (input) edge (encoder1) edge (encoder2);
+		\draw (encoder1) to (encoded1);
+		\draw (encoder2) to (encoded2);
+		\draw [->] (encoded1) edge (boolfn1.west) edge (boolfn2.west);
+		\draw [->] (encoded2) edge (boolfn3.west);
+		\draw [->] (boolfn1) to (output1);
+		\draw [->] (boolfn2) to (output2);
+		\draw [->] (boolfn3) to (output3);
+
+		% Models
+		\begin{scope}[
+				class label/.style={
+					anchor=west, xshift=-1em, yshift=2ex,
+					font=\tt\footnotesize, inner sep=0pt, outer sep=3pt,}
+			]
+			\node [class label] (class features1) at (encoder1.north west)
+				{LocalFeatures};
+			\node [class label] (class features2) at (encoder2.north west)
+				{LocalFeatures};
+			\node [class label] (class bools) at (boolfns.north west)
+				{BooleanFunctionsArray};
+			\node [class label, xshift=-1.2em, yshift=2.5ex]
+				(class fluents) at (class features1.north west) {Fluents};
+		\end{scope}
+		\begin{pgfonlayer}{below}
+			\node (encoding1 class box) [
+				draw=\encodingColor, fill=\encodingColor!30!white, inner sep=5pt,
+					fit=(class features1) (encoder1)] {};
+			\node (encoding2 class box) [
+				draw=\encodingColor, fill=\encodingColor!30!white, inner sep=5pt,
+				fit=(class features2) (encoder2)] {};
+			\node (bools class box) [
+				draw=\boolsColor, fill=\boolsColor!30!white, inner sep=5pt,
+				fit=(class bools) (boolfn3.south east)] {};
+		\end{pgfonlayer}
+		\begin{pgfonlayer}{beloww}
+			\node (fluents class box) [
+				draw=\fluentsColor, fill=\fluentsColor!30!white, inner sep=5pt,
+				fit={(class fluents) (encoding1 class box) (encoding2 class box)
+					(bools class box)}] {};
+		\end{pgfonlayer}
+
+		% Annotations
+		\coordinate (annotations y) at ($(fluents class box.south)+(0,-0.7)$);
+		\begin{pgfonlayer}{below}
+			\node (input-annotation) at (input|-annotations y) {Input};
+			\node (encoding-annotation) at (encoded1|-annotations y) {Encodings};
+			\node (outputs-annotation) at (outputs|-annotations y) {Predictions};
+			\draw [pin line] (input) -- (input-annotation);
+			\draw [pin line] (encoded1) -- (encoding-annotation);
+			\draw [pin line] (outputs) -- (outputs-annotation);
+		\end{pgfonlayer}
+	\end{tikzpicture}
+	\caption{The disposition of the various classes for the general scheme of
+	Figure~\vref{fig:model-scheme}.}
+	\label{fig:fluents-classes}
+\end{figure}
+All the initialization parameters reflect the command line arguments. For
+instance, the \verb|--network| command chooses the number of units and layers
+of each encoder. Also, \verb|--train| select which of these inner models
+should be trained, when we call the object \verb|compute_all| function.
+Depending on which model we're working on, both the computation graph and the
+metrics saved greatly change.
 

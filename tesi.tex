@@ -264,9 +264,10 @@
 	commentstyle=\color{gray}, basewidth=0.53em, tabsize=2, numbers=none,
 	numberstyle=\tiny, escapeinside={/*_}{_*/}, xleftmargin=3ex,
 }
+%\lstdefinelanguage{Python3}{Python}{deletekeywords={apply,}}
 \lstdefinestyle{python}{
 	language=Python, keywordstyle=\color{blue!50!black}\bfseries,
-	stringstyle=\color{violet!50!black},
+	stringstyle=\color{violet!50!black}, deletekeywords=[2]{apply},
 }
 \lstdefinestyle{bash}{basicstyle=\ttfamily, language=bash}
 \lstdefinestyle{inlinepy}{style=python, basicstyle=\ttfamily}
