@@ -989,7 +989,7 @@ structure in Figure~\ref{fig:tb-graph-ga}. The blocks we see are layers and
 their content can be inspected.
 \begin{figure}
 	\centering
-	\includegraphics[height=0.40\textheight]{./imgs/ga-graph.png}
+	\includegraphics[height=0.45\textheight]{./imgs/ga-graph.png}
 	\caption{The TensorBoard visualization of the computation graph for GA.}
 	\label{fig:tb-graph-ga}
 \end{figure}
@@ -1120,7 +1120,7 @@ scheme shown in Figure~\vref{fig:model-scheme}.
 
 		% Encoders
 		\matrix [
-			right=of input, row sep=1cm, column sep=0.5cm, nodes={anchor=center},
+			right=of input, row sep=1.2cm, column sep=0.5cm, nodes={anchor=center},
 		] (encoders) {
 			\node [block] (encoder1) {Encoder \\ (region 1)}; \&
 			\node [dot] (encoded1) {}; \\
@@ -1201,8 +1201,8 @@ scheme shown in Figure~\vref{fig:model-scheme}.
 			\draw [pin line] (outputs) -- (outputs-annotation);
 		\end{pgfonlayer}
 	\end{tikzpicture}
-	\caption{The disposition of the various classes for the general scheme of
-	Figure~\vref{fig:model-scheme}.}
+	\caption{The disposition of the various classes corresponding to the general
+	scheme of Figure~\vref{fig:model-scheme}.}
 	\label{fig:fluents-classes}
 \end{figure}
 All the initialization parameters reflect the command line arguments. For

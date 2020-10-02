@@ -1,3 +1,3 @@
 
 make:
-	lualatex tesi.tex
+	lualatex -shell-escape tesi.tex
