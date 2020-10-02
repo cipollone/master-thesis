@@ -53,9 +53,9 @@ at the GitHub repository:
 It can be installed with the \texttt{pip} commandAs any other Python package,
 we just need to point to this git repository. The installation
 command is:
-\begin{lstlisting}[style=bash]
+\begin{minted}{text}
 pip install git+https://github.com/cipollone/atarieyes
-\end{lstlisting}
+\end{minted}
 This installs this package from the master branch. If we need to work on some
 specific revision, for example on the \texttt{develop} branch, we can append
 \verb!@develop! or any other commit to the previous address.
@@ -77,11 +77,11 @@ allows environment-specific Python installations.
 Once installed, we can use the \texttt{atarieyes} package. As we will see, we
 often use this module through its command line interface. However, if we want
 just to include some structures and algorithms in other applications, we can
-\lstinline[style=inlinepy]|import atarieyes|, as usual. For development it may
+\mintinline{py3}|import atarieyes|, as usual. For development it may
 be also useful to look at the source code. We can clone the repository:
-\begin{lstlisting}[style=bash]
+\begin{minted}{text}
 git clone https://github.com/cipollone/atarieyes.git
-\end{lstlisting}
+\end{minted}
 This is also useful if, for any reason, some updated dependency is no longer
 compatible with this package. What we can do is to \texttt{cd} to this cloned
 directory, then run \texttt{poetry install}. Poetry is the container
@@ -93,11 +93,11 @@ versions that have been used during development and are guaranteed to work.
 
 To run this package as a script we run the following command from the same
 environment where we've installed it:
-\begin{lstlisting}[style=bash]
+\begin{minted}{text}
 python3 -m atarieyes
-\end{lstlisting}
+\end{minted}
 The reader can assume that any \texttt{atarieyes} command that we will see, is
-executed by \lstinline[style=inlinesh]|python3 -m|.
+executed by \verb|python3 -m|.
 
 \subsubsection*{Getting help}
 
@@ -105,11 +105,11 @@ The package provides a compete command line interface, with many options that
 control the training process. In these sections we look at the most important
 commands. For any doubt, we can use the \verb|--help| option, abbreviated
 as \verb|-h|. When added, it prints the arguments that are supported by any
-command. For example, running \lstinline[style=inlinesh]{atarieyes -h}
+command. For example, running \verb|atarieyes -h|
 produces the following message\footnote{We use the
 \texttt{argparse} library for parsing and generating these messages. The file
 \texttt{\_\_main\_\_.py} file also acts as reference for the commands.}:
-\begin{lstlisting}
+\begin{minted}{text}
 usage: __main__.py [-h] [--list] [--from FROM] {agent,features} ...
 
 Feature extraction and RL on Atari Games
@@ -123,7 +123,7 @@ optional arguments:
   -h, --help        show this help message and exit
   --list            List all environments, then exit
   --from FROM       Load arguments from file
-\end{lstlisting}
+\end{minted}
 
 The \verb|--list| option prints the unique of every Atari game. To use any of
 these games as environment, we pass its identifier to the
@@ -148,9 +148,9 @@ Three operations can be performed for the agent: \texttt{train},
 \texttt{play}, and \texttt{watch}.
 
 To train an agent we run:
-\begin{lstlisting}[style=bash]
-atarieyes agent train /*_ \dots _*/
-\end{lstlisting}
+\begin{minted}[escapeinside=||]{bash}
+atarieyes agent train      # ...
+\end{minted}
 This command has many options, some of which control the parameters of the
 Double DQN algorithm. We show here just the most relevant:
 \begin{description}
@@ -206,9 +206,9 @@ Restraining Bolt.
 The first step is to define a set of fluents to learn, and their associated
 regions. The \texttt{select} command allows to easily select the regions for
 an environment. For example, to define regions in the Pong game, we run:
-\begin{lstlisting}[style=bash]
-	atarieyes features select -e Pong-v4
-\end{lstlisting}
+\begin{minted}{text}
+atarieyes features select -e Pong-v4
+\end{minted}
 where \texttt{Pong-v4} is the precise name of the environment. After this
 command, a frame of the game is shown. With the mouse we can do one or more
 selections (press Enter to accept). The first selection is the portion of the
@@ -221,8 +221,9 @@ The output generated is a JSON file containing our definitions that we can now
 modify and integrate. We could have written this file manually, but
 \texttt{select} is a convenient way to start. The file is saved at
 \texttt{definitions/}<env-name>\texttt{.json}. In our example on the Pong
-environment, the output is:
-\begin{lstlisting}
+environment, the output is shown in Listing~\ref{lst:pong-def-example}
+\begin{listing}
+\begin{minted}{json}
 {
   "_frame": [ 0, 33, 160, 195 ],
   "regions": {
@@ -240,7 +241,10 @@ environment, the output is:
   "constraints": [],
   "restraining_bolt": []
 }
-\end{lstlisting}
+\end{minted}
+\caption{Example for the Pong game; file \texttt{definitions/Pong-v4.json}}
+\label{lst:pong-def-example}
+\end{listing}
 which lists each region name, abbreviation, coordinates, and fluents defined.
 Now we can fill each \verb|"fluents"| with the list of symbols that we want to
 define in that region.
@@ -256,7 +260,7 @@ formula. Since the \texttt{constraints} are always satisfied, we consider as
 restraining specification the conjunction of both fields.
 
 After the definitions, we're ready to train the valuation functions.
-This is achieved by the \lstinline[style=bash]|atarieyes features train|, much
+This is achieved by the \verb|atarieyes features train|, much
 like we've done for the agent. Few of the many options of this command are:
 \begin{description}
 	\item [\texttt{--stream}] Sets the IP address of a running instance of
@@ -281,9 +285,9 @@ composed by one DBN for each region (the encoders) and the Boolean functions,
 shared by all regions. The encoders, in turn, contain a stack of RBMs, which
 are organized in layers. For each region, we need to train the shallow layers
 first. For example as:
-\begin{lstlisting}[style=bash, style=nomargin]
+\begin{minted}{text}
 atarieyes features train -e Pong-v4 --network 20 3 --train bottom 0
-\end{lstlisting}
+\end{minted}
 Then, we proceed to the next layer just below (in this example,
 \verb|bottom 1| is the next and last layer of this encoder). After each
 encoder is trained, we can proceed to train the Boolean functions with
@@ -433,10 +437,10 @@ directory. Training commands, instead, store their result inside
 \texttt{runs/}. For example,
 \verb|atarieyes agent train -e Pong-v4| 
 generates the following directories:
-\begin{lstlisting}
+\begin{minted}{text}
 runs/agent/Pong-v4/logs/0/
 runs/agent/Pong-v4/models/0/
-\end{lstlisting}
+\end{minted}
 Every training generates ``logs'' and ``models'' directories in
 unique paths composed with increasing numbers. In the example above, a new
 output would be saved \verb|logs/1| and \verb|models/1|.
@@ -451,9 +455,9 @@ option, to load a saved agent. ``logs'' directory, instead, contains
 The remaining files in the logs directory contain various metrics that allow
 to follow the training process. These logs can be visualized with TensorBoard,
 the TensorFlow visualization tool. In the example, we would run:
-\begin{lstlisting}[style=bash]
+\begin{minted}{text}
 poetry run tensorboard --logdir runs/agent/Pong-v4/logs/
-\end{lstlisting}
+\end{minted}
 For each episode, we can read: the number of steps, the cumulative reward, the
 distribution of RB states, the distribution of selected actions, and other
 metrics related to DQN.
@@ -510,13 +514,13 @@ expressions in a string format accepted by \texttt{flloat}.  We can refer to
 this library documentation to understand what is format accepted. Since
 \texttt{flloat} gets installed with \texttt{atarieyes}, we can also experiment
 interactively with it.  For example:
-\begin{lstlisting}[style=python]
+\begin{minted}{py3}
 from flloat.parser.ldlf import LDLfParser as Parser
 
 expression = "A & [true*; A]B & <true*; ?B>tt"
 formula = Parser()(expression)
 automa = formula.to_automaton()
-\end{lstlisting}
+\end{minted}
 This is useful to check that the \texttt{expression} has the correct syntax,
 and that it represents the intended temporal property (it's possible to
 visualize the automaton \texttt{automa} with Graphviz). In this example,
@@ -600,7 +604,7 @@ Restraining Bolt could even be on separate machines. Furthermore, this allows
 our implementation of the features extractor and the Restraining Bolt to
 communicate with any kind of RL agent, even implemented with some other
 library. It's sufficient that the agent program does
-\lstinline[style=inlinepy]|import atarieyes.streaming| to use this module
+\mintinline{py3}|import atarieyes.streaming| to use this module
 interface for exchanging messages with the Restraining Bolt.
 
 This file defines two base classes: \texttt{Sender} and \texttt{Receiver}.
@@ -648,21 +652,18 @@ library. So, with just one call, it's possible to receive the next states for
 any number of state--symbol input pairs.
 
 The methods are:
-\begin{lstlisting}[style=python]
-def initial_states(self, n_instances):
-	# ...
+\begin{minted}{py3}
+def initial_states(self, n_instances): # ...
 
-def is_final(self, states):
-	# ...
+def is_final(self, states): # ...
 
 def successors(self, states, symbols):
-
 	# Lookup
 	keys = self._to_keys(states, symbols)
 	next_states = self.transitions.lookup(keys)
 	
 	return next_states
-\end{lstlisting}
+\end{minted}
 The automaton instance is state-less. The caller should maintain a vector of
 states, created from \verb|initial_states| and transformed each time with
 \texttt{successors}.
@@ -693,22 +694,22 @@ function decorator that can be applied to functions of TensorFlow
 computations. The result is a new layer class that executes the same function.
 This is a very quick way of converting simple state-less computations to
 layers. For example, suppose we have a simple function
-\lstinline[style=inlinepy]|scale_to(inputs, in_range, out_range)| that
+\mintinline{py3}|scale_to(inputs, in_range, out_range)| that
 linearly scales the values \texttt{inputs} from the \verb|in_range| to
 \verb|out_range|. Applying the decorator,
-\begin{lstlisting}[style=python]
+\begin{minted}{py3}
 @layerize("ScaleTo")
 def scale_to(inputs, in_range, out_range):
 	# ...
-\end{lstlisting}
+\end{minted}
 defines a new class \texttt{ScaleTo}, subclass of \texttt{BaseLayer}. We can
 now instantiate from this layer class:
-\begin{lstlisting}[style=python]
+\begin{minted}{py3}
 rescaling = ScaleTo(in_range=(0, 255), out_range=(-1, 1))
-\end{lstlisting}
+\end{minted}
 The layer instance, \texttt{rescaling}, can be used as an atomic operation
-inside other layers. Calling \lstinline[style=inlinepy]|rescaling(x)| is
-equivalent to \lstinline[style=inlinepy]|scale_to(x, (0, 255), (-1, 1))|.
+inside other layers. Calling \mintinline{py3}|rescaling(x)| is
+equivalent to \mintinline{py3}|scale_to(x, (0, 255), (-1, 1))|.
 
 This module also defines:
 \begin{itemize}
@@ -750,11 +751,11 @@ the training process of each agent, but we mainly care about the model and
 processor.
 
 Two agents are defined in this module:
-\begin{lstlisting}[style=python]
+\begin{minted}{py3}
 class AtariAgent(QAgentDef): # ...
 
 class RestrainedAtariAgent(AtariAgent): # ...
-\end{lstlisting}
+\end{minted}
 
 The first of the two, \texttt{AtariAgent}, has the same structure as that of
 the original DQN paper~\cite{bib:atari-deeprl}. The \texttt{model} is a
@@ -787,7 +788,7 @@ Section~\ref{sec:exploration-policies}: \texttt{RepeatEpsPolicy},
 \subsubsection*{\texttt{training} and \texttt{playing} packages}
 
 The \texttt{Trainer} class contained in the \texttt{training} module is
-executed for any \lstinline[style=inlinepy]|agent train| command. On
+executed for any \verb|agent train| command. On
 initialization, it collects all the command line parameters and the
 appropriate agent definition that serve to instantiate a Keras-RL agent. The
 agent's class is the \texttt{DQNAgent}, which is the \texttt{keras-rl}
@@ -818,12 +819,12 @@ the use of other RL libraries in the future.
 
 This package is the largest portion of the software, because it implements all
 the models and algorithms described in Chapter~\ref{ch:fluents}. The files in
-this directory are used for any
-``\lstinline[style=inlinesh]|atarieyes features|'' command: \texttt{training}
-is used when training features, \texttt{rb} executes a Restraining Bolt from
-predictions of trained features, and \texttt{selector} is the regions
-selection tool (this last module doesn't need to be discussed further).
-The other files define the model or participate at the training process.
+this directory are used for any \verb|atarieyes features| command:
+\texttt{training} is used when training features, \texttt{rb} executes a
+Restraining Bolt from predictions of trained features, and \texttt{selector}
+is the regions selection tool (this last module doesn't need to be discussed
+further).  The other files define the model or participate at the training
+process.
 
 
 \subsubsection*{\texttt{rb} module}
@@ -833,21 +834,24 @@ that executes a RB from trained features that continuously interacts with the
 agent's instance. The class responsible for this interaction is called
 \texttt{Runner}. Its only method, \texttt{run}, enters the infinite loop shown
 in Listing~\ref{lst:runner-run}.
-\begin{lstlisting}[style=floatpy, label=lst:runner-run,%
-	caption={Infinite loop of \texttt{Runner.run} in the \texttt{rb} module.}]
+\begin{listing}
+	\begin{minted}[escapeinside=||, linenos=true]{py3}
 while True:
-		# Receive an observation
-		frame, _ = self.frames_receiver.receive(wait=True)
+	# Receive an observation
+	frame, _ = self.frames_receiver.receive(wait=True)
 
-		# Make a prediction for all fluents
-		predicted = self.fluents.predict(inputs)
+	# Make a prediction for all fluents
+	predicted = self.fluents.predict(inputs)
 
-		# Update RB
-		state, reward = self.rb.step(predicted) /*_ \label{lst:run-rb-line} _*/
+	# Update RB
+	state, reward = self.rb.step(predicted)
 
-		# Send RB state and reward to the agent
-		self.rb_sender.send(self.states_map[state], reward)
-\end{lstlisting}
+	# Send RB state and reward to the agent
+	self.rb_sender.send(self.states_map[state], reward)
+\end{minted}
+\caption{Infinite loop of \texttt{Runner.run} in the \texttt{rb} module.}
+\label{lst:runner-run}
+\end{listing}
 The procedure is simple. At each cycle: receive an observation from the
 environment (RL agent's instance), predict the fluents values from the image,
 use these values to move the Restraining Bolt, send back the RB state and
@@ -856,7 +860,7 @@ prediction and the RB. Of course, in order to predict the fluents values we
 need to have a valuation function already trained.
 
 The second class in this module is \texttt{RestrainingBolt} (this is the type
-of the \texttt{rb} object at line~\ref{lst:run-rb-line}). The only important
+of the \texttt{rb} object in Listing~\ref{lst:runner-run}). The only important
 detail is that it can either create a new automaton or load one previously
 used. We'll see why this is important.
 
@@ -935,24 +939,27 @@ dependent.
 The outer interface of any \texttt{GeneticAlgorithm} is composed of two
 functions. Since they are relatively simple, we report their code in
 Listing~\ref{lst:ga-methods}.
-\begin{lstlisting}[style=floatpy, label=lst:ga-methods,
-	caption={The public interface of any \texttt{GeneticAlgorithm}.}]
+\begin{listing}
+\begin{minted}{py3}
 def compute_train_step(self, population, fitness):
 
-		# Compute
-		population = self.reproduce((population, fitness))
-		population = self.crossover(population)
-		population = self.mutate(population)
-		fitness = self.compute_fitness(population)
+	# Compute
+	population = self.reproduce((population, fitness))
+	population = self.crossover(population)
+	population = self.mutate(population)
+	fitness = self.compute_fitness(population)
 
-		return population, fitness
+	return population, fitness
 
 def apply(self, population, fitness):
 
-		self.population.assign(population)
-		self.fitness.assign(fitness)
-		self._update_best()
-\end{lstlisting}
+	self.population.assign(population)
+	self.fitness.assign(fitness)
+	self._update_best()
+\end{minted}
+\caption{The public interface of any \texttt{GeneticAlgorithm}.}
+\label{lst:ga-methods}
+\end{listing}
 The first, \verb|compute_train_step|, receives the current pair of population
 of candidates and fitness values, and computes a new pair after one cycle of
 the algorithm. We can clearly recognize the 4 basic steps: reproduction,
@@ -962,10 +969,10 @@ computed population and fitness values and stores them into
 saves the individual with the highest fitness value to the variable
 \verb|self.best|. To execute the algorithm, the called could simply loop
 over the two instructions:
-\begin{lstlisting}[style=python]
+\begin{minted}{py3}
 population, fitness = ga.compute_train_step(ga.population, ga.fitness)
 ga.apply(population, fitness)
-\end{lstlisting}
+\end{minted}
 
 The base class already defines \texttt{reproduce}, \texttt{crossover} and
 \texttt{mutate}, because most operations can be executed independently of the
@@ -1010,7 +1017,7 @@ What is important is that it defines a function \verb|compute_fitness| which
 runs a number of episodes, computes the vector of predictions according to
 each individual, and uses the \texttt{TemporalConstraints} class to compute
 the final metrics. Then, the vector of fitness values is computed as:
-\begin{lstlisting}[style=python]
+\begin{minted}{py3}
 # Combine metrics
 avg_consistency = tf.math.reduce_mean(consistencies, axis=0)
 max_sensitivity = tf.math.reduce_max(sensitivities, axis=0)
@@ -1019,7 +1026,7 @@ max_sensitivity = tf.math.reduce_max(sensitivities, axis=0)
 fitness = avg_consistency * max_sensitivity
 fmin, fmax = self._fitness_range
 fitness = fmin + (fmax - fmin) * fitness
-\end{lstlisting}
+\end{minted}
 
 The class also overrides the \verb|_update_best| function, because the best
 individual is not that with the highest fitness, but the one with maximum
@@ -1047,8 +1054,8 @@ Every class in this file is a subclass of \texttt{Model}. This is an abstract
 interface that just indicates what we need to define, much like we've done
 with \texttt{QAgentDef}. We can see its structure in
 Listing~\ref{lst:model-interface}.
-\begin{lstlisting}[style=floatpy, label=lst:model-interface,
-	caption={The interface of every model definition.}]
+\begin{listing}
+\begin{minted}{py3}
 class Model(ABC2):
 
     # This is the main model
@@ -1065,7 +1072,10 @@ class Model(ABC2):
     @abstractmethod
     def compute_all(self, inputs):
         # ...
-\end{lstlisting}
+\end{minted}
+\caption{The interface of every model definition.}
+\label{lst:model-interface}
+\end{listing}
 On initialization, every subclass must instantiate the three abstract
 attributes. The most important is \verb|self.model| which stores any container
 of TensorFlow operations such as \verb|tf.Module| or \verb|tf.keras.Model|.
@@ -1083,7 +1093,7 @@ represents a Restricted Boltzmann Machine with binary units. Its
 \texttt{model} attribute is just a layer called \texttt{BernoulliPair}, which
 is composed by the visible and hidden units. RBMs are not trained from some
 loss function, but with Persistent CD. So, \verb|computed_gradient| is set to
-\lstinline[style=inlinepy]|true| and \verb|compute_all| returns both a
+\mintinline{py3}|true| and \verb|compute_all| returns both a
 prediction for the binary units, and the gradient computed with the algorithm.
 More precisely, at each call, it performs a single pass of the ``repeat'' loop
 of the Algorithm~\vref{alg:pcd}\footnote{The gradient also includes two

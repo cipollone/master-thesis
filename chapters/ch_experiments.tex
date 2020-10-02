@@ -132,15 +132,15 @@ agent will be able to hit the bricks in every episode. The fluents might not
 evolve at all when the agent loses a play.
 
 To specify all these definitions to our software we run:
-\begin{lstlisting}[style=bash]
+\begin{minted}{text}
 atarieyes features select -e BreakoutDeterministic-v4
-\end{lstlisting}
+\end{minted}
 and we select the region of Figure~\ref{fig:breakout-fluents}. Then we
 complete the generated file with the fluents names and any of the two temporal
 constraints above. The resulting file is shown in
 Listing~\ref{lst:breakout-definitions}. 
 \begin{listing}
-	\begin{minted}{json}
+\begin{minted}{json}
 {
   "_frame": [
     8, 32, 152, 197
@@ -165,9 +165,9 @@ Listing~\ref{lst:breakout-definitions}.
 		"!<true*; br_full>br_empty"
 	]
 }
-	\end{minted}
-	\caption{The content of \texttt{definitions/BreakoutDeterministic-v4.json}.}
-	\label{lst:breakout-definitions}
+\end{minted}
+\caption{The content of \texttt{definitions/BreakoutDeterministic-v4.json}.}
+\label{lst:breakout-definitions}
 \end{listing}
 "\texttt{br}" is just an abbreviation for that region name. Other than that,
 the file exactly represents what we've defined so far.

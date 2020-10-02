@@ -22,6 +22,8 @@
 *.nlo
 *.nls
 
+/_minted-tesi/
+
 ## Linux
 *~
 .fuse_hidden*

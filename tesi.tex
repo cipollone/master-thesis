@@ -25,8 +25,7 @@
 \usepackage{algorithm}
 \usepackage{algorithmicx}
 \usepackage{algpseudocode}
-\usepackage{listings}
-\usepackage[chapter]{minted}
+\usepackage[newfloat,chapter]{minted}
 \usepackage{biblatex}
 \usepackage{xurl}
 \usepackage[hidelinks]{hyperref}
@@ -261,27 +260,11 @@
   \OldStatex\hskip\dimexpr#1\@tempdima\relax}
 \makeatother
 
-% Listings
-\lstset{
-	language={}, basicstyle=\ttfamily, keywordstyle={},
-	commentstyle=\color{gray}, basewidth=0.53em, tabsize=2, numbers=none,
-	numberstyle=\tiny, escapeinside={/*_}{_*/},
-}
-%\lstdefinelanguage{Python3}{Python}{deletekeywords={apply,}}
-\lstdefinestyle{python}{
-	language=Python, keywordstyle=\color{blue!50!black}\bfseries,
-	stringstyle=\color{violet!50!black}, deletekeywords=[2]{apply},
-}
-\lstdefinestyle{bash}{basicstyle=\ttfamily, language=bash}
-\lstdefinestyle{inlinepy}{style=python, basicstyle=\ttfamily}
-\lstdefinestyle{inlinesh}{style=bash}
-\lstdefinestyle{floatpy}{style=python, float, numbers=left}
-\lstdefinestyle{nomargin}{xleftmargin=0ex}
-
-% Now using minted for listings
-\AtBeginEnvironment{listing}{\setcounter{listing}{\value{lstlisting}}}
-\AtEndEnvironment{listing}{\stepcounter{lstlisting}}
-\setminted{frame=none}
+% Minted
+\setminted[py3]{tabsize=4}
+\usemintedstyle[py3]{tango}
+\setminted[json]{tabsize=2}
+\usemintedstyle[json]{friendly}
 
 % Suppress useless warnings
 \hfuzz=2pt
