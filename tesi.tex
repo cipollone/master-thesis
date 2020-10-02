@@ -243,6 +243,15 @@
 \pgfplotsset{
 	compat=1.16,
 	every axis/.style={font=\scriptsize},
+	metrics/.style={
+		mark=none,
+		xmin=0,
+	},
+	cycle list={
+		{blue!40!black},
+		{red!40!black},
+		{green!40!black},
+	}
 }
 
 % Algorithms
@@ -264,7 +273,7 @@
 \setminted[py3]{tabsize=4}
 \usemintedstyle[py3]{tango}
 \setminted[json]{tabsize=2}
-\usemintedstyle[json]{friendly}
+\usemintedstyle[json]{stata}
 
 % Suppress useless warnings
 \hfuzz=2pt
