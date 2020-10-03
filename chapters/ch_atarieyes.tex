@@ -277,8 +277,9 @@ like we've done for the agent. Few of the many options of this command are:
 		the model are not modified.
 	\item [\texttt{--network}] Specifies the structure of the encoders. The
 		argument of this command is a list of natural numbers. The $i$-th number
-		indicates of how many hidden units is composed the $i$-th layer of each
-		DBN.
+		indicates of how many hidden units is composed the $i+1$-th layer of each
+		DBN. Instead, the first layer has always as many visible units as the
+		number of pixels of each region.
 \end{description}
 The features extractor that we've defined in Chapter~\ref{ch:fluents} is
 composed by one DBN for each region (the encoders) and the Boolean functions,

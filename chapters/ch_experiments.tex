@@ -175,41 +175,296 @@ the file exactly represents what we've defined so far.
 
 \subsection{Training}
 
-The first step is to train a RL agent on the standard environment.
-Some of the options of the \verb|agent train| command are: a batch size of 32,
-learning rate of $0,0001$, double Q-Network update every 10000 steps. To
-follow the training progress, we run TensorBoard on the agent's log directory.
-The results obtained are shown in Figure~\ref{fig:breakout-agent-train}.
+The first step is to train a RL agent on the environment as it is.
+Some of the options we've used for the \verb|agent train| command are: a batch
+size of 32, learning rate of $0,0001$, double Q-Network update every 10000
+steps. To follow the training progress, we run TensorBoard on the agent's log
+directory.  The results obtained are shown in
+Figure~\ref{fig:breakout-agent-train}.
 \begin{figure}
 	\centering
 	\begin{tikzpicture}
 		\begin{axis}[
 				metrics, xlabel={episode}, ylabel={cumulative reward},
-				width=0.7\textwidth, height=0.3\textheight]
+				width=0.7\textwidth, height=0.25\textheight, ymax=90]
 			\addplot table
-			{./data/run-17may_logs-tag-episode_metrics_episode_reward.txt};
+			{./data/run-agent-episode_metrics_episode_reward.txt};
 		\end{axis}
 	\end{tikzpicture}
 	\caption{Training the RL agent. Plot of the cumulative reward in each
 	episode.}
 	\label{fig:breakout-agent-train}
 \end{figure}
-The plot is the cumulative reward achieved in each episode. At the end of the
-training, the agent achieves an average reward above 70, which means that is
-able to hit 70 bricks without ever losing the ball. This was an expected
-result, as we want to replicate the results of previous studies at this stage.
 
-The neural network needs time to train on the new observations reached (a
-frame without bricks is really different to the Q-Network). However, we stop
-this training at 4100 episodes, as this is not the main purpose of this
-experiment. These performances are sufficient to reach states in which
-\const{Empty} becomes true. So, we're ready to train the features extractor.
+This plot is the cumulative reward achieved in each episode. At the end of the
+training, the agent achieves a reward above 70, which means that is able to
+hit 70 bricks without ever losing the ball. This was an expected result,
+because at this stage, we just want to replicate the results of previous
+studies.  The neural network needs time to adapt to the new observations
+reached (a frame without bricks is really different for the Q-Network).
+However, we stop this training at 4100 episodes, as this is not the main
+purpose of this experiment. These performances are, in fact, sufficient to
+reach states in which \const{Empty} becomes true. So, we're ready to train the
+features extractor.
 
+The fluents are trained from a dataset generated online by a running agent.
+So, we start the trained agent from the previous step:
+\begin{minted}[escapeinside=“”]{text}
+atarieyes agent play “\normalfont<args-file>” -c “\normalfont<checkpoint>” --rand-test 0.1
+\end{minted}
+where <checkpoint> is any saved agent from the previous training. When
+training the feature extractor, the agent should avoid repetitive behaviours,
+but try to thoroughly explore the environment. This command selects a
+0.1-greedy policy, but we've also experimented with many others, such as
+\verb|--rand-eps|. We let this command run and focus on the receiving side.
+
+The network that we use for the encoder is a DBN of size $(N, 50, 20)$. $N$ is
+the number of input pixels in our region, but this is computed by the
+software and we don't need to specify it. This network contains two RBMs and
+generates an encoding of 20 binary units. At first sight, this encoding could
+seem quite large. However, we must consider that there are 18 bricks in the
+selected region. If we want to learn a representation for these bricks, there
+must be at least 18 units. 20 constitutes a nearly-optimal size for this
+encoding (we use 20, because the optimal might not be reachable during
+training). Also, we've observed that the shallow network $(N, 20)$ is not able
+to achieve the same performances as the deep architecture selected here.
+
+First we train the layer number~0, that of size $(N, 50)$, with the following
+command:
+\begin{minted}{bash}
+atarieyes features train --network 50 20 --train blue_right 0
+\end{minted}
+Other omitted arguments are: the environment, learning rate of $0.001$,
+batch size of 50 and regularization factors.
+
+The output of this training is shown by the plots on the left in
+Figure~\ref{fig:plot-br-encoder}. The most important is the free energy, shown
+in the top left plot, that we've defined in Equation~\eqref{eq:free-energy} at
+page~\pageref{eq:free-energy}. A low free energy means that the model is
+recognizing the training dataset, because a low energy is associated to a high
+probability for the input batches. The second metric, the reconstruction
+error, shows the $L_1$ distance between the input images and the reconstructed
+images (reconstructions are the most probable images under the encoding
+assigned for the true inputs). Minimizing the reconstruction error is not the
+training objective of Persistent CD, but it's useful because, unlike the free
+energy, we know its scale and lower bound.
+
+\begin{figure}[p]
+	\hspace*{-2cm}%
+	\begin{minipage}{\textwidth+3.5cm}
+	\begin{tikzpicture}
+		\pgfplotsset{
+			every axis/.append style={
+				metrics, width=0.4\textwidth, height=0.25\textheight,
+				enlarge x limits=false,
+			}
+		}
+		\begin{axis} [
+				name=free energy 0, xlabel={step}, ylabel={free energy}]
+			\addplot table
+			{./data/run-features-logs0-metrics_free_energy.txt};
+		\end{axis}
+		\begin{axis}[
+				at=(free energy 0.below south), anchor=above north,
+				xlabel={step}, ylabel={reconstruction error}, ymin=0, ymax=0.5]
+			\addplot table
+			{./data/run-features-logs0-metrics_reconstruction_error.txt};
+		\end{axis}
+		\begin{axis} [
+				name=free energy 1,
+				at=(free energy 0.right of east), anchor=left of west,
+				xlabel={step}]
+			\addplot table
+			{./data/run-features-logs2-metrics_free_energy.txt};
+		\end{axis}
+		\begin{axis}[
+				at=(free energy 1.below south), anchor=above north,
+				xlabel={step}, ymin=0, ymax=0.5]
+			\addplot table
+			{./data/run-features-logs2-metrics_reconstruction_error.txt};
+		\end{axis}
+		% Titles
+		\node [above, yshift=3ex] at (free energy 0.above north)
+			{Training layer 0 -- $(N, 50)$};
+		\node [above, yshift=3ex] at (free energy 1.above north)
+			{Training layer 1 -- $(50, 20)$};
+	\end{tikzpicture}
+	\caption{Training metrics of the encoder model.}
+	\label{fig:plot-br-encoder}
+	\end{minipage}%
+	\hspace*{-1.5cm}%
+\end{figure}
+
+We can also appreciate quality of the trained model, by looking at the quality
+of its reconstructions. Figure~\ref{fig:imgs-br-encoder-0} shows, on the top
+row, three input images for our region. Each of these inputs has a different
+configuration of bricks. On the bottom row, we see the expected input images,
+given the encoding that the model associates to the real input\footnote{
+	The expected input has a likelihood term, given by the encoding, and a prior
+	expectation, which remembers the most frequent input patterns. The expected
+	input is a probabilistic prediction and it shouldn't be properly considered
+	an input reconstruction.
+}.
+
+\begin{figure}
+	\centering
+	\begin{tikzpicture}
+		\matrix [
+			matrix of nodes, nodes={image, tight, draw, thin},
+			row sep=4mm, column sep=8mm, outer sep=4mm,
+		] {
+			\includegraphics[width=4cm]{./imgs/br_encoder_layer0_last_true.png} \&
+			\includegraphics[width=4cm]{./imgs/br_encoder_layer0_last1_true.png} \&
+			\includegraphics[width=4cm]{./imgs/br_encoder_layer0_last2_true.png} \\
+			\includegraphics[width=4cm]{./imgs/br_encoder_layer0_last_est.png} \&
+			\includegraphics[width=4cm]{./imgs/br_encoder_layer0_last1_est.png} \&
+			\includegraphics[width=4cm]{./imgs/br_encoder_layer0_last2_est.png} \\
+		};
+	\end{tikzpicture}
+	\caption{True inputs (top row) and expected input images (bottom row).
+	Reconstructions generated with layer~0.}
+	\label{fig:imgs-br-encoder-0}
+\end{figure}
+
+Now that the first layer is trained correctly, we proceed to the second and
+final layer of this encoder. With the commands \verb|--train| and
+\verb|--init| we can train the next layer (the index is 1) from the weights
+obtained at the previous step. The results are shown in the right-hand column
+of Figure~\ref{fig:plot-br-encoder}. Now we have a trained encoder that
+transforms the input image for this region in a vector of 20 binary units.
+
+Since this is the only encoder, we can now pass to discuss the Boolean
+functions. To train this final ``layer'', we issue a similar command:
+\begin{minted}{bash}
+atarieyes features train --network 50 20 --train all 2
+\end{minted}
+For the moment, let's ignore the specific parameters used in this case. We can
+directly look at the training outcome in the plots of
+Figure~\ref{fig:plot-br-bool}.
+\begin{figure}[p]
+	\centering
+	\begin{tikzpicture}
+		\pgfplotsset{
+			every axis/.append style={
+				metrics, width=0.8\textwidth, height=0.27\textheight,
+				/pgfplots/.cd,
+				minor xtick={90,223,263}, grid=none, xminorgrids,
+			},
+		}
+		\begin{axis}[
+				name=consistency, xlabel={step}, ylabel={avg. consistency},
+				/pgfplots/table/.cd, col sep=comma, x=step, y=consistency,
+			]
+			\addplot table {./data/run-features-logs5-metrics.txt};
+			\addplot table {./data/run-features-logs6-metrics.txt};
+			\addplot table {./data/run-features-logs7-metrics.txt};
+			\addplot table {./data/run-features-logs8-metrics.txt};
+		\end{axis}
+		\begin{axis}[
+				name=sensitivity, xlabel={step}, ylabel={avg. sensitivity},
+				at=(consistency.below south), anchor=above north, yshift=-0.5cm,
+				/pgfplots/table/.cd, col sep=comma, x=step, y=sensitivity,
+			]
+			\addplot table {./data/run-features-logs5-metrics.txt};
+			\addplot table {./data/run-features-logs6-metrics.txt};
+			\addplot table {./data/run-features-logs7-metrics.txt};
+			\addplot table {./data/run-features-logs8-metrics.txt};
+		\end{axis}
+		\begin{axis}[
+				name=fitness, xlabel={step}, ylabel={avg. fitness},
+				at=(sensitivity.below south), anchor=above north, yshift=-0.5cm,
+				/pgfplots/table/.cd, col sep=comma, x=step, y=fitness,
+			]
+			\addplot table {./data/run-features-logs5-metrics.txt};
+			\addplot table {./data/run-features-logs6-metrics.txt};
+			\addplot table {./data/run-features-logs7-metrics.txt};
+			\addplot table {./data/run-features-logs8-metrics.txt};
+		\end{axis}
+	\end{tikzpicture}
+	\caption{Training metrics generated by the GA for Boolean functions:
+	population averages for consistency, sensitivity and fitness.}
+	\label{fig:plot-br-bool}
+\end{figure}
+From top to bottom, they show the values of ``consistency'', ``sensitivity''
+and fitness, averaged over all candidate functions. These metrics are computed
+with respect to the automaton in Figure~\ref{fig:breakout-constraint}. Only
+the fitness value contributes to the reproduction probability of each
+individual. The other two metrics are shown just to get a better
+understanding.
+
+As we can see from the first peak in the consistency plot, the genetic
+algorithm, just by eliminating all the candidates that do not predict
+$\set{\const{Full}}$ for the initial configuration, is able to be consistent
+with the constraint. Then, to further improve the fitness, the algorithm
+search for functions that are also able to navigate the automaton states. Of
+course, this comes at a risk of falling into rejecting states.
+It seems that good candidates are found at step 220 and 260, where predictions
+visit all the automaton final states, always satisfying the constraint, at the
+end of the trace.
+
+The colors and the vertical lines in Figure~\ref{fig:plot-br-bool} separate
+different training commands. After each interruption we resume from the
+previous state with the \verb|--cont| option. This detail is relevant because,
+as training progresses, the needs can change. From left to right, the
+algorithm parameters for each run are the following:
+\begin{center}
+\begin{tabular}{l*4c}
+	\texttt{--fitness-episodes} & 2 & 5 & 12 & 20 \\
+	\texttt{--fitness} & (30, 100) & (30, 100) & (10, 100) & (10, 100) \\
+	\texttt{--mutation-p} & 0.02 & 0.02 & 0.005 & 0.002 \\
+	\texttt{--crossover-p} & 0.02 & 0.02 & 0.005 & 0.002
+\end{tabular}
+\end{center}
+The most important is \texttt{--fitness-episodes}, which determines how many
+episodes are observed in order to compute the fitness function. As training
+progresses, we should increase this number, because the target function should
+be ideally consistent with any trace. A good nondeterminism from the agent's
+side, helps to generate diverse test episodes and to keep this number limited.
+Similarly, the other parameters follow a similar idea: training should slow
+down and be more accurate over time.  At the end of this process, a best
+candidate is selected according to the criterion described in the previous
+chapter: the rules with maximum consistency and highest sensitivity.
+
+We've now trained a complete features extractor. When it receives an image of
+the Breakout environment, it's able to predict a Boolean value for
+\const{Full} and \const{Empty}. To verify the quality of the result, we can
+just make predictions with the model. Figure~\ref{fig:breakout-predict} shows
+few predictions made with the model obtained. The frame is cropped around the
+relevant portion just for compactness, and the input region in highlighted in
+the rectangle.
+\begin{figure}
+	\centering
+	\begin{tikzpicture}
+		\begin{scope}
+			\node [image, tight, transparent] (frame size)
+				{\includegraphics[height=4cm]{./imgs/br2.png}};
+			\node [image, tight] (frame)
+				{\includegraphics[height=4cm]{./imgs/br2.png}};
+			\begin{scope}[shift=(frame.north west), x={(frame.north east)},
+				y={(frame.south west)}]
+				\draw [region box] \boxblueright node (blueright-coord) {};
+			\end{scope}
+		\end{scope}
+	\end{tikzpicture}
+	\caption{Predictions on Breakout with the trained model.}
+	\label{fig:breakout-predict}
+\end{figure}
+
+
+
+
+% TODO: rare block
 
 \subsection{Comments}
 
-% TODO: DQN con uno strato non bastava
+% TODO: semplice per RL ma non necessariamente per feature extraction. Dipende
+% dalla complessità dei fluenti
+% TODO: osservazioni semplici poco rumorose, MA non uniformemente distribuite
+% TODO: seleziono uno di 2^n configurazioni. Non potevo farlo con un simbolo
+% solo e non potevo con altre configurazioni intermedie senza legarlo ad altri
+% simboli.
 % TODO: sembrava banale ma non lo è: natura combinatoria
+% TODO: raggiunto perfettamente
 
 % Back to brak into sections
 \let\sectionbreak\savedsectionbreak
