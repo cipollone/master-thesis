@@ -746,10 +746,10 @@ from one place to the other.
 
 Following the same procedure as in the previous game, we should train the RL
 agent alone on the environment rewards. However, as previously studies had
-found, the agent can't reach any reward at all here. This is fine, since we
-use the first agent just to train the features extractor. The random policy is
+found, the agent can't reach any reward at all, here. This is fine, the first
+agent is used just to train the features extractor. The random policy will be
 enough to learn the first two symbols: \const{AtStart} and \const{AtStairs1}.
-We run:
+So, we run:
 \begin{minted}[escapeinside=“”]{text}
 atarieyes agent play “\normalfont<args-file>” -c “\normalfont<checkpoint>” --rand-test 1
 \end{minted}
@@ -757,13 +757,14 @@ which plays completely with random actions.
 
 The encoder network we chose is a DBN with size $(N, 10, 1)$. This means that
 each input region is encoded into a single Boolean value. Let's discuss this
-choice: a scalar encoding means that the extracted Boolean feature is exactly
-the fluent that we want to learn. The Boolean functions play no role at all in
-the selection of the desired concept. This is intentional. As we've previously
-noted, the encoding size should be the smallest number of units that are
-sufficient to determine the truth of the proposition. If with a single unit
-the encoder is able to isolate the required feature alone, there's no point in
-transfer this task to the Boolean functions.
+choice: a scalar encoding means that the fluent value will be exactly the
+extracted Boolean feature. The Boolean functions play no role at all in the
+selection of the desired concept (they can only negate the received value).
+This is intentional. As we've previously noted, the encoding size should be
+the smallest number of units that are sufficient to determine the truth of the
+proposition. If, with a single unit, the encoder is able to isolate the
+required feature by itself, there's no point in transfering this task to the
+Boolean functions, where the separation might be more complex.
 
 The training command for the first layer of the encoder at the ``start''
 region is:
@@ -771,12 +772,12 @@ region is:
 atarieyes features train --network 10 1 --train start 0
 \end{minted}
 We repeat this process for layer~1 and the encoder at region ``stairs1''.
-Each of these trainings is much faster than the Breakout case, because the
+All these runs are much faster than in the Breakout case, because the
 input images show little diversity. On the other end, the event we're trying
 to catch is very rare (the agent needs to pass on each region by chance), so
-we use a slightly larger batch size, of~100 images.
+we use a slightly larger batch size, with~100 images.
 Figure~\ref{fig:plot-mz-encoder} shows the reconstruction error for each of
-these four trainings.
+these four trainings. We omit plots for the last layer, the Boolean functions.
 
 \begin{figure}[p]
 	\centering
@@ -820,21 +821,162 @@ these four trainings.
 	\label{fig:plot-mz-encoder}
 \end{figure}
 
-Last is the layer of Boolean rules, which plays little role in this case, as
-it can just negate the output of the encoder, if that is necessary. We omit
-plots for this last training.
-
-The resulting features extractor correctly valuates both symbols,
+The features extractor obtained correctly valuates both symbols,
 \const{AtStart} and \const{AtStairs1}, in all images that we tested. Let's see
-what the model has learnt.
+what the model has learnt. In Figure~\ref{fig:mz-expected-inputs}, we
+visualize the expected input images given the output encodings, in a similar
+way to Figure~\ref{fig:breakout-model-all}. In this case, the encoding is
+composed of just one Boolean unit. So, we show the input associated to both
+values.
+\begin{figure}
+	\centering
+	\begin{tikzpicture}[img box/.style={image, draw, thick}]
+		\matrix [row sep=0.5cm, column sep=0.5cm] {
+			\& \node {encoding~0}; \& \node {encoding~1}; \\
+			\node {``start''\\region}; \&
+			\node [img box] {\includegraphics[width=3cm]{./imgs/mz_start_0.png}}; \&
+			\node [img box] {\includegraphics[width=3cm]{./imgs/mz_start_1.png}}; \\
+			\node {``stairs1''\\region}; \&
+			\node [img box] {\includegraphics[height=3.5cm]{./imgs/mz_stairs_0.png}}; \&
+			\node [img box] {\includegraphics[height=3.5cm]{./imgs/mz_stairs_1.png}}; \\
+		};
+	\end{tikzpicture}
+	\caption{Expected input images for each region and encoding output.
+	The differences between columns have been emphasized.}
+	\label{fig:mz-expected-inputs}
+\end{figure}
 
-% TODO: figure of expected inputs
+The left images are the expected inputs when the encodings are~0, while
+the right are associated to~1. Since the character is rarely inside the
+regions, there is a strong bias that tend to uniform all these images. So,
+we've slightly emphasized the differences between the two columns to improve
+this visualization. As we can now understand, the encoders have learnt to
+recognize when the agent is \emph{not} inside each region. The slight gray
+tones in the left column mean that there is some possibility for the agent to
+be there, when the encoding is~0; while it is certainly not there for the
+output~1. In fact, if we then look at the Boolean rules, we would see that
+this encoding is negated to produce the fluent valuations.
 
-% TODO: player with RB commands
+The now complete features extractor can be used to guide the agent with
+additional rewards. We write the following simple temporal goal:
+\begin{equation}
+	\ldiamond{(\lnot \const{AtStairs1})^*}(\const{AtStairs1} \land \llast)
+\end{equation}
+which sends a single reward when the agent reaches the stairs on the right
+(see the regions in Figure~\ref{fig:mz-fluent-regions}). We write this formula
+on the field \texttt{restraining\_bolt} in the file of definitions. If we
+remember that the agent wasn't able to reach any reward at all, this initial
+goal is a way to start.
+
+We now train the RL agent on this goal by executing \verb|agent train| and a
+\verb|features rb| instances. Once we see that the agent has learnt to reach
+this first goal, we can repeat the previous process for a new symbol. In this
+case, we would let the trained agent play, and train the features extractor
+for the symbol \const{AtStairs1bot}, which is the next encountered the path.
+With this iterative procedure we've been also able to learn \const{AtStairs2}.
+
+To this point, we've mainly addressed the problem of sparse rewards, because
+the Restraining Bolt has been used to send rewards upon the detection of some
+events.  However, we can also use it to solve non-Markovian tasks.
+Suppose we want the agent to repeatedly jump from ``start'' to ``stairs1'' and
+vice versa. This apparently simple problem cannot be solved just providing the
+appropriate rewards, because, just from the input frame, the policy hasn't
+enough information about where to direct the player. Instead, the RB is able
+to provide a consistent information about the next position to reach.
+
+In the \verb|restraining_bolt| field, we now write a \ldl{} formula, that,
+combined with the temporal constraints, corresponds to the automaton in
+Figure~\ref{fig:mz-repetitive-goal-automa}.
+\begin{figure}
+	\centering
+	\includegraphics[width=\textwidth]{./imgs/mz-repetitive-goal-automa.pdf}
+	\caption{Automaton associated to the last temporal goal (back and forth from
+	``start'' to ``stairs1'').}.
+	\label{fig:mz-repetitive-goal-automa}
+\end{figure}
+What this specification says is that the agent can accumulate rewards,
+represented by the final states, by following the loop of RB: 3~\to 1 \to
+4 \to 5 \to~3. So, it is induced to pass from ``start'' to ``stairs1'' and
+vice-versa. This is only possible, because the agent also receives from the RB
+in which of these states it is.
+
+Seen as a image-to-action function, the agent's policy corresponding to
+states 4, 7 and 5 will guide the agent toward ``start'', while for 1, 6 and 4,
+will point in the opposite direction. We run the usual
+\texttt{agent}--\texttt{features} pair of instances to train the agent on this
+new goal. In Figure~\ref{fig:mz-repetitive-goal-reward}, we show the
+the cumulative reward during this training.
+\begin{figure}
+	\centering
+	\begin{tikzpicture}
+		\begin{axis}[
+				metrics, xlabel={eposode}, ylabel={cumulative reward},
+				width=0.7\textwidth, height=0.2\textheight,
+				xmin=3403, ymin=0, enlarge x limits=false, ymax=15]
+			\addplot table
+				{./data/run-mz-agent-repetitive-reward.txt};
+		\end{axis}
+	\end{tikzpicture}
+	\caption{Training the RL agent on the ``start''--``stairs1'' goal. Plot of
+	the cumulative reward in each episode.}
+	\label{fig:mz-repetitive-goal-reward}
+\end{figure}
+The increase we see means that the agent is learning to get from one position
+to the other, multiple times, in the same episode. The maximum of 14 means
+that it touches both positions 7 times. In
+Figure~\ref{fig:mz-repetitive-goal-path}, we show the approximate path that it
+usually follows.
+
+\begin{figure}
+	\centering
+	\begin{tikzpicture}[
+			region pos/.style={circle, tight, minimum size=8pt},
+			path arrow/.style={draw=white, thick, ->},
+		]
+		\node (frame) [image, tight] 
+			{\includegraphics[height=7cm]{./imgs/mz5.png}};
+		\begin{scope}[shift=(frame.north west),
+				x={(frame.north east)}, y={(frame.south west)}]
+			\draw [region box] \boxstart node (start) [region pos, pos=0.5] {};
+			\draw [region box] \boxstairsone node (stairs1) [region pos, pos=0.5] {};
+		\end{scope}
+		\begin{scope}[shift=(frame.south west),
+				x={(frame.south east)}, y={(frame.north west)}]
+			% Arrows
+			\path [path arrow] (start.east) .. controls +(0.05,0) .. (0.7, 0.47);
+			\path [path arrow] (0.7, 0.47) .. controls +(0.1,0) .. (stairs1.north);
+			\path [path arrow] (stairs1.north west) .. controls
+				+(-0.05,0.05) and (0.75, 0.40) .. (0.7, 0.35);
+			\path [path arrow] let \p1 = (start.south) in
+				(0.7, 0.35) .. controls +(0,0.05) and ($(\x1, 0.45)+(0.05,0)$)
+				.. (\x1, 0.40);
+			\path [path arrow] let \p1 = (start.south) in
+				(\x1, 0.40) -- (start.south);
+		\end{scope}
+	\end{tikzpicture}
+	\caption{Path followed for the ``start''--``stairs1'' goal.}
+	\label{fig:mz-repetitive-goal-path}
+\end{figure}
 
 
 \subsection{Comments}
 
+In this second environment, we've shown how to interleave two processes:
+training the RL agent and training the features extractor. We gradually
+improved the agent's performance until it had been possible to reach a
+satisfactory set of symbols. Then, we used this set of fluents to declare a
+non-Markovian task, in order to show a working application of the Restraining
+Bolt.
+
+In this small section, we'll make few observations about these experiments on
+the Montezuma's Revenge game: both regarding few interesting details and the
+issues still to solve, also suggesting few options for improvement.
+
+
+
+% TODO: key and leave the first room
+% TODO: takes longer
+% TODO: explore the first room
 % TODO: rare input
 % TODO: useless temporal constraints
 % TODO: continue training! more efficient RL training

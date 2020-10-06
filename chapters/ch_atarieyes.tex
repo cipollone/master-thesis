@@ -880,6 +880,15 @@ continued trainings. The reason is that the agent has learnt to associate a
 state ID to a configuration of the environment. Any other permutation of the
 automaton IDs would be misinterpreted by the agent.
 
+It's important to precise that the current implementation doesn't perform
+\emph{reward shaping}~\cite{bib:favorito-thesis}. This technique produces
+additional rewards, even before the temporal goal is completely reached, in
+order to guide the RL agent (it is possible to do so, without modifying the
+optimal policy). Since this hasn't been implemented yet, we used
+\texttt{restraining\_bolt} to reward the prefixes of the desired trajectory.
+We won't consider this detail in the following discussion, as it creates more
+complex temporal specifications and it would be avoided with reward shaping.
+
 
 \subsubsection*{\texttt{training} module}
 
