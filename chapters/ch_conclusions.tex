@@ -1,10 +1,179 @@
-\chapter{Conclusions and future work}
+\chapter{Conclusion and future works}
 
 \label{ch:conclusions}
 
-What I have done (concretely); what I haven't done; how I'd improve the
-results and how to possibly relax some assumptions.
+%% Short chapter: don't break on sections
+%\let\sectionbreak\dontbreakhere
+
+\section{Overview}
+
+With this thesis, we addressed the problem of applying a method, called the
+``Restraining Bolt''~\cite{bib:bolt}, to Deep Reinforcement learning. This
+necessity is caused by the known limitations of RL which Deep RL directly
+inherits: the Markovian assumptions on rewards an observations. Full
+observability, in particular, is always falsified in the real world, and even
+is some video games of moderate complexity. Instead, this logic construction,
+inspired by~\cite{bib:nmrdp-logic-first}, allowed us to solve RL environments
+with sparse rewards, and a large class of tasks with partial observations and
+non-Markovian goals. This means that we're starting to address the group of
+problems where RL, and recently Deep RL, always struggled to solve.
+
+However, any form of logic reasoning works by manipulating an abstraction. In
+case of temporal logics used by Restraining Bolt, we're talking about a set of
+atomic propositions, that represent the state of some meaningful events in the
+outside world. Creating this connection, between environment observations and
+true atomic propositions, is clearly not an easy task. The more complex the
+observations become, the harder is to \emph{ground} the truth of such symbols
+to the environment state. This is the major limitation that impede the
+application of some high-level reasoning to Deep RL.
+
+By slightly extending the concepts of ``observation'' and ``proposition'',
+any decision problem can be stated as the issue addressed here: the problem of
+deciding the truth of a propositional atom. So, after the general frame in
+which this problem has been introduced, we must remember that we've only
+considered a limited class of observations and propositions.
+
+Our observations are images of the video games of the collection Atari~2600.
+Propositions are conditions on visual features on the image, such as the
+presence of an object at some location, or a certain pattern of a visible
+feature. Limitations and assumptions regarding propositions have been listed
+thorough Chapter~\ref{ch:fluents}.
 
 
-% TODO: metrics are too specific. Remove
-% TODO: learn specification from example
+\section{Main contributions}
+
+In this section, we summarize the main contributions of this thesis. Most of
+them have been motivated by the need of a successful application of the
+Restraining Bolt to Deep Reinforcement Learning. The Restraining Bolt has been
+previously demonstrated only in combination with RL. Moving to more complex
+observations required to devise many original solutions that we list here:
+
+\begin{description}[style=nextline]
+	
+	\item[Model for a deep restrained agent]
+		Deep RL agents trained with value-based algorithms rely on Q-Networks.
+		When the agent plays in combination with a Restraining Bolt, it receives
+		the image from the environment and the RB state. How should be combine
+		such different inputs in the agent's network? The model proposed in
+		Section~\ref{sec:model-atari-rb} uses the RB state to select the
+		appropriate parameters to use among a set. Although only a portion of the
+		network has been separated, this allow to produce radically different
+		policies for distinct RB states.
+
+	\item[Learning fluents with temporal constraints]
+		Chapter~\ref{ch:fluents} proposed original ideas to solve the problem of
+		learning valuations for a propositions. We used formulae of temporal
+		logics to express the expected temporal behaviour of the desired
+		valuations. The known limitations of this approach have been discussed in
+		Section~\ref{sec:fluents-limitations}, but we also provided experiments to
+		shown that the idea can be effective in the class of problems under
+		consideration.
+
+	\item[Models for the features extractor]
+		With ``features extractor'' we called the complete function that from an
+		image of the game returns the fluents Boolean values. This thesis also
+		proposed a model for this function, which combines a part of unsupervised
+		learning, a DBN network, and an array of Boolean functions. This last part
+		is inspired by areas of concept learning problems. This double
+		arrangements addresses the known limitations of temporal constraints.
+		Furthermore, as the visualizations in the Experiments chapter have shown,
+		the output encoding of the DBN can be understood by the human observer.
+		The latter part might also be easily be defined by hand, if needed.
+
+	\item[The \texttt{atarieyes} package]
+		We provide an implementation for all the ideas presented in this thesis.
+		The software \texttt{atarieyes} is a Python package, documented in a clear
+		way.  Most operations can be performed just from the command line
+		interface it provides, with many tunable training parameters. Its internal
+		structures can be also adopted in future applications, thanks to the
+		modular design. The most interesting feature is that the functionalities
+		related to the fluents are completely separated from the RL agent. We
+		could even train a feature extractor or apply the Restraining Bolt with
+		agents realized with other Deep RL libraries.
+
+\end{description}
+
+We conclude with two minor contributions that are worth mentioning. First, we
+collaborated with the original author~\cite{bib:favorito-thesis} to the recent
+improvements to the \texttt{flloat} Python package. This is package is
+currently used by researchers for \ldl{}-to-DFA translations, and it's the one
+we adopted in this thesis. Together, we worked for a more stable version of
+the software and an improved language parser for \ldl{}.
+
+Lastly, we'd like to emphasize that Section~\ref{sec:non-markov} presented an
+unifying formalism between RL problems with partial observations and
+non-Markovian goals. As we've seen, just focusing on the Markov assumptions on
+rewards, the two classes of problems can be presented from the same point of
+view. We could consider all of them as partially observable environments. The
+RB, in this context, is a clever way to keep track of the unobservable
+informations that are relevant for obtaining the rewards.
+
+
+\section{Future works}
+
+\label{sec:future}
+
+Features extraction is clearly a central topic of this work. We believe that
+temporal logics can be also used to describe the desired meaning of our
+symbols. Still, we don't think to have satisfactorily demonstrated this
+possibility. In the future, we'd like to remove some of the most limiting
+assumptions taken in this thesis, so to allow more interesting possibilities.
+Aware of the current limitations of this work, we conclude the thesis by
+suggesting some interesting directions of the future research:
+\begin{description}
+	\item [Removing regions]
+		One simplification we took is valuating fluents on fixed portions of the
+		input image. Clearly, this strongly restricts the class of observations
+		that can be handled, since it requires mostly static elements in the
+		scene.  We should definitely avoid this. One possibility is to define
+		regions not on fixed locations, but on specific features of the image. The
+		idea is first to find the relevant feature, then evaluate the symbol on a
+		portion of the input at that position.
+
+	\item [Removing metrics]
+		The ``consistency'' and ``sensitivity'' metrics have been used to rank
+		candidate function and pick a solution. However, both of them induce a
+		rather arbitrary ordering over candidates, which might not suitable for
+		all problems. They are a form of heuristics biasing the search. Instead,
+		we should only check for satisfaction between trace and constraint.
+		The reason for their adoption is that, as we've discussed in
+		Section~\ref{sec:fluents-limitations}, temporal constraints are very weak
+		indications when used alone. We should search alternative and more correct
+		ways to \emph{ground} the model predictions to the desired valuations.
+
+	\item [Strong grounding]
+		We believe that this last issue is the most important to discuss. Temporal
+		constraints are just weak indications of the desired input-output
+		associations. Just by talking in some abstract language, we can't hope to
+		reliably bind the abstraction we're using to the external world states.
+		These states must appear inside the specification, somehow. We propose to
+		investigate two possibilities:
+		\begin{itemize}
+			\item The first is to include in the temporal specification some
+				\emph{grounded} fluents. Grounded fluents are propositional symbols
+				which are exactly valuated. Examples are: propositions about the
+				action just executed or the reward received, conditions reliably
+				decided by some ad-hoc neural network.
+			\item The second is to include a very small dataset of few input-output
+				labelled samples.
+		\end{itemize}
+		We strongly believe that merging temporal constraints with more classic
+		sources of informations like the two mentioned would create very effective
+		and specific description of the desired concept.
+
+	\item [Experiments] The last, and more obvious, necessity is to test 
+		these improvements to see what can be achieved. We believe that these
+		changes would open many possibilities. Also the original idea hasn't been
+		satisfactorily demonstrated just from the experiments of the previous
+		section.
+\end{description}
+
+The problem we addressed in this thesis is a central topic. This is not
+something related just to the Restraining Bolt method, but with any form of
+logic reasoning on Deep RL agents. Even in presence of Markovian task, which
+might be solved with a pure Deep RL agent, there might be the necessity to
+understand the agent policy. Policies on images are really hard to visualize
+and understand, because they don't work from a structured representation easy
+to understand for human. Being able to create reliable abstractions is an
+important goal that would also help to follow the purposes and decisions of
+our agents.

@@ -965,20 +965,46 @@ In this second environment, we've shown how to interleave two processes:
 training the RL agent and training the features extractor. We gradually
 improved the agent's performance until it had been possible to reach a
 satisfactory set of symbols. Then, we used this set of fluents to declare a
-non-Markovian task, in order to show a working application of the Restraining
-Bolt.
+non-Markovian task, and we've shown a successful training and play with the
+Restraining Bolt.
 
 In this small section, we'll make few observations about these experiments on
-the Montezuma's Revenge game: both regarding few interesting details and the
-issues still to solve, also suggesting few options for improvement.
+the Montezuma's Revenge game. First, we highlight some interesting details:
+\begin{description}
 
+	\item [Rare events] Although the symbols represented very simple conditions,
+		we requested encoder to recognize very rare events. This has been possible
+		thanks to Persistent CD, because it focuses on encoding the input
+		distribution, not finding the accurate input reconstruction.
 
+	\item [Long training] Restrained RL agents require longer trainings with
+		respect to the agent without the Restraining Bolt. Often, this effect
+		isn't caused by the additional parameters that are required. This is
+		mainly caused by the more complex policy that we want to learn. The more
+		complex landscape requires to sample pairs of input images--output values
+		for each automaton state, because the best action can be radically
+		different. Unfortunately, sampling cannot be performed uniformly, since the
+		agent has to reach those state. So, rare configurations will slow down the
+		training.
 
-% TODO: key and leave the first room
-% TODO: takes longer
-% TODO: explore the first room
-% TODO: rare input
-% TODO: useless temporal constraints
-% TODO: continue training! more efficient RL training
-% TODO: couldn't remove action: bad sampling and exploration
-% TODO: too many actions. maybe better not distinct
+\end{description}
+
+Regarding the necessary improvements to this example:
+\begin{description}
+
+	\item [Too many actions] With the same training time, as the number of
+		action increases, the quality of the policy decreases, because sampling
+		becomes less efficient. 18 distinct and independent actions may be too
+		much. Instead, we could try to exploit the fact that some of them are just
+		a composition of a smaller group of actions, such as: $\const{Left} +
+		\const{Up} + \const{Fire}$.
+
+	\item [Explore the map!] We have all the symbols we need to write a temporal
+		specification that asks the agent to reach the key, then leave this first
+		room of the game. This would be a more interesting challenge to try.
+		Instead, in order to navigate the other rooms of the maze, we would need
+		to slightly modify the implementation to remove fixed regions. This idea
+		is introduced in Section~\ref{sec:future} ``\nameref{sec:future}''.
+
+\end{description}
+
