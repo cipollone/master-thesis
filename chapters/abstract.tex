@@ -1,15 +1,16 @@
 Reinforcement Learning (RL) and Deep RL, although different, both share the
-strong assumption of learning under Markovian rewards. A method, originally
-demonstrated for RL, adopts the temporal logics \ltl{}/\ldl{} to declare
-non-Markovian goals and train agents on these tasks. In this thesis, we
-apply the same method to Deep~RL, demonstrating that it can take advantage of
-the same construction.
+strong assumption that the environment generates Markovian rewards. A method,
+originally demonstrated for RL, adopts the temporal logics \ltl{}/\ldl{} to
+declare non-Markovian goals and train agents on these tasks. In this thesis,
+we apply the same method to Deep~RL, demonstrating that it's possible to
+successfully apply the same construction.
 
 The complex observations used in Deep~RL introduce new difficulties to be
 addressed: how can we \emph{ground} the logic abstraction, composed of atomic
 propositions, to match the environment state? Most of this thesis focus on
-this central problem of logic reasoning. We propose an original solution that
-employs temporal logics to specify the desired temporal behaviour of the
-propositions to extract. We also define a specific model that allows to
-apply these ideas on the Atari games, a class of environments frequently used
-in Deep RL, and we evaluate the effectiveness of this method in few of those.
+this central problem, for a specific class of observations and propositions.
+We propose an original solution that employs temporal logic to specify the
+expected temporal behaviour of the propositions to extract. We also define a
+specific model that allows to apply these ideas on the Atari games, a class of
+environments frequently used in Deep RL, and we evaluate the effectiveness of
+this method in two of those.

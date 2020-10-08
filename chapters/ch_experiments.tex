@@ -10,8 +10,9 @@ in combination with the Restraining Bolt for complex RL tasks.
 
 We'll look at two environments: Breakout and Montezuma's Revenge. For the
 first we'll test the training process of the features extractor, while the
-second is used for a more complete demonstration about the possibilities (we
-proceed from learnt features to the application of the Restraining Bolt).
+second is used for a more complete demonstration about the possibilities of
+the complete agent (we proceed from learnt features to the application
+of the Restraining Bolt).
 
 % Page too short: don't break here
 \let\sectionbreak\dontbreakhere
@@ -41,9 +42,8 @@ The exact environment name for this game is \verb|BreakoutDeterministic-v4|.
 \subsection{Definitions}
 
 We now define two propositional symbols, \const{Full} and \const{Empty}, and
-we apply the proposed model and training procedure to learn their Boolean
-valuation function. The intended interpretation of these two proposition
-is:
+we apply the proposed model and the training procedure to learn their Boolean
+valuation function. The intended interpretation of these two proposition is:
 \begin{description}
 	\item [\const{Full}] should be true when the area is full of bricks.
 	\item [\const{Empty}] should be true when there are no bricks inside the
@@ -98,9 +98,9 @@ temporal constraint:
 	\end{array}
 	\label{eq:breakout-constraint}
 \end{equation}
-The conjunction $\land \lnot \lend$ means that we're not referring to the end
-of the trace. This is only required in this \ldl{} semantics for finite
-traces.
+The conjunction $\land\, \lnot \lend$ means that we're not referring to the
+end of the trace. This is only required in the \ldl{} semantics for finite
+traces used here.
 
 The DFA associated to this temporal constraint is shown in
 Figure~\ref{fig:breakout-constraint}. This is the automaton that the software
@@ -108,7 +108,8 @@ will use to search among the candidate functions.
 \begin{figure}
 	\centering
 	\includegraphics[height=0.5\textheight]{./imgs/br_constraints.pdf}
-	\caption{The DFA associated to Equation~\eqref{eq:breakout-constraint}.}
+	\caption{The DFA associated to the formula in
+	Equation~\eqref{eq:breakout-constraint}.}
 	\label{fig:breakout-constraint}
 \end{figure}
 As we can see from its structure, the fluents dynamics is relatively simple.
@@ -134,7 +135,7 @@ To specify all these definitions to our software we run:
 \begin{minted}{text}
 atarieyes features select -e BreakoutDeterministic-v4
 \end{minted}
-and we select the region of Figure~\ref{fig:breakout-fluents}. Then we
+and we select the region of Figure~\ref{fig:breakout-fluents}. Then, we
 complete the generated file with the fluents names and any of the two temporal
 constraints above. The resulting file is shown in
 Listing~\ref{lst:breakout-definitions}. 
@@ -168,7 +169,7 @@ Listing~\ref{lst:breakout-definitions}.
 \caption{The content of \texttt{definitions/BreakoutDeterministic-v4.json}.}
 \label{lst:breakout-definitions}
 \end{listing}
-"\texttt{br}" is just an abbreviation for that region name. Other than that,
+"\texttt{br}" is just the abbreviation for that region name. Other than that,
 the file exactly represents what we've defined so far.
 
 
@@ -176,7 +177,7 @@ the file exactly represents what we've defined so far.
 
 The first step is to train a RL agent on the environment as it is.
 Some of the options we've used for the \verb|agent train| command are: a batch
-size of 32, learning rate of $0,0001$, double Q-Network update every 10000
+size of 32, learning rate of $0.0001$, and double Q-Network update every 10000
 steps. To follow the training progress, we run TensorBoard on the agent's log
 directory.  The results obtained are shown in
 Figure~\ref{fig:breakout-agent-train}.
@@ -213,7 +214,7 @@ atarieyes agent play “\normalfont<args-file>” -c “\normalfont<checkpoint>�
 \end{minted}
 where <checkpoint> is any saved agent from the previous training. When
 training the feature extractor, the agent should avoid repetitive behaviours,
-but try to thoroughly explore the environment. This command selects a
+and try to thoroughly explore the environment. This command selects a
 0.1-greedy policy, but we've also experimented with many others, such as
 \verb|--rand-eps|. We let this command run and focus on the receiving side.
 
@@ -228,8 +229,8 @@ encoding (we use 20, because the optimal might not be reachable during
 training). Also, we've observed that the shallow network $(N, 20)$ is not able
 to achieve the same performances as the deep architecture selected here.
 
-First we train the layer number~0, that of size $(N, 50)$, with the following
-command:
+First, we train the layer number~0, that is of size $(N, 50)$, with the
+following command:
 \begin{minted}{bash}
 atarieyes features train --network 50 20 --train blue_right 0
 \end{minted}
@@ -245,8 +246,8 @@ probability for the input batches. The second metric, the reconstruction
 error, shows the $L_1$ distance between the input images and the reconstructed
 images (reconstructions are the most probable images under the encoding
 assigned for the true inputs). Minimizing the reconstruction error is not the
-training objective of Persistent CD, but it's useful because, unlike the free
-energy, we know its scale and lower bound.
+training objective of Persistent CD, but it's useful to visualize it anyway,
+because, unlike the free energy, we know its correct scale and lower bound.
 
 \begin{figure}[p]
 	\hspace*{-2cm}%
@@ -294,16 +295,15 @@ energy, we know its scale and lower bound.
 	\hspace*{-1.5cm}%
 \end{figure}
 
-We can also appreciate quality of the trained model, by looking at the quality
-of its reconstructions. Figure~\ref{fig:imgs-br-encoder-0} shows, on the top
-row, three input images for our region. Each of these inputs has a different
+We can also appreciate the trained model, by looking at the quality of its
+reconstructions. The top row of Figure~\ref{fig:imgs-br-encoder-0} shows three
+input images in our region. Each of these inputs has a different
 configuration of bricks. On the bottom row, we see the expected input images,
-given the encoding that the model associates to the real input\footnote{
-	The expected input has a likelihood term, given by the encoding, and a prior
-	expectation, which remembers the most frequent input patterns. The expected
-	input is a probabilistic prediction and it shouldn't be properly considered
-	an input reconstruction.
-}.
+given the encoding that the model associates to the inputs above\footnote{ The
+expected input has a likelihood term, that is generated from the encoding, and
+a prior expectation, which derives from the most frequent input patterns. So,
+the expected input is a probabilistic prediction and it shouldn't be properly
+considered an input reconstruction.  }.
 
 \begin{figure}
 	\centering
@@ -329,7 +329,7 @@ Now that the first layer is trained correctly, we proceed to the second and
 final layer of this encoder. With the commands \verb|--train| and
 \verb|--init| we can train the next layer (the index is 1) from the weights
 obtained at the previous step. The results are shown in the right-hand column
-of Figure~\ref{fig:plot-br-encoder}. Now we have a trained encoder that
+of Figure~\ref{fig:plot-br-encoder}. We have now trained an encoder that
 transforms the input image for this region in a vector of 20 binary units.
 
 Since this is the only encoder, we can now pass to discuss the Boolean
@@ -380,8 +380,8 @@ Figure~\ref{fig:plot-br-bool}.
 			\addplot table {./data/run-br-features-logs8-metrics.txt};
 		\end{axis}
 	\end{tikzpicture}
-	\caption{Training metrics generated by the GA for Boolean functions:
-	population averages for consistency, sensitivity and fitness.}
+	\caption{Training metrics generated by the GA for the Boolean functions:
+	population average values for consistency, sensitivity and fitness.}
 	\label{fig:plot-br-bool}
 \end{figure}
 From top to bottom, they show the values of ``consistency'', ``sensitivity''
@@ -395,17 +395,17 @@ As we can see from the first peak in the consistency plot, the genetic
 algorithm, just by eliminating all the candidates that do not predict
 $\set{\const{Full}}$ for the initial configuration, is able to be consistent
 with the constraint. Then, to further improve the fitness, the algorithm
-search for functions that are also able to navigate the automaton states. Of
+looks for functions that are also able to explore the automaton states. Of
 course, this comes at a risk of falling into rejecting states.
-It seems that good candidates are found at step 220 and 260, where predictions
-visit all the automaton final states, always satisfying the constraint, at the
-end of the trace.
+It seems that better candidates are found at step 220 and 260, where
+predictions visit all the automaton final states, always satisfying the
+constraint, at the end of the trace.
 
 The colors and the vertical lines in Figure~\ref{fig:plot-br-bool} separate
 different training commands. After each interruption we resume from the
 previous state with the \verb|--cont| option. This detail is relevant because,
-as training progresses, the needs can change. From left to right, the
-algorithm parameters for each run are the following:
+as training progresses, the most appropriate hyper-parameters change. From
+left to right, the algorithm parameters for each run are the following:
 \begin{center}
 \begin{tabular}{l*4c}
 	\texttt{--fitness-episodes} & 2 & 5 & 12 & 20 \\
@@ -422,7 +422,7 @@ side, helps to generate diverse test episodes and to keep this number limited.
 Similarly, the other parameters follow a similar idea: training should slow
 down and be more accurate over time.  At the end of this process, a best
 candidate is selected according to the criterion described in the previous
-chapter: the rules with maximum consistency and highest sensitivity.
+chapter: the individual with maximum consistency and highest sensitivity.
 
 
 \subsection{Comments}
@@ -432,7 +432,7 @@ environment, it's able to predict a Boolean value for \const{Full} and
 \const{Empty}. To verify the quality of the result, we can just make
 predictions with this model. We can see few predictions in
 Figure~\ref{fig:breakout-predict}. For compactness, we show just a portion of
-the entire frame, and the input region in highlighted in the rectangle.
+the entire frame, and the input region is highlighted in the rectangle.
 \tikzset{
 	image part/.style={path picture={
 		\node (#1) [image, tight]
@@ -549,20 +549,21 @@ the third unit of the encoder is~1, and vice versa.
 The most probable inputs shown here are also affected by a prior probability.
 In fact, the fourth brick, which is almost always down, is the same that the
 agent has learnt to hit first (see the dark column). Since the fourth brick is
-so rare, the model didn't associate any unit to its precence, but it has just
-assigned a strong prior probability, instead. So the wrong prediction we've
+so rare, the model didn't associate any unit to its precence, but it has only
+assigned a strong prior probability, instead. So, the wrong prediction we've
 seen above is caused by a too coarse encoding. Clearly, everything that the
 encoder considers of the same class cannot be distinguished by the Boolean
 functions.
 
-On the right of Figure~\ref{fig:breakout-model-all}, two columns of 0s and 1s.
-These are the Boolean rules (1-rules) of the best candidate. We can recognize
-a reasonable pattern: the rule for \const{Full} requires the absence of the
-features 1 and 10, which detect the empty line, and the presence of many
-other features, which are associated to the presence of each brick. The rule
-for \const{Empty} does almost the opposite.
+On the right of Figure~\ref{fig:breakout-model-all}, there are two columns of
+0s and 1s.  These are the Boolean rules (1-rules) of the best candidate that
+the model has selected. We can recognize a reasonable pattern: the rule for
+\const{Full} requires the absence of the features 1 and 10, which detect the
+empty line, and the presence of many other features, which are associated to
+the presence of each brick. The rule for \const{Empty} does almost the
+opposite.
 
-We now understand that the concept for \const{Full} is not learnt exactly,
+We also understand that the concept for \const{Full} is not learnt exactly,
 because the rule doesn't require anything about the second brick (feature
 number 8). This is not necessarily an error: we want the features extractor to
 give correct valuations just for the trajectories visited by the agent, not
@@ -570,25 +571,27 @@ for any input. In fact, the training dataset are the observations produced by
 the agent, and we want the valuations function to be correct on those. In this
 example, the light colour of the second column suggests that the second brick
 is the last to be hit. At that point, the model has many other evidences that
-\const{Fluents} is false. So, it didn't need to link the concept to this
+\const{Full} must be false (other bricks required by the rule are down,
+already). So, it didn't need to link the concept of the fluent to the 8th
 feature. In general, this is the reason why the agent's policy should have a
-strong stochastic component.
+strong stochastic component: to encounter as many possible trajectories during
+the training phase.
 
-To conclude, this game doesn't constitute a challenge for RL, because it has
-been solved as one of the first games. Instead, it can be a much more
-challenging environment, if we consider the features extraction problem. The
-difficulty of learning some propositions doesn't reside in the cumulative
-reward, but on the complexity of the observations and on the desired meaning
-of those propositions. This problem quickly becomes hard when we want to learn
-very complex concepts.
+To conclude, this game is not considered a complex environment for Deep RL,
+because it has been solved as one of the first games. Instead, it can be a
+much more challenging environment, if we consider the features extraction
+problem. The difficulty of learning some propositions doesn't reside in the
+cumulative reward, but on the complexity of the observations and on the
+desired meaning of the propositions. This problem quickly becomes hard when
+we want to learn very complex concepts.
 
 Even though our observations had very little noise (the ball passing was the
-only noise), we selected a region with many meaningful configurations. Due to
-the combinatory nature of the bricks, we've asked the features extractor to
-detect one in $2^{18}$ configurations, which is not an easy task. As we've
-seen this goal as been achieved almost perfectly.
+only noise, in fact), we selected a region with many meaningful
+configurations. Due to the combinatory nature of the bricks, we've asked the
+features extractor to detect one in $2^{18}$ configurations, which is not an
+easy task. As we've seen, this goal as been achieved almost perfectly.
 
-Due to the way temporal constrains and metrics work, it's better to learn
+Due to the way temporal constrains and metrics work, it's better to learn some
 correlated fluents at the same time. Even if we would only need \const{Full}
 for some temporal goal, we wouldn't be able to learn one of the two symbols in
 isolation.
@@ -602,7 +605,7 @@ With the previous game, we've shown that it's indeed possible to learn Boolean
 propositions of moderate complexity. Here, instead, we demonstrate the
 complete training procedure described in
 Section~\ref{sec:training-incremental}: from a completely inexpert agent,
-we'll obtain a capable one, that bases its decision on the features learnt.
+we'll obtain a capable one, that bases its decisions on the features learnt.
 
 We'll use a second game from the Atari collection, called Montezuma's Revenge
 (the precise environment name is
@@ -616,13 +619,12 @@ initial image of this game.
 \end{figure}
 The agent's goal is to move the character inside the many rooms of the
 labyrinth, collect the items required to advance, and avoid enemies. The
-action space is composed by all of the 18 actions we've described
-in~\ref{sec:atari-envs}. They allow to move the agent in 8 directions of the
-plane (up-down, left-right and their combinations), optionally combined with
-the \textit{fire} action.
+action space is composed by 18 actions. They allow to move the agent to remain
+still, move left-right, up-down (and combinations of the two), optionally
+while performing the \texttt{fire} action.
 
 As we can imagine from the many actions and the more complex map, this game is
-much more complext for a RL agent with respect to Breakout. In fact, it's
+much harder for a RL agent with respect to Breakout. In fact, it's
 arguably the most difficult among all games in the Atari~2600 collection. We
 can see, for example, that in~\cite{bib:atari-deepq-nature} the DQN agent
 achieves no rewards at all. This difficulty arise from two factors: partial
@@ -675,9 +677,9 @@ should be true when the key has been taken by the agent.
 \end{figure}
 
 We can clearly use these symbols to guide the agent through the room,
-rewarding it at each spot reached. When it grabs the key, the environment send
-a reward, so that of the RB is redundant. However, in order to progress, the
-agent has to get the key and come back to the start position. So, the
+rewarding it at each spot reached. When it grabs the key, the environment
+sends a reward, so that of the RB is redundant. However, in order to progress,
+the agent has to get the key and come back to the start position. So,
 \const{KeyTook} is required in order to write the correct temporal
 specification.
 
@@ -745,7 +747,7 @@ from one place to the other.
 
 Following the same procedure as in the previous game, we should train the RL
 agent alone on the environment rewards. However, as previously studies had
-found, the agent can't reach any reward at all, here. This is fine, the first
+found, the agent can't reach any reward at all, here. This is fine. The first
 agent is used just to train the features extractor. The random policy will be
 enough to learn the first two symbols: \const{AtStart} and \const{AtStairs1}.
 So, we run:
@@ -757,13 +759,13 @@ which plays completely with random actions.
 The encoder network we chose is a DBN with size $(N, 10, 1)$. This means that
 each input region is encoded into a single Boolean value. Let's discuss this
 choice: a scalar encoding means that the fluent value will be exactly the
-extracted Boolean feature. The Boolean functions play no role at all in the
-selection of the desired concept (they can only negate the received value).
-This is intentional. As we've previously noted, the encoding size should be
-the smallest number of units that are sufficient to determine the truth of the
-proposition. If, with a single unit, the encoder is able to isolate the
-required feature by itself, there's no point in transfering this task to the
-Boolean functions, where the separation might be more complex.
+extracted Boolean feature. Therefore, the Boolean functions play no role at
+all in the selection of the desired concept (they can only negate the received
+value).  This is intentional. As we've previously noted, the encoding size
+should be the smallest number of units that are sufficient to determine the
+truth of the propositions. If, with a single unit, the encoder is able to
+isolate the required feature by itself, there's no point in transfering this
+task to the Boolean functions, where the separation might be more complex.
 
 The training command for the first layer of the encoder at the ``start''
 region is:
@@ -867,19 +869,19 @@ on the field \texttt{restraining\_bolt} in the file of definitions. If we
 remember that the agent wasn't able to reach any reward at all, this initial
 goal is a way to start.
 
-We now train the RL agent on this goal by executing \verb|agent train| and a
-\verb|features rb| instances. Once we see that the agent has learnt to reach
-this first goal, we can repeat the previous process for a new symbol. In this
-case, we would let the trained agent play, and train the features extractor
-for the symbol \const{AtStairs1bot}, which is the next encountered the path.
-With this iterative procedure we've been also able to learn \const{AtStairs2}.
+We now train the RL agent on this goal by executing both \verb|agent train|
+and \verb|features rb|. Once we see that the agent has learnt to reach this
+first goal, we can repeat the previous process for a new symbol. In this case,
+we would let the trained agent play, and train the features extractor for the
+symbol \const{AtStairs1bot}, which is the next encountered the path.  With
+this iterative procedure we've been also able to learn \const{AtStairs2}.
 
 To this point, we've mainly addressed the problem of sparse rewards, because
 the Restraining Bolt has been used to send rewards upon the detection of some
 events.  However, we can also use it to solve non-Markovian tasks.
 Suppose we want the agent to repeatedly jump from ``start'' to ``stairs1'' and
 vice versa. This apparently simple problem cannot be solved just providing the
-appropriate rewards, because, just from the input frame, the policy hasn't
+appropriate rewards, because, from one input frame, the policy hasn't
 enough information about where to direct the player. Instead, the RB is able
 to provide a consistent information about the next position to reach.
 
@@ -894,14 +896,14 @@ Figure~\ref{fig:mz-repetitive-goal-automa}.
 	\label{fig:mz-repetitive-goal-automa}
 \end{figure}
 What this specification says is that the agent can accumulate rewards,
-represented by the final states, by following the loop of RB: 3~\to 1 \to
-4 \to 5 \to~3. So, it is induced to pass from ``start'' to ``stairs1'' and
-vice-versa. This is only possible, because the agent also receives from the RB
-in which of these states it is.
+represented by the final states, by following the cycle of states: ${3 \to}\,
+1 \to 4 \to 5\, {\to 3}$. So, it is induced to pass from ``start'' to
+``stairs1'' and vice-versa. This is only possible, because the agent also
+receives from the RB in which of these states it is.
 
-Seen as a image-to-action function, the agent's policy corresponding to
-states 4, 7 and 5 will guide the agent toward ``start'', while for 1, 6 and 4,
-will point in the opposite direction. We run the usual
+Seen as an image-to-action function, the agent's policy corresponding to
+states 4, 7 and 5 will tend toward the position ``start'', while for 1, 6 and
+4, it will point in the opposite direction. We run the usual
 \texttt{agent}--\texttt{features} pair of instances to train the agent on this
 new goal. In Figure~\ref{fig:mz-repetitive-goal-reward}, we show the
 the cumulative reward during this training.
@@ -978,13 +980,13 @@ the Montezuma's Revenge game. First, we highlight some interesting details:
 
 	\item [Long training] Restrained RL agents require longer trainings with
 		respect to the agent without the Restraining Bolt. Often, this effect
-		isn't caused by the additional parameters that are required. This is
-		mainly caused by the more complex policy that we want to learn. The more
-		complex landscape requires to sample pairs of input images--output values
-		for each automaton state, because the best action can be radically
-		different. Unfortunately, sampling cannot be performed uniformly, since the
-		agent has to reach those state. So, rare configurations will slow down the
-		training.
+		isn't caused by the additional parameters that are required. Instead, this
+		is needed by the more complex policy that we want to learn. Q-values have
+		now a more complex landscape that requires to sample pairs of (input
+		images--output values) for each automaton state, because the best action
+		can be radically different for each of those. Unfortunately, sampling
+		cannot be performed uniformly, since the agent has to reach those state.
+		So, rare configurations will slow down the training.
 
 \end{description}
 
@@ -1003,7 +1005,7 @@ Regarding the necessary improvements to this example:
 		room of the game. This would be a more interesting challenge to try.
 		Instead, in order to navigate the other rooms of the maze, we would need
 		to slightly modify the implementation to remove fixed regions. This idea
-		is introduced in Section~\ref{sec:future} ``\nameref{sec:future}''.
+		is introduced in Section~\ref{sec:future} of ``\nameref{sec:future}''.
 
 \end{description}
 

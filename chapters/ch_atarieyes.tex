@@ -4,7 +4,7 @@
 
 This chapter describes the software realized in this thesis, that we called
 ``AtariEyes''. Its purpose is both to implement the ideas that have been
-presented in previous chapters and to generate the experiments shown
+presented until now and to generate the experiments shown in
 Chapter~\ref{ch:experiments}.
 
 Apart from being a realization of the ideas proposed, this software has some
@@ -34,8 +34,8 @@ can:
 
 This chapter is divided in two sections: Section~\ref{sec:how-to-use}
 documents how the software can be used from a user perspective;
-Section~\ref{sec:implementation} is a larger part that explains some of the
-most interesting details about the implementation.
+while Section~\ref{sec:implementation} explains some of the most interesting
+details about the implementation.
 %While the former is really
 %useful for an high-level overview, the latter highlights some interesting
 %parts which may be useful also in future developments.
@@ -47,27 +47,28 @@ most interesting details about the implementation.
 
 \subsection{Tools and setup}
 
-The software \texttt{AtariEyes} is a Python package. It is publicly available
+The software \texttt{atarieyes} is a Python package. It is publicly available
 at the GitHub repository:
 \href{https://github.com/cipollone/atarieyes}{\texttt{cipollone/atarieyes}}.
-It can be installed with the \texttt{pip} commandAs any other Python package,
+It can be installed with the \texttt{pip} command as any other Python package,
 we just need to point to this git repository. The installation
 command is:
 \begin{minted}{text}
 pip install git+https://github.com/cipollone/atarieyes
 \end{minted}
-This installs this package from the master branch. If we need to work on some
-specific revision, for example on the \texttt{develop} branch, we can append
-\verb!@develop! or any other commit to the previous address.
+This command installs this package from the master branch. If we need to work
+on some specific revision, for example on the \texttt{develop} branch, we can
+append \verb!@develop! or any other commit to the previous address.
 
-Dependencies are automatically installed by \texttt{pip}.  In Python, it is
-common to run applications inside virtual environments. Just run this
-installation command within a container to avoid dependency conflicts with
+Dependencies are automatically installed by \texttt{pip}. In Python, however,
+it is common to run applications inside virtual environments. Just run this
+installation command within a container, to avoid dependency conflicts with
 other applications. One rather particular dependency is TensorFlow, which is a
 famous Machine Learning library that we use for parallel computing. Following
 the instructions of the specific container application, we can reuse some
-preexisting system installation, if we need. Currently, the supported version
-is only 2.1, but future 2.x versions might also be compatible.
+preexisting system installation, if we need. Currently, the supported
+TensorFlow version is only 2.1, but future 2.x versions might also be
+compatible.
 
 The package is written in Python~3 and the minimum version required for the
 interpreter is 3.7. This requirement should be met by most modern operating
@@ -77,16 +78,16 @@ allows environment-specific Python installations.
 Once installed, we can use the \texttt{atarieyes} package. As we will see, we
 often use this module through its command line interface. However, if we want
 just to include some structures and algorithms in other applications, we can
-\mintinline{py3}|import atarieyes|, as usual. For development it may
-be also useful to look at the source code. We can clone the repository:
+\mintinline{py3}|import atarieyes|. For development, it may be also useful to
+look at the source code. We can clone the repository:
 \begin{minted}{text}
 git clone https://github.com/cipollone/atarieyes.git
 \end{minted}
 This is also useful if, for any reason, some updated dependency is no longer
 compatible with this package. What we can do is to \texttt{cd} to this cloned
-directory, then run \texttt{poetry install}. Poetry is the container
+directory, then run \verb|poetry install|. Poetry is the container
 application that we use. This command will install the exact dependency
-versions that have been used during development and are guaranteed to work.
+versions that have been tested during development and are guaranteed to work.
 
 
 \subsection{Execution}
@@ -96,19 +97,19 @@ environment where we've installed it:
 \begin{minted}{text}
 python3 -m atarieyes
 \end{minted}
-The reader can assume that any \texttt{atarieyes} command that we will see, is
-executed by \verb|python3 -m|.
+The reader can assume that any \texttt{atarieyes} command that we'll see, is
+executed through \verb|python3 -m|.
 
 \subsubsection*{Getting help}
 
 The package provides a compete command line interface, with many options that
-control the training process. In these sections we look at the most important
-commands. For any doubt, we can use the \verb|--help| option, abbreviated
-as \verb|-h|. When added, it prints the arguments that are supported by any
-command. For example, running \verb|atarieyes -h|
-produces the following message\footnote{We use the
+control the training process. In these sections, we look at the most important
+commands. For any doubt, or to list the arguments not discussed, we can use
+the \verb|--help| option, abbreviated as \verb|-h|. When added, it prints the
+arguments that are supported by any command. For example, running
+\verb|atarieyes -h| produces the following message\footnote{We use the
 \texttt{argparse} library for parsing and generating these messages. The file
-\texttt{\_\_main\_\_.py} file also acts as reference for the commands.}:
+\texttt{\_\_main\_\_.py} file also acts as reference for these commands.}:
 \begin{minted}{text}
 usage: __main__.py [-h] [--list] [--from FROM] {agent,features} ...
 
@@ -125,21 +126,19 @@ optional arguments:
   --from FROM       Load arguments from file
 \end{minted}
 
-The \verb|--list| option prints the unique of every Atari game. To use any of
-these games as environment, we pass its identifier to the
+The \verb|--list| option prints the unique identifier of every Atari game. To
+use any of these games as environments, we pass its name to the
 \verb|--env|/\texttt{-e} option, where appropriate.
 
-The \verb|--from| option allows to execute the command and options stored some
-JSON file. The JSON must be a dictionary of pairs: argument name--argument
-value. The interface of this file is exactly the same of the command line
-interface that we're describing. After any ``train'' command, an
-\verb|args.json| is automatically saved. The purpose of this option is
-allowing to repeat, resume or slightly modify a command that was previously
-used.
+The \verb|--from| option allows to execute the commands and options stored
+some JSON file. The JSON must be a dictionary of parameter names and values.
+After any ``train'' command, an \verb|args.json| is automatically saved. The
+purpose of this option is allowing to repeat, resume or slightly modify a
+command that was previously used.
 
-All commands are divided in two groups. The \texttt{agent} commands regard the
-RL agent, while \texttt{features} commands are related to the features
-extractor.
+All commands are divided in two groups. Those starting with \texttt{agent}
+regard the RL agent, while the \texttt{features} commands are related to the
+features extractor.
 
 
 \subsubsection*{Agents}
@@ -154,7 +153,7 @@ atarieyes agent train      # ...
 This command has many options, some of which control the parameters of the
 Double DQN algorithm. We show here just the most relevant:
 \begin{description}
-	\item [\texttt{-e}/\texttt{--env}] Selects the environment to use among the
+	\item [\texttt{-e}/\texttt{--env}] Selects the environment to use, among the
 		list of Atari games.
 	\item [\texttt{-b}/\texttt{--batch}] Each update of the Q-Network is
 		computed from a cumulative gradient of this number of samples.
@@ -187,10 +186,10 @@ train a features extractor. Some options are:
 	\item [\texttt{--rand-eps} {\normalfont and} \texttt{--explore-policy}]
 		These two options allow to use the two custom exploration policies that
 		were defined in Section~\ref{sec:exploration-policies}.
-	\item [\texttt{-w}/\texttt{--watch}] To visualize the frames of the game.
-		Allowed arguments are \texttt{render}, to watch the images on screen while
-		the agent plays, or \texttt{stream} to send them to another running
-		instance. These can be received by another instance training the
+	\item [\texttt{-w}/\texttt{--watch}] Used to visualize the frames of the
+		game.  Allowed arguments are \texttt{render}, to watch the images on
+		screen while the agent plays, or \texttt{stream} to send them to another
+		running instance. The receiver could be another instance training the
 		features extractor model.
 	\item [\texttt{--record}] To save a video of the agent's performance.
 \end{description}
@@ -200,7 +199,7 @@ train a features extractor. Some options are:
 
 Commands that start with \texttt{atarieyes features} are related to the
 features extractor. We can train the model that was developed in
-Chapter~\ref{ch:fluents} and use it for prediction withing a
+Chapter~\ref{ch:fluents} and use it for prediction in combination with a
 Restraining Bolt.
 
 The first step is to define a set of fluents to learn, and their associated
@@ -214,14 +213,16 @@ command, a frame of the game is shown. With the mouse we can do one or more
 selections (press Enter to accept). The first selection is the portion of the
 image where the agent should be trained (allowing to cut irrelevant parts).
 Then, every following selection is a definition of a new region. After each
-selection we insert at the terminal an unique name and abbreviation for that
+selection, we insert at the terminal an unique name and abbreviation for that
 region.
 
 The output generated is a JSON file containing our definitions that we can now
 modify and integrate. We could have written this file manually, but
 \texttt{select} is a convenient way to start. The file is saved at
-\texttt{definitions/}<env-name>\texttt{.json}. In our example on the Pong
-environment, the output is shown in Listing~\ref{lst:pong-def-example}
+\texttt{definitions/}<env-name>\texttt{.json}. Now we can fill all the
+\verb|"fluents"| fields with the list of symbols that we want to define in
+each region. In our example on the Pong environment, the output is shown in
+Listing~\ref{lst:pong-def-example}
 \begin{listing}
 \begin{minted}{json}
 {
@@ -245,19 +246,19 @@ environment, the output is shown in Listing~\ref{lst:pong-def-example}
 \caption{Example for the Pong game; file \texttt{definitions/Pong-v4.json}}
 \label{lst:pong-def-example}
 \end{listing}
-which lists each region name, abbreviation, coordinates, and fluents defined.
-Now we can fill each \verb|"fluents"| with the list of symbols that we want to
-define in that region.
+which contain each region name, abbreviation, coordinates, and fluents
+defined. 
 
 The other two empty fields are \verb|"constraints"| and
 \verb|"restraining_bolt"|. Here we write the \ldl{} formulae for the temporal
 constraints (Section~\ref{sec:temporal-constraints}) and for the Restraining
 Bolt temporal specification (Section~\ref{sec:rb}), respectively. The atomic
 symbols of both formulae must be among the fluents we've defined above. In
-this file, they are stored as lists just to improve readability. All
-expressions each list are joined through conjunction in a single \ldl{}
-formula. Since the \texttt{constraints} are always satisfied, we consider as
-restraining specification the conjunction of both fields.
+this file, they are stored as lists of formulae, just to improve readability.
+The expressions each list will be joined through conjunction in a single
+\ldl{} formula. Since the \texttt{constraints} are always satisfied, we
+consider as restraining specification the conjunction of both of these
+formulae.
 
 After the definitions, we're ready to train the valuation functions.
 This is achieved by the \verb|atarieyes features train|, much
@@ -273,11 +274,11 @@ like we've done for the agent. Few of the many options of this command are:
 	\item [\texttt{-i}/\texttt{--init}] Starts a new training but initializes
 		the parameters from a checkpoint.
 	\item [\texttt{--train}] The two arguments that follow are the name and the
-		depth of the layer that should be trained by this command. Other parts of
-		the model are not modified.
+		depth of the layer that should be trained by this command. The other
+		parameters of the model are not modified.
 	\item [\texttt{--network}] Specifies the structure of the encoders. The
 		argument of this command is a list of natural numbers. The $i$-th number
-		indicates of how many hidden units is composed the $i+1$-th layer of each
+		indicates of how many hidden units composed the $i+1$-th layer of each
 		DBN. Instead, the first layer has always as many visible units as the
 		number of pixels of each region.
 \end{description}
@@ -443,8 +444,8 @@ runs/agent/Pong-v4/logs/0/
 runs/agent/Pong-v4/models/0/
 \end{minted}
 Every training generates ``logs'' and ``models'' directories in
-unique paths composed with increasing numbers. In the example above, a new
-output would be saved \verb|logs/1| and \verb|models/1|.
+unique paths composed with increasing numbers. After the example above, a new
+output would be saved at \verb|logs/1| and \verb|models/1|.
 
 Inside the ``models'' directory we can find all the checkpoints saved
 during training. These files can be passed as arguments to a \verb|--continue|
@@ -459,9 +460,9 @@ the TensorFlow visualization tool. In the example, we would run:
 \begin{minted}{text}
 poetry run tensorboard --logdir runs/agent/Pong-v4/logs/
 \end{minted}
-For each episode, we can read: the number of steps, the cumulative reward, the
-distribution of RB states, the distribution of selected actions, and other
-metrics related to DQN.
+For each episode, we could read in TensorFlow: the number of steps, the
+cumulative reward, the distribution of RB states, the distribution of selected
+actions, and metrics related to DQN.
 
 The output of a \texttt{features train} command is really similar to that for
 the agent: ``logs'' and ``models'' directories are saved under
@@ -471,17 +472,17 @@ Some informations that we save and can be visualized are the following:
 \begin{description}
 	\item [Scalar metrics] These are relevant scalar quantities that allow to
 		follow the training algorithm. For RBM training, we store: free energy,
-		reconstruction error, sparsity and normalization loss, learning rate.
-		Instead, for the Boolean functions, we can read: average and maximum
-		values of the sensitivity, consistency metrics, and fitness.
+		reconstruction error, sparsity and normalization loss.  Instead, for the
+		Boolean functions, we can read: average and maximum values of the
+		sensitivity, consistency metrics, and fitness.
 	\item [Images] Reconstructed most probable input images.
-	\item [Graph] We can inspect the graph of computation of each step of the
-		training algorithm. Each inner model of the features extractor has a
+	\item [Graph] We can inspect the graph of computations for each training
+		command. Each inner model of the features extractor has a
 		different training graph. For the Boolean functions, for example, we
 		observe the four steps of the genetic algorithm.
 	\item [Distributions] We can observe how the model parameters are
 		distributed on the real axis. This helps to investigate under/over-fitting
-		and other issues. For the genetic algorithm we visualize the population
+		and other issues. For the genetic algorithm, we visualize the population
 		fitness values, a projected representation of the individuals, and the
 		fluents predictions.
 \end{description}
@@ -508,11 +509,12 @@ developed in Java\footnote{GitHub
 \texttt{RiccardoDeMasellis/FLLOAT.}}}. Then, development has continued and,
 during this thesis work, we contributed to the advancements of the
 library. We helped to improve the overall stability of the software and to
-write a more efficient parsing of the input languages (we use version~0.3.0).
+write a more efficient parsing of the input languages (the version used here
+is~0.3.0).
 
 The fields \verb|constraints| and \verb|restraining_bolt| both contain \ldl{}
 expressions in a string format accepted by \texttt{flloat}.  We can refer to
-this library documentation to understand what is format accepted. Since
+this library documentation to understand what format is accepted. Since
 \texttt{flloat} gets installed with \texttt{atarieyes}, we can also experiment
 interactively with it.  For example:
 \begin{minted}{py3}
@@ -611,13 +613,13 @@ interface for exchanging messages with the Restraining Bolt.
 This file defines two base classes: \texttt{Sender} and \texttt{Receiver}.
 The sender is a TCP server that waits for an incoming connection from the
 receiver. They only realize the basic functionality, because the specific
-messages format is defined in subclasses.
+messages format is defined in their subclasses.
 
 \texttt{AtariFramesSender} and \texttt{AtariFramesReceiver} is a pair of
 subclasses that are used to send images of the Atari games when the
 \verb|--stream| option is present. Similarly, \texttt{StateRewardSender} and
-\texttt{StateRewardReceiver} transmit the pair $(\vec{q}, r')$ of automaton
-state and reward from the RB back to the agent.
+\texttt{StateRewardReceiver} transmit the pair $(\vec{q}, r')$ containing an
+automaton state and a reward, from the RB back to the agent.
 
 Users can send and receive data with \texttt{send} and \texttt{receive}
 methods of the respective instances in each pair.  The base classes also
@@ -666,24 +668,25 @@ def successors(self, states, symbols):
 	return next_states
 \end{minted}
 The automaton instance is state-less. The caller should maintain a vector of
-states, created from \verb|initial_states| and transformed each time with
+states, created from \verb|initial_states| and transform it each time with
 \texttt{successors}.
 
-The input \texttt{symbols} is a vector of predictions, one for each candidate.
-The symbols alphabet is the set of Boolean interpretations of the fluents.
-This means that the space occupied by the lookup table is exponential in the
-number of fluents. This is not an issue, because the \ldl{} to DFA conversion
-has a double-exponential time cost, which is often a much stronger requirement
-on the number of usable fluents.
+The \texttt{symbols} argument is a vector of predictions, one for each
+candidate.  The symbols alphabet is the set of Boolean interpretations of the
+fluents.  This means that the space occupied by the lookup table is
+exponential in the number of fluents. This is not an issue, because the
+\ldl{}-to-DFA conversion has a double-exponential time cost on the length of
+the constraints, which is often a much stronger requirement on the number of
+usable fluents.
 
 
 \subsubsection*{\texttt{layers} module}
 
 In Keras, TensorFlow and any modern library, Neural Networks are implemented
-as a composition of layers. Although we're not required to use layers, they
+as a composition of layers. Although we're not required to use them, they
 allow a better organization of our models. This module defines the basic
-functionality related to layers and the specific definitions of layers that
-will be used in our networks.
+functionality related to layers and the specific definitions that will be used
+in our networks.
 
 \texttt{BaseLayer} is the base class of any layer that will be defined.
 Its main role is to set some defaults and enclose the subclasses' operations
@@ -709,10 +712,10 @@ now instantiate from this layer class:
 rescaling = ScaleTo(in_range=(0, 255), out_range=(-1, 1))
 \end{minted}
 The layer instance, \texttt{rescaling}, can be used as an atomic operation
-inside other layers. Calling \mintinline{py3}|rescaling(x)| is
+inside our models. Now, calling \mintinline{py3}|rescaling(x)| is
 equivalent to \mintinline{py3}|scale_to(x, (0, 255), (-1, 1))|.
 
-This module also defines:
+The outer module also define:
 \begin{itemize}
 	\item Image preprocessing layer: scaling, cropping, resizing.
 	\item Convolution block: optional padding, 2D convolution, activation
@@ -748,8 +751,7 @@ of a DQN agent. Subclasses should instantiate two attributes:
 \texttt{model}, which is the Q-Network of that agent, and \texttt{processor},
 which allows to transform the data exchanged between the agent and the
 environment.  Subclasses also define a list of metrics that allow to follow
-the training process of each agent, but we mainly care about the model and
-processor.
+the training process. 
 
 Two agents are defined in this module:
 \begin{minted}{py3}
@@ -764,11 +766,11 @@ TensorFlow \texttt{Model} with the composition of layers that we've
 illustrated in Section~\ref{sec:model-atari}. Essentially, it contains by a
 stack of convolutional layers, followed by a final dense layer.
 
-The \texttt{processor} is a \verb|keras-rl| structure that can transform the
-observations produced by the environment, before the agent processes it. It is
-used to combine a stack of the 4 most recent images into a single observation
-(see the discussion on non-Markovian rewards due to moving bodies. It also
-apples reward clipping and terminates episodes when the first life is lost.
+The \texttt{processor} is a function that can transform the observations
+produced by the environment, before the agent processes it. This agent uses it
+to combine a stack of the 4 most recent images into a single observation (see
+the discussion on non-Markovian rewards due to moving bodies). It also apples
+reward clipping and terminates episodes when the first life is lost.
 
 The second agent, \texttt{RestrainedAtariAgent}, is used in place of
 \texttt{AtariAgent} when a RB is applied (\verb|--rb| option). The
@@ -781,7 +783,7 @@ time the environment produces a new image, it sends this observation to the
 RB and receives a new pair of state and reward in response. These inputs are
 then combined with those of the environment, before passing them to the agent.
 
-The last definitions of this modules are the three exploration policies of
+The last definitions of this module are the three exploration policies of
 Section~\ref{sec:exploration-policies}: \texttt{RepeatEpsPolicy},
 \texttt{EpisodeRandomEpsPolicy} and \texttt{ExplorationPolicy}.
 
@@ -823,8 +825,8 @@ this directory are used for any \verb|atarieyes features| command:
 \texttt{training} is used when training features, \texttt{rb} executes a
 Restraining Bolt from predictions of trained features, and \texttt{selector}
 is the regions selection tool (this last module doesn't need to be discussed
-further).  The other files define the model or participate at the training
-process.
+further).  The other files in this package serve to define the model or
+participate at the training process.
 
 
 \subsubsection*{\texttt{rb} module}
@@ -853,11 +855,11 @@ while True:
 \label{lst:runner-run}
 \end{listing}
 The procedure is simple. At each cycle: receive an observation from the
-environment (RL agent's instance), predict the fluents values from the image,
-use these values to move the Restraining Bolt, send back the RB state and
+environment (RL agent's instance); predict the fluents values from the image;
+use these values to move the Restraining Bolt; send back the RB state and
 reward. As we can see, this executes both the features extractor for
-prediction and the RB. Of course, in order to predict the fluents values we
-need to have a valuation function already trained.
+prediction and the Restraining Bolt. Of course, in order to predict the
+fluents values we need to have a valuation function already trained.
 
 The second class in this module is \texttt{RestrainingBolt} (this is the type
 of the \texttt{rb} object in Listing~\ref{lst:runner-run}). The only important
@@ -865,7 +867,7 @@ detail is that it can either create a new automaton or load one previously
 used. We'll see why this is important.
 
 When the \verb|--new| option is added to an \verb|atarieyes features rb|
-command, this class creates a new DFA, by combining the fields
+command, this class creates a new DFA, by combining the JSON file fields
 \texttt{constraints} and \texttt{restraining\_bolt} into a single formula.
 Then, it uses the \texttt{flloat} library to transform it into the
 corresponding DFA. This automaton is saved in the current \texttt{logs}
@@ -874,10 +876,10 @@ didn't change, it's important to let this class load the saved automaton.
 
 The fist reason is efficiency, because \ldl{} to DFA is a very costly
 operation. Even more important is that, if the RL agent has trained with one
-automaton, it should use exactly the same automaton when testing or for
+automaton, it should use exactly the same automaton when testing, or for
 continued trainings. The reason is that the agent has learnt to associate a
 state ID to a configuration of the environment. Any other permutation of the
-automaton IDs would be misinterpreted by the agent.
+automaton IDs would be misinterpreted by the agent's policy.
 
 It's important to precise that the current implementation doesn't perform
 \emph{reward shaping}~\cite{bib:favorito-thesis}. This technique produces
@@ -896,18 +898,18 @@ Just like for the agent, a training command, in this case
 Its role is to instantiate a features extractor model according to the
 parameters supplied (net structure, layer to train, etc), optionally
 initialize the parameters from a checkpoint, and start executing the training
-loop.  At each iteration it receives a new observation from the agent
+loop.  At each iteration, it receives a new observation from the agent
 instance, samples a new random batch and performs one optimization step with
 the Adam optimizer.
 
-Also in this training loop, at regular intervals, a \texttt{CheckpointsSaver}
+Also, in this training loop, at regular intervals, a \texttt{CheckpointsSaver}
 saves the current model parameters, and a \texttt{TensorboardLogger} exports
 the metrics for visualization. We care this original part more than the agent
 training loop. So, the metrics are particularly detailed in this case. Also,
 they only talk about quantities that are relevant for the layer currently
 trained. When we train the Boolean functions, we can visualize consistency,
-sensitivity and fitness; when we train a RBM we visualize the free energy and
-reconstruction error, for example.
+sensitivity and fitness; instead, when we train a RBM, we visualize the free
+energy and reconstruction error, for instance.
 
 All the remaining files in this package concur for the training process or the
 model definition. We'll follow a bottom up description with the few remaining.
@@ -916,7 +918,7 @@ model definition. We'll follow a bottom up description with the few remaining.
 \subsubsection*{\texttt{temporal} module}
 
 Training the features requires to evaluate ``how much'' each candidate set of
-Boolean functions satisfies the temporal constraints. For this purpose, this
+Boolean functions satisfies the temporal constraint. For this purpose, this
 module computes the ``consistency'' and ``sensitivity'' metrics from the
 received traces of predicted values.
 
@@ -928,19 +930,20 @@ step. As argument it receives a matrix of Boolean values, where each row is
 one candidate's prediction of the fluents values. This serves to update the
 relevant quantities for computing the two metrics. The latter,
 \texttt{compute}, must called at the end of each episode. It has no arguments,
-but returns two arrays, the value of consistency and sensitivity for each
-candidate set of Boolean functions.
+but returns two arrays, the value of consistency and sensitivity metrics for
+each candidate set of Boolean functions.
 
-Both functions have been implemented with TensorFlow operations, so to
-ensure a parallel computation for each candidate. The time required is weakly
-dependent of the number of candidate functions.
+Both functions have been implemented with TensorFlow operations, so to ensure
+a parallel computation for each individual. The time required to compute the
+fitness function depends very weakly from the number of candidate functions,
+as most time is spent for the Atari simulator.
 
 
 \subsubsection*{\texttt{genetic} module}
 
 This module contains the implementation of the Genetic Algorithm described in
 Section~\ref{sec:ga-for-bools}, i.e. GA applied to Boolean functions. The file
-is structured as follows. The abstract class \texttt{GeneticAlgorithm} is a
+is structured as follows. The abstract class \texttt{GeneticAlgorithm}
 implements most of the algorithm. All the subclasses that inherit from it
 just complete the algorithm with the few missing parts which are problem
 dependent.
@@ -976,7 +979,7 @@ crossover, mutation, and fitness. \verb|apply| receives a pair of newly
 computed population and fitness values and stores them into
 \verb|self.population| and \verb|self.fitness|. Instead, \verb|_update_best|
 saves the individual with the highest fitness value to the variable
-\verb|self.best|. To execute the algorithm, the called could simply loop
+\verb|self.best|. To execute the algorithm, the caller can simply loop
 over the two instructions:
 \begin{minted}{py3}
 population, fitness = ga.compute_train_step(ga.population, ga.fitness)
@@ -986,23 +989,24 @@ ga.apply(population, fitness)
 The base class already defines \texttt{reproduce}, \texttt{crossover} and
 \texttt{mutate}, because most operations can be executed independently of the
 problem. Instead, subclasses are required to implement three functions:
-\verb|initial_population|, which returns the initial population;
-\verb|compute_fitness|, because is clearly problem-dependent; and
+\verb|initial_population|, which returns the initial set of individuals;
+\verb|compute_fitness|, because fitness is clearly problem-dependent; and
 \verb|sample_symbols|, that is used when the algorithm needs to sample new
 symbols (chromosomes).
 
-For a greatest efficiency, every operation in this module has been implemented
-with TensorFlow operations. In fact, reproduction, sampling, crossovers can be
-implemented as parallel operations, with leads to a scalable algorithm for a
-large number of individuals. This is also the reason of the separation into
-\verb|compute_train_step| and \verb|apply|: keeping them separate leads to a
-more efficient computation and a clearer visualization.
+For the greatest efficiency, every computation of this module has been
+implemented with TensorFlow operations. In fact, reproduction, sampling,
+crossovers can be implemented as parallel operations, which leads to a
+scalable algorithm for a large number of individuals. This is also the reason
+of the separation into \verb|compute_train_step| and \verb|apply|: separating
+most computations from assignments leads to a more efficient execution and a
+clearer visualization.
 
 Every function in this class, even those defined by the subclasses, are
 transformed to TensorFlow layers, thanks to \texttt{layerize}. This keeps the
 model organized and simplifies the TensorBoard graph. We can see the general
 structure in Figure~\ref{fig:tb-graph-ga}. The blocks we see are layers and
-their content can be inspected.
+their content can be inspected as well.
 \begin{figure}
 	\centering
 	\includegraphics[height=0.45\textheight]{./imgs/ga-graph.png}
@@ -1013,18 +1017,18 @@ their content can be inspected.
 We can now proceed to apply this algorithm to learning the Boolean functions,
 just like we've discussed in Section~\ref{sec:ga-for-bools}.
 The class \texttt{BooleanFunctionsArrayGA} is a subclass of
-\texttt{GeneticAlgorithm} that defines the missing methods for the problem of
-learning the Boolean functions.
+\texttt{GeneticAlgorithm} that defines the missing methods specifically for
+the problem of learning the Boolean rules.
 
 This class defines, through \verb|initial_population| and
-\verb|sample_symbols|, a population composed of arrays of Boolean rules,
-exactly those shown in Figure~\vref{fig:boolean-rules}. Essentially, each
-individual is composed by the concatenation of encoded Boolean rules. We don't
-need to look much at the details.
+\verb|sample_symbols|, a population composed of arrays of Boolean rules.
+Essentially, each individual is composed by the concatenation of the same
+Boolean rules we've shown in Figure~\vref{fig:boolean-rules}. We don't need to
+look much other details.
 
-What is important is that it defines a function \verb|compute_fitness| which
-runs a number of episodes, computes the vector of predictions according to
-each individual, and uses the \texttt{TemporalConstraints} class to compute
+What is important is that this class defines a function \verb|compute_fitness|
+which runs a number of episodes; computes the vector of predictions according
+to each individual; and uses the \texttt{TemporalConstraints} class to return
 the final metrics. Then, the vector of fitness values is computed as:
 \begin{minted}{py3}
 # Combine metrics
@@ -1041,9 +1045,9 @@ The class also overrides the \verb|_update_best| function, because the best
 individual is not that with the highest fitness, but the one with maximum
 consistency (hard constraint) with the highest sensitivity (soft constraint).
 
-When we call the public method \texttt{predict} the class computes the most
-likely value for every fluent using just \verb|self.best|. The population is
-only used for training.
+Finally, when we call the public method \texttt{predict} the class computes
+the most likely value for every fluent using just \verb|self.best|. The
+population is only used for training.
 
 
 \subsubsection*{\texttt{models} module}
@@ -1089,13 +1093,13 @@ On initialization, every subclass must instantiate the three abstract
 attributes. The most important is \verb|self.model| which stores any container
 of TensorFlow operations such as \verb|tf.Module| or \verb|tf.keras.Model|.
 The other attributes can be used if we need to define a custom training loop.
-\verb|computed_gradient| is a Boolean flag that indicates can't be computed
-automatically from some loss function. Similarly, \verb|train_step| should be
-assigned to a callable, when we need to redefine the training phase entirely.
-The function \texttt{predict} is used to make a prediction for a model
-(whatever that means for a specific subclass), while \verb|compute_all|
-performs all operations required both for prediction and for training (see the
-class docstring for more details).
+\verb|computed_gradient| is a Boolean flag that indicates when the gradient
+can't be automatically computed from the loss function. Similarly,
+\verb|train_step| should be assigned to a callable, when we need to redefine
+the training phase entirely.  The function \texttt{predict} is used to make a
+prediction with the model (whatever that means for a specific subclass), while
+\verb|compute_all| performs all operations required both for prediction and
+for training (see the class docstring for more details).
 
 The smallest model in the whole hierarchy is the \texttt{BinaryRBM}, which
 represents a Restricted Boltzmann Machine with binary units. Its
@@ -1115,13 +1119,13 @@ class \texttt{LocalFeatures} combines a preprocessing layer and a
 model.
 
 On the other hand, the \texttt{GeneticModel} encapsulates any
-\texttt{GeneticAlgorithm} as any other model definition, so to use them
+\texttt{GeneticAlgorithm}, cast as other model definitions, so to use them
 together. \verb|self.model| is, in this case, the population of individuals.
 Since the training procedure of GAs is so different, we override the training
 loop by defining a simple \verb|train_step| that simply calls
-\verb|compute_train_step| and \verb|apply|.
+the GA's \verb|compute_train_step| and \verb|apply|.
 
-Now that every model has been defined we can combine them in the final
+Now that every model has been defined, we can combine them in the final
 arrangement. \texttt{Fluents} is the outer container for all other models.
 Figure~\ref{fig:fluents-classes} shows how the various models are composed
 inside the \texttt{Fluents} class. This figure directly corresponds to the
@@ -1226,8 +1230,8 @@ scheme shown in Figure~\vref{fig:model-scheme}.
 \end{figure}
 All the initialization parameters reflect the command line arguments. For
 instance, the \verb|--network| command chooses the number of units and layers
-of each encoder. Also, \verb|--train| select which of these inner models
-should be trained, when we call the object \verb|compute_all| function.
-Depending on which model we're working on, both the computation graph and the
-metrics saved greatly change.
+of each encoder. Also, \verb|--train| selects which of these inner models
+should be trained, when we call the \texttt{Fluents}' \verb|compute_all|
+function.  Depending on which model we're working on, both the computation
+graph and the metrics saved greatly change.
 
