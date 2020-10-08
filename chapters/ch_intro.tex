@@ -1,34 +1,31 @@
 \chapter{Introduction}
 
-% TODO: read again with new title
-% TODO: one page?
-
 % Intro logic
 A classic and important branch of Artificial Intelligence (AI) aims at
-developing agents that select their actions through a form of logic reasoning,
+developing agents that select their actions through forms of logic reasoning,
 such as planning. One of the main advantages of these approaches is that
 reasoning proceeds by manipulating \emph{abstractions}. In fact, in logic,
 we can define symbols that represent any meaningful event or condition that
 should be considered. For example, some propositional symbols might represent
 conditions such as ``the door is closed'' or ``I am holding an object'', etc.
-We'll also call these propositional symbols with the term ``\emph{fluents}''
-(a name that suggests how their truth can change over time).
+We'll also call these atomic propositions with the term ``\emph{fluents}''
+(a name that suggests that their truth can change over time).
 
 % Grounding
-These reasoning methods based on logics are powerful but they imply one
-fundamental ability: at each instant, the agent must be able to decide whether
-those propositions are true. This means that all symbols that represent
-conditions which happen to be true in the environment, must be true for the
-agent. This process is called \emph{grounding} and it is essential for any
-correct logic reasoning. Unfortunately, this can be really hard in complex
-environments, because the agent's sensors may return a noisy and
-multidimensional output, that is difficult to interpret.
+Reasoning methods based on logics are powerful but they imply one fundamental
+ability: at each instant, the agent must be able to decide whether those
+propositions are true. This means that all symbols that represent conditions
+which happen to be true in the environment, must be true for the agent. This
+process is called \emph{grounding} and it is essential in order to make
+reasoning relevant for the external environment. Unfortunately, this can be
+really hard in complex environments, because the agent's sensors may generate
+noisy and multidimensional inputs, that are difficult to interpret.
 
 % Observations in RL
 Reinforcement Learning (RL) is a successful field of AI, in which the
 agent's goal is to learn a policy that maximizes the rewards received.  We
 could argue that RL does not require the valuations just mentioned. Still,
-rewards and punishments must be somehow supplied in response to desirable and
+rewards and punishments must be supplied somehow, in response to desirable and
 undesirable events. We could consider of providing these feedbacks with
 programmed ad-hoc conditions, but this can be easily done just for the
 simulations we create. Furthermore, as we will see, complex and non-Markovian
@@ -37,11 +34,12 @@ methods; thus, introducing all the needs of the latter.
 
 % Bridge: goal
 With this thesis, we defined and implemented an agent based on temporal logics
-and Deep Reinforcement Learning. This required to investigate new ways to
-solve the fluents valuation problem that has been just described, for a
-specific class of environments and fluents. In
-Section~\ref{sec:intro-objective}, the goal and the achievements of this work
-will be described more precisely.
+and Deep Reinforcement Learning. This combination required to investigate new
+ways to solve the grounding problem just described, for a specific class of
+environments and fluents.
+\enlargethispage{1\baselineskip}
+% In Section~\ref{sec:intro-objective}, the goal and
+% the achievements of this work will be described more precisely.
 
 
 \section{Related works}
@@ -77,7 +75,7 @@ provide various levels of complexity, they have few and strict rules, and they
 are easy to implement and simulate. Regarding Deep RL, many authors have
 tested their algorithms on the collection of video games
 ``Atari~2600''~\cite{bib:atari-games}. In this thesis, we'll use and
-experiment with the same environments.
+experiment with games from this collection.
 
 % Algorithms
 The reinforcement learning algorithm we've adopted is called Double
@@ -86,7 +84,7 @@ relatively simple algorithm, based on DQN, which has also proven to be
 successful for the specific environments that we'll use in our
 experiments~\cite{bib:atari-deepq-nature}. In fact, among Q-Network
 algorithms, the only ones that were able to clearly achieve superior
-performances in most of these games combined many of the others DQN
+performances in most of these games have combined many of the others DQN
 variants~\cite{bib:rainbow}.
 
 % Some games are hard
@@ -106,14 +104,16 @@ environments is the construction provided in~\cite{bib:degiacomo-logic-nmrdp}
 and~\cite{bib:bolt}. The former work~\cite{bib:degiacomo-logic-nmrdp} has
 shown that a Non-Markovian Reward Decision Process (NMRDP) can be easily
 declared with linear-time temporal logics, and it has provided a translation
-from this NMRDP to a classic MDP. The logics they used are~\ltl{} and~\ldl{}.
-This idea was initially introduced in~\cite{bib:nmrdp-logic-first} for a
-linear temporal logic of the past. The latter work~\cite{bib:bolt}, instead,
-has shown that through a similar construction, it's possible to influence the
-agent's optimal behaviour by declaring additional non-Markovian rewards that
-are learnt in conjunction with the original rewards. This paper named this
-additional module with ``Restraining Bolt''.  Thorough this thesis, it may be
-practical to use this name to refer to this logic construction.
+from this NMRDP to a classic MDP. The logics the authors used are~\ltl{}
+and~\ldl{}.  This idea was initially introduced
+in~\cite{bib:nmrdp-logic-first} for a linear temporal logic of the past.
+
+The latter work~\cite{bib:bolt}, instead, has shown that through a similar
+construction, it is possible to influence the agent's optimal behaviour by
+declaring additional non-Markovian rewards that are produced in conjunction
+with the original rewards. This paper named this additional module with
+``Restraining Bolt''.  Thorough this thesis, it may be practical to use this
+name to refer to this logic construction.
 
 
 \section{Objective and results}
@@ -136,9 +136,9 @@ those concerning the definition of a Deep RL agent for non-Markovian goals,
 and those related to methods for learning the fluents' valuation function.
 Regarding the former, in this thesis:
 \begin{itemize}
-		\item We provide a flexible implementation of the Restraining Bolt method,
+		\item We provide a flexible implementation of the Restraining Bolt method
 			described in~\cite{bib:bolt} and~\cite{bib:degiacomo-logic-nmrdp}.
-		\item We proposed a neural network architecture for a Deep RL agent that
+		\item We proposed a Neural Network architecture for a Deep RL agent that
 			allowed to successfully employ the Restraining Bolt also in Deep
 			Reinforcement Learning.
 		\item Tests have been conducted in a video game called \emph{Montezuma's
@@ -154,9 +154,9 @@ possible to learn a function that, given an observation of the environment,
 predicts whether the fluents we have defined are true? As we may recognise,
 this problem is really general, and we must restrict to a specific class of
 fluents and observations. Observations will be frames of the Atari games, and
-fluents will be propositions decidable from a single frame. Every choice or
-assumption that further restricts the applicability of the proposed method
-will be pointed our along the text. Still, there are some interesting
+fluents will be propositions decidable from each of these images. Every choice
+or assumption that will further restrict the applicability of the proposed
+method will be pointed our along the text. Still, there are some interesting
 achievements of this work that are to be highlighted:
 \begin{itemize}
 	\item We don't manually assign a meaning to some Boolean features.
@@ -195,16 +195,17 @@ The rest of this thesis is structured as follows:
 		non-Markovian goals. In Sections~\ref{sec:rl} and~\ref{sec:deep-rl} we
 		thoroughly explain the basic concepts behind RL and Deep RL. Then, in
 		Section~\ref{sec:non-markov}, we will analyze what happens when the most
-		common assumptions of RL (and of Deep RL) are falsified.  A solution for
+		common assumptions of RL, and of Deep RL, are falsified.  A solution for
 		these complex RL problems will be presented in
 		Section~\ref{sec:non-markov-solutions}, where we illustrate the
 		Restraining Bolt method.  This chapter ends with
 		Section~\ref{sec:rb-deep-model}, where we propose an original model that
 		allows to apply the previous solution also in the context of Deep RL.
 	\item[\ref{ch:fluents}~--~\nameref{ch:fluents}]
-		In this important chapter we propose a model for the valuation function
-		of the fluents. We'll also propose a training algorithm for this model
-		that doesn't require labelled datasets at all.
+		In this important chapter, we illustrate the proposed training method for
+		the fluents valuation functions. We also define a specific model that
+		encodes a portion of the input frame to generate the fluent Boolean
+		valuations.  We'll also formulate a training algorithm for this model.
 	\item[\ref{ch:atarieyes}~--~\nameref{ch:atarieyes}]
 		This chapter presents the software that implements all the concepts
 		presented in the previous chapters. We will first review its features and
@@ -213,11 +214,11 @@ The rest of this thesis is structured as follows:
 	\item[\ref{ch:experiments}~--~\nameref{ch:experiments}]
 		This chapter contains experiments and training outcomes in two Atari
 		games. The experiments will be finalized to test: the effectiveness of the
-		proposed method for learning the valuation functions; the capabilities of
-		the ``restrained'' Deep RL agents.
+		proposed method for learning the valuation functions; the combination of
+		such computed fluents in a Deep RL agent with the Restraining Bolt.
 	\item[\ref{ch:conclusions}~--~\nameref{ch:conclusions}]
 		In this final chapter, we draw the main conclusions that can be derived
-		from this work, the strength of this approach and its weakness, and all
-		the possibilities for improvement.
+		from this work, the strength of this approach and its weakness, and many
+		of the possibilities for improvement.
 \end{description}
 

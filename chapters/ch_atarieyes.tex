@@ -788,13 +788,12 @@ Section~\ref{sec:exploration-policies}: \texttt{RepeatEpsPolicy},
 
 \subsubsection*{\texttt{training} and \texttt{playing} packages}
 
-The \texttt{Trainer} class contained in the \texttt{training} module is
-executed for any \verb|agent train| command. On
-initialization, it collects all the command line parameters and the
-appropriate agent definition that serve to instantiate a Keras-RL agent. The
-agent's class is the \texttt{DQNAgent}, which is the \texttt{keras-rl}
-implementation of the (Double) DQN algorithm. Then, the method
-\verb|Trainer.train| enters the main training loop.
+The \texttt{Trainer} class, inside the \texttt{training} module, is executed
+for any \verb|agent train| command. On initialization, it collects all the
+command line parameters and the appropriate agent definition that serve to
+instantiate a Keras-RL agent. The agent's class is the \texttt{DQNAgent},
+which is the \texttt{keras-rl} implementation of the (Double) DQN algorithm.
+Then, the method \verb|Trainer.train| enters the main training loop.
 
 Keras uses a very interesting concept: callbacks. A callback can be used to
 insert additional computations in specific points of the training loop.  We
@@ -1135,7 +1134,7 @@ scheme shown in Figure~\vref{fig:model-scheme}.
 		]
 		% Input
 		\node [image] (frame)
-			{\includegraphics[height=2cm]{./imgs/br0.png}};
+			{\includegraphics[height=1.8cm]{./imgs/br0.png}};
 		\node [dot, right=0.7cm of frame] (input) {};
 
 		% Encoders

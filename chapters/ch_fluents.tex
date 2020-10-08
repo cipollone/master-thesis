@@ -174,7 +174,6 @@ Figure~\ref{fig:response-automa}.
 			A}\ldiamond{\true^*}B}$.}
 		\label{fig:response-automa}
 \end{figure}
-% TODO: note about symbolic transitions?
 Temporal logics like \ldl{} are very expressive and allows to write many
 complex properties that the symbols satisfy.
 
@@ -627,19 +626,19 @@ dataset according to the model, $l(\params) \coloneqq \log p(\dataset \given
 \params)$. The optimal parameters are those maximizing the likelihood
 $l(\params)$. So, we may approach this solution by following the positive
 gradient of the likelihood. The gradient of the likelihood, with respect to
-each group $c$ of parameters, is~\footnote{ The function $\basisfun_c$ only
-receives the values of the clique $c$.  In the following equation, we write
-$\x$ instead of $\x_c$, to ease the notation.}:
+each group $c$ of parameters, is:
 \begin{equation}
 	\frac{\partial l}{\partial \params_c} = \E_{\x' \sim \dataset}
 	\bigl[\basisfun_c(\x') \bigr] - \E_{\x} \bigl[\basisfun_c(\x) \bigr]
 	\label{eq:ugm-gradient}
 \end{equation}
 The two parts compute the expected value of same quantity according to a
-different distribution of~$\x$. The positive term simply stands for the
-average value of that quantity, computed from the samples in the training
-dataset; while in the right-most term, we take an expectation on $\x$
-according to the distribution induced by the model.
+different distribution of~$\x$~\footnote{ The function $\basisfun_c$ only
+receives the values of the clique $c$.  In Equation~\eqref{eq:ugm-gradient},
+we write $\x$ instead of $\x_c$, to ease the notation.}. The positive term
+simply stands for the average value of that quantity, computed from the
+samples in the training dataset; while in the right-most term, we take an
+expectation on $\x$ according to the distribution induced by the model.
 
 We'll end this quick review of MRFs, by discussing the role of latent
 variables. As we already know from the comparison between MDPs and POMDPs,

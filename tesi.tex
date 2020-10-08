@@ -1,6 +1,6 @@
 % LuaLatex
 
-\documentclass[LaM, binding=1.8cm]{sapthesis}
+\documentclass[LaM, binding=1.8cm, noexaminfo]{sapthesis}
 
 \usepackage{fontspec}
 \usepackage{microtype}
@@ -299,8 +299,6 @@
 \newtheorem{example}{Example}
 \newtheorem{definition}{Definition}
 
-% TODO: exam date and examiner infos
-
 % Line space
 \onehalfspacing
 
@@ -327,18 +325,26 @@ Statistica}
 
 \begin{document}
 
-% TODO: abstract
 % TODO: dedication?
 
-% Title pages
 \frontmatter
+
+% Title page
 \maketitle
+
+% Abstract
+\begin{abstract}
+	\input{chapters/abstract.tex}
+\end{abstract}
+
+% TOC
 \tableofcontents
+
+% Nomencl
 \printnomenclature[2cm]
 
 % Chapters
 \mainmatter
-
 
 \include{chapters/ch_intro}
 \include{chapters/ch_logics}
@@ -353,3 +359,5 @@ Statistica}
 \printbibliography
 
 \end{document}
+
+% TODO: page layouts and chapters length

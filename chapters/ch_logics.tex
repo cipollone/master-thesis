@@ -509,13 +509,46 @@ accepts~$\trace$. Also, the space-size of $\automa_\formula$ is linear in the
 size of~$\formula$. Since the emptiness problem for AFWs is PSPACE-complete,
 we get a proof for Theorem~\vref{th:ldlf-completeness}.
 
+
+\subsubsection*{DFA translation}
+
 DFAs are the easiest automata to visualize and simulate. A \ldl{} formula can
 be translated to an equivalent DFA through the following transformations:
-\ldl{} $\to$ AFW $\to$ NFA $\to$ DFA. Although the asymptotic worst-case cost
-of this algorithm is already the best known (which doubly-exponential on the
-size of the formula), it is possible to combine some or all of these steps in
-a single algorithm, that may allow some optimizations. A \ldl{}-to-NFA
-algorithm is presented in~\cite{bib:degiacomo-logic-nmrdp}; while a
-\ldl{}-to-DFA is described in~\cite{bib:favorito-thesis}.
+\ldl{} $\to$ AFW $\to$ NFA $\to$ DFA. The asymptotic worst-case cost of this
+procedure is already the best known, which doubly-exponential on the size of
+the formula. Still, it is possible to combine some or all of these steps in a
+single algorithm, that may allow some optimizations. A \ldl{}-to-NFA algorithm
+is presented in~\cite{bib:degiacomo-logic-nmrdp}; while a \ldl{}-to-DFA is
+described in~\cite{bib:favorito-thesis}.
 
-% TODO: symbolic dfa
+These automata have an input alphabet $\Sigma$ of size $2^{\abs{\fluents}}$.
+This means that a complete DFA has a large number of arcs. Instead of
+connecting each pair with propositional interpretations, which can be a huge
+enumeration of sets, we use formulae of propositional logic. The automaton
+traverses a transition $q_j \xrightarrow{\propformula} q_i$ if it is in state
+$q_j$ and it receives an input $\Pi$ such that $\Pi \models \propformula$.
+In a deterministic automaton, from each state, exactly one transition is
+satisfied for any input. The formulae $\propformula$ are just a form of
+``syntactic sugar'' that often leads to more concise visualization of
+automata. An example of this equivalence is shown in
+Figure~\ref{fig:automaton-arcs}.
+\begin{figure}
+	\centering
+	\begin{tikzpicture}[
+			transition/.style={above, font=\scriptsize},
+		]
+		\matrix [column sep=3cm, row sep=0.5cm,
+				nodes={circle, draw, minimum size=0.3cm}] {
+			\node (q1) [label=below:{$q_1$}] {}; \&
+			\node (q2) [label=below:{$q_2$}] {}; \\
+			\node (q12) [label=below:{$q_1$}] {}; \&
+			\node (q22) [label=below:{$q_2$}] {}; \\
+		};
+		\draw [->] (q1)
+			edge [out=10, in=170] node [transition] {$\set{A, B, C}$} (q2)
+			edge [out=-10, in=190] node [transition, below] {$\set{A, B}$} (q2);
+		\draw [->] (q12) -- node [transition] {$A \land B$} (q22);
+	\end{tikzpicture}
+	\caption{Formulae of propositional logic represent a set of arcs.}
+	\label{fig:automaton-arcs}
+\end{figure}

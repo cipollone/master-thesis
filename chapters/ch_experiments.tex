@@ -125,7 +125,6 @@ We could have also used the following equivalent formula:
 \end{equation}
 where the operator $\resym^+$ is an abbreviation of the regular expression
 $(\resym; \resym^*)$.
-% TODO: draw with tikz
 
 Most states in this automaton are final. In fact, nothing guarantees that the
 agent will be able to hit the bricks in every episode. The fluents might not
@@ -311,7 +310,7 @@ given the encoding that the model associates to the real input\footnote{
 	\begin{tikzpicture}
 		\matrix [
 			matrix of nodes, nodes={image, tight, draw, thin},
-			row sep=4mm, column sep=8mm, outer sep=4mm,
+			row sep=4mm, column sep=6mm, outer sep=3mm,
 		] {
 			\includegraphics[width=4cm]{./imgs/br_encoder_layer0_last_true.png} \&
 			\includegraphics[width=4cm]{./imgs/br_encoder_layer0_last1_true.png} \&
@@ -346,7 +345,7 @@ Figure~\ref{fig:plot-br-bool}.
 	\begin{tikzpicture}
 		\pgfplotsset{
 			every axis/.append style={
-				metrics, width=0.8\textwidth, height=0.27\textheight,
+				metrics, width=0.8\textwidth, height=0.25\textheight,
 				/pgfplots/.cd,
 				minor xtick={90,223,263}, grid=none, xminorgrids,
 			},
