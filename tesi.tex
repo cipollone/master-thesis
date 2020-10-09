@@ -33,10 +33,6 @@
 % Bibliography
 \addbibresource{bibliography.bib}
 
-% Sections in new pages
-\newcommand{\sectionbreak}{\clearpage}
-\let\savedsectionbreak\sectionbreak
-
 % Nomenclature with page links
 \renewcommand{\pagedeclaration}[1]{, \hyperlink{page.#1}{page\nobreakspace#1}}
 
@@ -349,6 +345,7 @@ Statistica}
 \include{chapters/ch_intro}
 \include{chapters/ch_logics}
 \include{chapters/ch_rl}
+\include{chapters/ch_nonmarkovrl}
 \include{chapters/ch_fluents}
 \include{chapters/ch_atarieyes}
 \include{chapters/ch_experiments}
@@ -361,3 +358,5 @@ Statistica}
 \end{document}
 
 % TODO: page layouts and chapters length
+
+% TODO: reorganize references for modified rl chapters
