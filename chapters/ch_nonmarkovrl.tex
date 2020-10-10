@@ -4,9 +4,9 @@
 
 \label{sec:non-markov}
 
-The goal of a RL agent is to maximize the rewards received.  A goal, or a
-task, is said \emph{non-Markovian} if the rewards do not satisfy the Markov
-assumption on rewards, i.e:
+The goal of a RL agent is to maximize the cumulative rewards received.  A
+goal, or a task, is said \emph{non-Markovian} if the rewards do not satisfy
+the Markov assumption on rewards, i.e:
 \begin{equation}
 	r_{t+1} \not\perp s_i, a_i, r_i \given s_t, a_t
 	\qquad \text{for some $t, i$, with $0 \le i < t$}
@@ -86,21 +86,21 @@ see, instead, is a sequence of observations ${ \langle o_0, o_1, \dots
 only act in response to observations, not states.
 
 The dotted arrows in Figure~\ref{fig:pomdp} have a question mark on them,
-because that dependency is our choice. As designers, we're free to select
-the informations that the agent should take into account when selecting an
-action. Is the last observation enough to decide? Or, more precisely, among
-all possible policies, do non-Markovian goals always admit an optimal policy
-of the form $\optimal\policy: \obsS \to A$? Unfortunately, the answer is no.
-As we will see, other informations are needed.
+because that dependency is our choice. As designers, we're free to select the
+informations that the agent should take into account when selecting an action.
+Is the last observation enough to decide? Or, more precisely, among all
+possible policies, do POMDPs always admit an optimal policy of the form
+$\optimal\policy: \obsS \to A$? Unfortunately, the answer is no. Other
+informations are needed.
 
-If the transition and observation functions are known, a common solution is to
-estimate the states and decide the action from this belief. With deterministic
-functions, the agent can iteratively restrict the set of possible states by
-eliminating those inconsistent with the observations received. More commonly,
-these functions are nondeterministic. In this case, probabilistic methods
-can be effective estimation algorithms. The iterative probabilistic filter
-applied to the sequence of observations would produce the belief distribution
-of the current state.  We can represent the general procedure, at any
+When the POMDP transition and observation functions are known, a common
+solution is to estimate the current unobservable state and decide the action
+from this belief. With deterministic functions, the agent can iteratively
+restrict the set of possible states by eliminating those inconsistent with the
+observations received. More commonly, these functions are nondeterministic,
+and the estimation algorithm is some recurrent probabilistic inference.
+In both cases, the algorithm would produce a belief of the current state,
+denoted with $b(s_t)$. We can represent the general procedure, at any
 instant~$t$, with the following computation:
 \begin{center}
 	\begin{tikzpicture}
@@ -115,25 +115,24 @@ instant~$t$, with the following computation:
 		\draw [->] (s) -- (an);
 	\end{tikzpicture}
 \end{center}
-where $b(s)$ denotes the belief of $s$, being either a set of states or a
-probability distribution. Since these beliefs depend on the whole sequence of
-observations, also the next action is implicitly based on the whole history.
+Since these beliefs depend on the whole sequence of observations, computing
+the next action from $b(s_t)$ also makes it dependent from the whole history.
 
 Standard RL algorithms cannot be applied to POMDPs, because the state space is
-not observable. Also, since we commonly assume the transition and observation
-functions to be unknown, no estimation could be carried out anyway.  There is
-a clear difference between MDPs and POMDPs. Still, RL algorithms are
-frequently applied to POMDPs. Not surprisingly, they perform very poorly on
-these environments. See, for example, the games with worst performances
-in~\cite{bib:atari-deepq-nature}. This is a subtle mistake, because
-determining whether we're observing the state space is the same as answering
-the following question: does the observation space capture the whole dynamics
-of the system? Or, more precisely, does an equivalent MDP $\langle \obsS, A,
-T_\obsS, R_\obsS, \discount' \rangle$, that produces the same rewards, exist?
-If both $T_\obsS: \obsS \times A \times \obsS \to \R$ and $R_\obsS: \obsS
+not observable. Also, since we allow the transition and observation functions
+to be unknown, no estimation could be carried out anyway.  There is a clear
+difference between MDPs and POMDPs. Still, RL algorithms are frequently
+applied to POMDPs. Not surprisingly, they perform very poorly on these
+environments. This is a subtle mistake, because determining whether we're
+observing the state space is the same as answering the following question:
+does the observation space capture the ``relevant'' dynamics of the system?
+Or, more precisely, does an equivalent MDP $\langle \obsS, A, T_\obsS,
+R_\obsS, \discount' \rangle$, that produces the same rewards, exist?  If both
+functions $T_\obsS: \obsS \times A \times \obsS \to \R$ and $R_\obsS: \obsS
 \times A \times \obsS \to \R$ exist and produce the same rewards, the
-environment can be successfully modelled and solved with an MDP.
-Figure~\ref{fig:pomdp-as-mpd} represents this situation.
+environment can be successfully modelled and solved as an MDP.
+However, since this is often not the case, we cannot apply RL algorithms to
+POMDPs. Figure~\ref{fig:pomdp-as-mpd} represents this situation.
 
 \begin{figure}
 	\centering
@@ -197,7 +196,8 @@ Figure~\ref{fig:pomdp-as-mpd} represents this situation.
 	\caption{The dotted arrows \protect\tikz [baseline=-0.5ex] \protect\draw
 	[densely dotted, ->] (0,0) to +(1.5em,0); represent the dependencies in a
 	POMDP model. Solid arrows \protect\tikz [baseline=-0.5ex] \protect\draw
-	[->] (0,0) to +(1.5em,0); show the MDP model over the same quantities.}
+	[->] (0,0) to +(1.5em,0); show the MDP assumption over the same observable.
+	This is usually a very poor approximation of the real dynamics.  }
 	\label{fig:pomdp-as-mpd}
 \end{figure}
 
@@ -237,8 +237,7 @@ Figure~\ref{fig:pomdp-as-mpd} represents this situation.
 	the position of the masses. Is the reward Markovian with respect to $S
 	\coloneqq \{\theta \in [-\pi, +\pi]\}$? No, because the agent is rewarded
 	when the pendulum \emph{stops} in the upward position. So, the appropriate
-	state space consists of both $\theta$ and $\dot\theta$ (or, rather its
-	discrete-time approximation).
+	state space consists of both $\theta$ and $\dot\theta$.
 
 	Including the momentum in the state space is very common for mechanical
 	systems. However, this can be also necessary for games. In fact, just
@@ -257,8 +256,8 @@ Figure~\ref{fig:pomdp-as-mpd} represents this situation.
 The previous section has shown how partial observations may falsify the Markov
 assumption on rewards. A second possibility is to have a complete observation
 of the state ($\obsS = \stateS$) but a task that is intrinsically
-non-Markovian. In this case, each reward is computed from the whole history
-of events
+non-Markovian. This is the case when each reward is computed from the whole
+history of events
 \begin{equation}
 	r_t = R(\langle s_0, s_1, \dots, s_t \rangle) \qquad \forall t \in \Z
 	\label{eq:nm-rewards}
@@ -272,7 +271,7 @@ we've seen for interpretations of temporal logics.
 Goals defined by rewards of equation~\eqref{eq:nm-rewards} are said
 ``temporally-extended'' because they take into account multiple timesteps. Why
 should we define a reward function that is explicitly non-Markovian? One
-possibility is that we might want our agent to drive the environment through a
+possibility is that we want our agent to drive the environment through a
 \emph{sequence} of states, instead of just reaching a single configuration.
 However, as we will see, we don't need to restrict to sequences, because we
 may define very complex reward functions.
@@ -779,22 +778,55 @@ again.
 
 We've thoroughly analyzed solutions for the non-Markovian goals of
 Section~\ref{sec:tempoal-goals}: namely, temporally-extended goals. We've
-solve them both in isolation, and as additional restraining specifications in
+solved them both in isolation, and as additional restraining specifications in
 preexisting MDPs. We now want to ask: is it possible to address partial
-observations, which is the second source of non-Markovian goals, in a similar
-way? In many cases, the answer is yes. Although, as we will see in a moment,
-this may not be possible or practical for every problem.
+observations, which is the second source of non-Markovian rewards, in a
+similar way? As we'll now discuss, for a class of these problems, the answer
+is yes. Although this may not be practical for all of them.
 
-Partially observable environments would be properly modelled with POMDPs
-$\langle W, A, T, R, \obsS, O\rangle$, because they define an observation
-function $O: W \to \obsS$ that maps world states to observations. However, in
-RL, this function is unknown and the states~$W$ are inaccessible for the
-agent. So, the simplest approach is to learn a policy directly from the
-observation space, $\policy: \obsS \to A$, as if the system were an MDP with
-states~$\obsS$ (see Figure~\vref{fig:pomdp-as-mpd}). As we've noted, this can
-lead to very poor performances, because rewards can be non-Markovian with
-respect to the observations.
+Partially observable stochastic environments are properly modelled with POMDPs
+$\langle S, A, T, R, \obsS, O\rangle$, because they are able to correctly
+distinguish between the world state space $S$ and the observations $\obsS$
+that the agent receives. POMDPs are a large class of problems of greater
+complexity with respect to MDPs. As we've discussed in
+Section~\ref{sec:partial-obs}, we can't simply apply RL algorithm from the
+visible quantities.  Instead, the classic solution method for POMDPs is to
+transform them to fully observable models over a different state space. In
+this section, we'll translate a class of POMDPs to MDPs over an extended state
+space, following a similar solution as that for \ldl{} rewards in the previous
+sections.
 
+% Factored POMDP
+The first restriction is that we'll only consider environments whose dynamic
+can be modelled with Factored POMDPs. A \emph{Factored POMDP} is a POMDP whose
+state and observation spaces are composed of Boolean assignments for a set of
+propositions~$\mathcal{P}$. They are defined as tuples $\langle \mathcal{P},
+S, A, T, R, \mathcal{P}_O\rangle$, where $\mathcal{P}$ is a set of
+propositions, $S = 2^\mathcal{P}$ is the state space of all assignments for
+$\mathcal{P}$, and $\mathcal{P}_O \subset \mathcal{P}$ is a set of observable
+variables. $T$ and $R$ are respectively the transition and reward function
+over the state space~$S$. The resulting observation space is:
+$2^{\mathcal{P}_O}$.
+
+In order to apply the solution that we'll discuss here, there must exists a
+Factored POMDP that generates the same distribution of rewards as those
+produced by the environment. Not all aspects of the system need to be
+modelled, just those influencing future rewards. This means that there must
+exist a relatively small set of propositions that governs the rewards
+produced, regardless of whether the agent is able to verify those conditions
+at each instant. This restriction excludes, for instance, all the environments
+whose rewards are inherently dependent of some continuous quantity. We won't
+be able to solve them with this technique.
+
+
+% TODO: RDP
+
+% TODO: MDP
+
+% TODO: said which, not how
+% TODO: practical imit rewards
+
+\begin{comment}
 Now, let's define a set of fluents~$\fluents$ that represent Boolean
 conditions whose truth can be valuated from the observations~$\obsS$.
 Similarly to the previous section, to each hidden environment state
@@ -957,6 +989,7 @@ rewards. For an unknown function, we mean that a precise model of that
 function is not available and cannot be exploited, not that the rewarded goal
 is obscure. For example, the rewards of Example~\ref{ex:rb-light} are unknown,
 because we don't know the function that maps \emph{images} to rewards.
+\end{comment}
 
 
 \subsubsection*{Conclusion}

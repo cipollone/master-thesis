@@ -12,3 +12,4 @@
 	- Riformula capitolo. Togli riferimento ai giochi
 - Structure of the thesis: di' quali sono nuovi e quali originali
 - Solve section name same as chapter
+- Solve references to modified chapters
