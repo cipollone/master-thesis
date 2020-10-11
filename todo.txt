@@ -14,4 +14,3 @@
 + Solve section name same as chapter
 + Solve references to modified chapters
 + Rileggi e unifica capitolo partialobs
-- Correzione rapida tesi
