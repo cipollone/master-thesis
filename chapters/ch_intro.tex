@@ -191,25 +191,33 @@ The rest of this thesis is structured as follows:
 		the Linear Dynamic Logic~(\ldl{}), that is the specific temporal logic
 		used in this text.
 	\item[\ref{ch:rl}~--~\nameref{ch:rl}]
-		In this chapter, we will see how to design Deep RL agents able to achieve
-		non-Markovian goals. In Sections~\ref{sec:rl} and~\ref{sec:deep-rl} we
-		thoroughly explain the basic concepts behind RL and Deep RL. Then, in
-		Section~\ref{sec:non-markov}, we will analyze what happens when the most
-		common assumptions of RL, and of Deep RL, are falsified.  A solution for
-		these complex RL problems will be presented in
-		Section~\ref{sec:non-markov-solutions}, where we illustrate the
-		Restraining Bolt method.  This chapter ends with
-		Section~\ref{sec:rb-deep-model}, where we propose an original model that
-		allows to apply the previous solution also in the context of Deep RL.
+		Here we describe the second large group of background topics for this
+		thesis. We introduce the fundamental concepts of RL, Deep RL, and we
+		define Double DQN, the Deep RL algorithm that we'll use.
+	\item[\ref{ch:nonmarkovrl}~--~\nameref{ch:nonmarkovrl}]
+		This chapter describes how to design RL agents able to achieve
+		non-Markovian goals. Here, we'll see an in-depth description of the
+		problem, we'll present recent solution methods and also propose some
+		original ideas. In Section~\ref{sec:non-markov}, we will analyze what
+		happens when the most common assumptions of RL, and of Deep RL, are
+		falsified. A recent solution for these complex RL problems will be
+		presented in Section~\ref{sec:non-markov-solutions}, where we explain the
+		Restraining Bolt method. This section also aims to illustrate two sources
+		of non-Markovian rewards in a unified discussion, and to formalize the
+		concept of Restraining Bolt applied to a class of POMDPs. The chapter ends
+		with Section~\ref{sec:rb-deep-model}, where we propose an original model
+		that allows to apply the Restraining Bolt method also in the context of
+		Deep RL.
 	\item[\ref{ch:fluents}~--~\nameref{ch:fluents}]
 		In this important chapter, we illustrate the proposed training method for
 		the fluents valuation functions. We also define a specific model that
 		encodes a portion of the input frame to generate the fluent Boolean
-		valuations.  We'll also formulate a training algorithm for this model.
+		valuations.  We'll also formulate the appropriate training algorithm for
+		this model.
 	\item[\ref{ch:atarieyes}~--~\nameref{ch:atarieyes}]
 		This chapter presents the software that implements all the concepts
 		presented in the previous chapters. We will first review its features and
-		its functionality from a user perspective, then the most interesting
+		its functionality from a user perspective. Then, the most interesting
 		implementation details will follow.
 	\item[\ref{ch:experiments}~--~\nameref{ch:experiments}]
 		This chapter contains experiments and training outcomes in two Atari

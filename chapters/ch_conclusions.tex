@@ -98,13 +98,14 @@ is currently used by researchers for \ldl{}-to-DFA translations, and it's the
 one we adopted in this thesis. Together, we worked for a more stable version
 of the software and an improved language parser for \ldl{}.
 
-Lastly, we'd like to emphasize that Section~\ref{sec:non-markov} presented an
-unifying formalism between RL problems with partial observations and
-non-Markovian goals. As we've seen, just focusing on the Markov assumptions on
-rewards, the two classes of problems can be presented from the same point of
-view: we could consider all of them as partially observable environments. The
-RB, in this context, is a clever way to keep track of the unobservable
-informations that are relevant for obtaining the rewards.
+Lastly, we'd like to emphasize that Chapter~\ref{ch:nonmarkovrl} presented RL
+problems with partial observations and temporally extended goals, with a
+unified approach. We've shown the many similarities between the two, and
+started to illustrate why it is possible to adopt the Restraining Bolt, which
+is devised for the latter group, also for some problems of the former class.
+We've discussed that if it can be successfully applied, the RB is a clever way
+to define the extended state space which include the relevant history-related
+informations.
 
 
 \section{Future works}

@@ -6,10 +6,12 @@
 + Titolo conclusions: future works implicit
 + Nuovo titolo per fluents "Learning to ground symbols trough RL"
 + "Tool for RL with ... (symbols learnt): atariyees package"
-- POMDP da sutton e de giacomo e riscrivi. non lo posso imparare
++ POMDP da sutton e de giacomo e riscrivi. non lo posso imparare
 	- Alcuni POMDP può essere espresso come una dipendenza regolare dalla storia, e poi transformarlo con un MDP esteso
 	- RDP "lo stato va 
 	- Riformula capitolo. Togli riferimento ai giochi
-- Structure of the thesis: di' quali sono nuovi e quali originali
-- Solve section name same as chapter
-- Solve references to modified chapters
++ Structure of the thesis: di' quali sono nuovi e quali originali
++ Solve section name same as chapter
++ Solve references to modified chapters
++ Rileggi e unifica capitolo partialobs
+- Correzione rapida tesi

@@ -1,5 +1,7 @@
 \chapter{Non-Markovian Reinforcement Learning}
 
+\label{ch:nonmarkovrl}
+
 \section{Non-Markovian goals}
 
 \label{sec:non-markov}
@@ -281,7 +283,7 @@ may define very complex reward functions.
 	want the light to be set on, then off again. The agent will be rewarded if,
 	at the end of the episode, the light has been set on only once.  The
 	environment is extremely simple: its state may be completely described by a
-	Boolean variable, ``lightOn'', which reflects the status of the light.
+	Boolean variable, \const{lightOn}, which reflects the status of the light.
 	Still, in order to valuate whether the task has been accomplished, it's not
 	sufficient to check whether the light is off at the end of the episode; we
 	also need to ensure that, \emph{during the whole episode}, it has been
@@ -728,6 +730,7 @@ A, T', R' \rangle$, where:
 			\sum_{i\, :\, q_i' \in F_i} r_i' + R(s, a, s')
 		\]
 \end{itemize}
+\label{page:rb-extended-mdp}
 Both $T_{l,s}$, that is the joint transition function of the symbols $s$ and
 $l$, and the original reward function, $R$, are unknown: we only observe the
 samples produced while the agent plays. Instead, we have to move all
@@ -811,8 +814,9 @@ assume that the environment can be defined as follows.
 			is $\setSym{I}_\setSym{P} \coloneqq 2^\setSym{P}$, the set of Boolean
 			configurations for~$\setSym{P}$.
 		\item $A$ is the space of discrete actions, as usual.
-		\item $T$ and $R$ are the transition and reward functions, defined over the
-			composite state space~$S$.
+		\item $T: S \times A \times S$ is the transition function.
+		\item $R: \setSym{I}_\setSym{P} \to \R$ is the reward function, whose
+			domain is restricted to the current configuration of~$\setSym{P}$.
 		\item $O: S \to \obsS$ is the observation function that just extracts the
 			observable component.
 	\end{itemize}
@@ -820,26 +824,29 @@ assume that the environment can be defined as follows.
 \end{definition}
 
 The class of partially observable environments that can be modelled as a POMDP
-of this definition have a relatively simple hidden dynamic, that can
-be represented as an assignment for a set of propositions. Usually, when the
-decomposition above is not possible or not feasible, it means that either the
-observable component is way too limited or that there is some continuous
-hidden dynamics that cannot be abstracted this way. Still, many environments
-can be modelled with such POMDP, because there exist a small set of hidden
-conditions in the environment that complete the explanation for future
-observations.  Consider, for instance, the Atari games. In many cases, there
-exists a small set of discrete simulator variables, representing the current
-hidden state of the game, which influences the result of the agent's actions.
+of this definition have a relatively simple hidden dynamic, that can be
+represented by the state of the Boolean variables~$\setSym{P}$. This set of
+propositions completely explains the rewards generated and, together with
+$\obsS$, also allow to predict future observations. As an example to explain
+this concept, we can consider the Atari games. In many of those, it is
+possible to define some (possibly unobservable) propositions, like
+$\const{EnemyDead}$ and $\const{DoorOpen}$, that are sufficient to produce the
+environment rewards and, together with the frame of the game, can be used to
+predict the next observation.
 
-The solution proposed proceeds as follows. First, we observe that any POMDP
+The solution we propose proceeds as follows. First, we observe that any POMDP
 can be expressed as a non-Markovian Decision Process over the space of
 observations. Then, we exploit the decomposition above to reconstruct the
 hidden configuration $\setSym{I}_\setSym{P}$ from the history of observations.
-This will leave us with a NMRDP with \ldl{} rewards, which we already know how
-to solve. This is a similar procedure to that presented in~\cite{bib:rdp}.
+Assuming regular properties on this hidden dynamics, we'll be able to use
+\ldl{} formulae to reconstruct $\setSym{I}_\setSym{P}$, and as a consequence
+also the rewards. This will leave us with a model almost equivalent to a MDP
+with \ldl{} restraining specifications, which we already know how to solve.
+This procedure mostly follows the ideas presented in~\cite{bib:rdp}.
 
-A non-Markovian Decision Process is identical to a NMRDP except that also the
-transition function can depend on the entire history of configurations.
+A non-Markovian Decision Process is identical to a NMRDP except that, in
+addition to rewards, also the transition function can depend on the entire
+history of configurations.
 \begin{definition}
 	A \emph{Non-Markovian Decision Process}
 	(NMDP)\nomenclature{NMDP}{Non-Markovian Decision Process} is a tuple
@@ -850,6 +857,7 @@ transition function can depend on the entire history of configurations.
 			maps non-empty sequences of states to the probability of the next state.
 		\item $R: S^+ \to \R$ is the reward function.
 	\end{itemize}
+	\label{def:nmdp-general}
 \end{definition}
 
 Any POMDP~$\modelsym_p$ can be formulated as a NMDP~$\modelsym_n \coloneqq
@@ -860,12 +868,13 @@ Still, computing transitions and rewards from $\obsS^+$ is unfeasible.
 Instead, we want to restrict this dependency on the past as much as possible.
 
 For this purpose, we introduce a new set~$\fluents$ of atomic propositions.
-The set of fluents~$\fluents$ is composed of propositions that can be decided
-from our observation space, i.e. we assume $\fluents$ to be such that there
-exists an $f: \obsS \to 2^\fluents$, in all the following definitions. We've
-previously called $f$ ``valuation function'' or ``features extractor''. We now
-use the variables~$\fluents$ to represent the ``essential'' information about
-the observations. More precisely, we'll formulate the following NMRDP:
+The set of fluents, $\fluents$, is composed of propositions that can be
+decided from our observation space, i.e. we assume $\fluents$ to be such that
+there exists an $f: \obsS \to 2^\fluents$, in all the following definitions.
+We've previously called $f$ a ``valuation function'' or ``features
+extractor''.  We now use the variables~$\fluents$ to represent the
+``essential'' information about the observations. More precisely, we'll
+formulate the following NMRDP:
 \begin{definition}
 	We define a class of NMDPs, $\modelsym_f \coloneqq \langle \fluents, S, A,
 	T, R \rangle$, with the following structure:
@@ -873,24 +882,29 @@ the observations. More precisely, we'll formulate the following NMRDP:
 		\item $\fluents$ is a finite set of atomic propositions.
 		\item $S \coloneqq \obsS \times \setSym{I}_\fluents$ is the state space
 			composed by a set $\obsS$ and $\setSym{I}_\fluents \coloneqq
-			2^\fluents$, the set of all configurations for the fluents~$\fluents$.
-		\item $T: \obsS \times \setSym{I}_\fluents^+ \to \R$ is a transition
-			function where the dependency on the past history is restricted just to
-			the trace of valuations produced for~$\fluents$.
-		\item $R: \obsS \times \setSym{I}_\fluents^+ \to \R$ is the reward
-			function, which follows a similar restriction.
+			2^\fluents$, the set of configurations for the fluents~$\fluents$.
+		\item $T: \obsS \times \setSym{I}_\fluents^+ \times S\to \R$ is the
+			transition function, where the dependency on the past history is
+			restricted just to $\setSym{I}_\fluents$, the trace of valuations
+			produced for~$\fluents$.
+		\item $R: \setSym{I}_\fluents^+ \to \R$ is the reward function.
 	\end{itemize}
 	\label{def:nmdp-fluents}
 \end{definition}
-Some, but not all POMDPs, can be expressed as the NMDPs of this definition. In
-fact, it is not always possible to find a sufficient set of fluents~$\fluents$
-(sufficient in the sense of the definition). We argue that many factored POMDP
-of Definition~\ref{def:pomdp-factored} can be formulated this way.
+While every POMDP can be expressed as the general NMDP of
+Definition~\ref{def:nmdp-general}, not all of them can be formulated as the
+class of NMDPs defined here. However, we argue that many factored POMDP of
+Definition~\ref{def:pomdp-factored} can be formulated this way. Still,
+without further assumptions on the nature of the observations $\obsS$, we
+can't guarantee whether it is possible to extract a sufficient set of
+fluents~$\fluents$ for this translation (sufficient in the sense of
+Definition~\ref{def:nmdp-fluents}). 
 
-We've reduced the relevant informations about history from an intractable
-$\obsS^+$ to $\setSym{I}_\fluents^+$ which is a trace of Boolean valuations.
-The next step is to exploit regularities in the functions $T$ and $R$ to
-express this NMDP in a even simpler formalism.
+We've now reduced the relevant informations about the history of observations,
+from an intractable $\obsS^+$, to $\setSym{I}_\fluents^+$, which is a trace of
+Boolean valuations.  The next step is to assume some regularities in the
+functions $T$ and $R$, to express a large group of such NMDPs in a even
+simpler formalism.
 
 The model that we want to introduce is a small variant of a \emph{Regular
 Decision Process} (RDP)\nomenclature{RDP}{Regular Decision Process}. The
@@ -909,22 +923,22 @@ $\modelsym_r \coloneqq \langle \fluents, S, A, T, R \rangle$ where:
 		$(\formula_i, a, T_i)$. Each $\formula_i$ is an \ldl{} formula over the
 		set of atoms $\fluents$ that indicates for which traces this tuple is
 		active. When the $i$-th tuple is active, and action $a$ is performed, the
-		probability of the next state $s \in S$, given the current $o \in \obsS$,
-		is returned by the function $T_i: \obsS \times S \to \R$.
+		probability of the next state $s \in S$, given the current observation $o
+		\in \obsS$, is returned by the function $T_i: \obsS \times S \to \R$.
 	\item $R$ is the reward function, defined as a finite set of pairs
 		$(\formula_j, r_j)$, which associate the reward $r_j$ when $\formula_j$
 		is satisfied by the trace produced for~$\fluents$.
 \end{itemize}
 This is just an informal definition because the formulae must obey additional
 constraints, in order to guarantee that each trace activates a single formula
-in the set~$T$. RDPs are defined in~\cite{bib:rdp}.
+in the set~$T$ (refer to the complete definition for RDPs in \cite{bib:rdp}).
 
 Until this point, we've just defined some models with more and more
-restrictions. We'll now link the class of POMDPs we're interested in to
-composite RDPs. Since, RDPs can be solved as MDPs over a compact state space,
-this will be considered as a solution.
+restrictions. We'll now link the class of POMDPs we're interested in, to
+composite RDPs. Since, RDPs can be solved through MDPs over a compact state
+space, this will be considered as a solution.
 
-Inspired by Lemma 3 of~\cite{bib:rdp}, we state the following
+Inspired by Lemma 3 of~\cite{bib:rdp}, we state the following:
 \begin{proposition}
 	Let $\modelsym_p \coloneqq \langle \setSym{P}, S, A, T, R, \obsS, O\rangle$
 	be a POMDP of Definition~\ref{def:pomdp-factored}. If there exists a set of
@@ -932,78 +946,51 @@ Inspired by Lemma 3 of~\cite{bib:rdp}, we state the following
 	\in \setSym{P}$ can be computed through a function $f_p: \obsS \times
 	\setSym{I}_\fluents^+$, with a regular dependency on
 	$\setSym{I}_\fluents^+$, then, there exists a (composite) RDP $\modelsym_r
-	\coloneqq \langle \fluents, S', A', T', R' \rangle$ that generates the same
-	rewards as~$\modelsym_p$.
+	\coloneqq \langle \fluents, \obsS \times \setSym{I}_\fluents, A, T', R'
+	\rangle$ that generates the same rewards as~$\modelsym_p$.
 \end{proposition}
-
-This is important because RDPs can be learnt by transforming them to
+This is important, because RDPs can be learnt by transforming them to
 equivalent MDPs. As shown in~\cite{bib:rdp}, an RDP with a fully
 factored state space, $S = 2^\fluents$, can be transformed to an MDP with a
 state space $S \times Q_1 \times \dots \times Q_n$. Also, each component $Q_i$
 is the set of states associated to an automaton $\automa_i$ generated from the
-\ldl{} formula $\formula_i$ that appear in the RDP transition and reward
-functions.
+\ldl{} formula $\formula_i$ that appears in the RDP's transition and reward
+functions. Similarly, we can show that a composite RDP can be transformed to
+an MDP with the following state space $\obsS \times S \times Q_1 \times \dots
+\times Q_n$.
 
-In a similar way, we can show that a composite RDP can be transformed to an
-MDP with a state space $\obsS \times Q_1 \times \dots \times Q_n$.  In fact,
-there are many analogies both between RDPs and NMRDPs with \ldl{} rewards, and
-between composite RDPs and MDPs with restraining specifications. However, the
-purpose of this section is not to provide complete proofs, but only to suggest
-how to leverage the results in~\cite{bib:rdp} in presence of a composite state
-space. 
+There is an evident similarity between each of these two MDP state spaces and
+those appearing in Definition~\ref{def:ldlf-eq-mdp} at
+page~\pageref{def:ldlf-eq-mdp} (NMRDPs with \ldl{} rewards) and those at
+page~\pageref{page:rb-extended-mdp} (MDPs with \ldl{} restraining
+specifications), respectively. This parallelism is due to the fact that a
+(possibly composite) RDP is an equivalent formalization for the behaviours
+defined by these two models.
 
-This discussion served to say that it is indeed possible to lean a restricted
-group of POMDPs by performing RL on an equivalent MDP. We said what is
-necessary, but not how to do it in a practical way. We conclude this section
-by suggesting how we might address partially observable environments. Clearly,
-we can't provide guarantees here, as much depends on the nature of the
-environments dynamics and observations.
+To conclude, a class of POMDPs $\modelsym_p \coloneqq \langle \setSym{P}, S,
+A, T, R, \obsS, O\rangle$ can be learnt by performing RL over an MDP
+$\modelsym \coloneqq \langle \obsS, A, T', R' \rangle$ with appropriate \ldl{}
+restraining specifications from a set of fluents~$\fluents$. Providing a
+complete proof for this result is behind the scope of this thesis. The purpose
+of this section is just to suggest how to leverage the results
+in~\cite{bib:rdp} in presence of a state space which is not completely
+factored (which we called ``composite''). In the small remainder of this
+section, we discuss how we could address partially observable environments,
+from a practical perspective. 
 
-\begin{comment}
-
-Suppose our goal is to define a function that generates the same rewards as
-the environment. Since the rewards are non-Markovian with respect to the
-observations, they will certainly be non-Markovian with respect to the fluents
-configurations which are computed from them. So, what we can do is to define a
-NMRDP with \ldl{} rewards from the fluents $\fluents$, that produces the same
-rewards~$r$ as the environment. In order to do this, we will certainly select
-as fluents all the conditions which are relevant for deciding whether the
-reward should be supplied.
-
-\begin{example}
-	Let's extend Example~\ref{ex:light}. An agent can control a light bulb
-	through a switch, but now it can capture images of the room. Suppose the
-	environment rewards the agent with the same condition of the previous
-	example: the light must have been switched on, then off, only once during
-	the episode.  Our goal is to emulate this reward with a NMRDP with \ldl{}
-	rewards.  First, we define a fluent $\const{LightOn}$, representing the
-	status of the light. The features extractor, from images of the room in
-	which the light is on, would produce $\const{LightOn} = \true$ (or $l =
-	\set{\const{LightOn}}$), and false otherwise. Now we state the following
-	\ldl{} goal:
-	\[
-		\formula_1 \coloneqq \ldiamond{(\lnot \const{LightOn})^*;
-		\const{LightOn}^+; (\lnot \const{LightOn})^+} \lend
-	\]
-	where $\resym^+$ is an abbreviation of $\resym; \resym^*$.
-	\label{ex:rb-light}
-\end{example}
-
-Assuming we've been able to define an NMRDP with \ldl{} rewards, $\nmrdpS =
-\langle \highlevelS, A, T, \set{(\formula_i, r_i')_{i=1}^m} \rangle$, that
-generates the same rewards as the environment. The equivalent MDP
-of~$\nmrdpS$, $\mdpS \coloneqq \langle S', A, T', R' \rangle$ has a state
-space $S' \coloneqq Q_1 \times \dots \times Q_m \times \highlevelS$. From
-Theorem~\ref{th:bolt-equivalence}, the rewards generated by~$\mdpS$ are the
-same as those generated by~$\nmrdpS$.  This also means that the original
-rewards, produced by the environment, are Markovian with respect to~$S'$.
-Therefore, by augmenting the observations with the automaton states~$\vec{q}$,
-we produce a state space that restores the Markov property.  This is possible,
-because these states keep track of the unobservable quantities in the
-environment state that affect future rewards. This is the important additional
-information that we need to provide to the agent, we may even not supply the
-rewards that we generate at all. Figure~\ref{fig:rb-partial-obs} shows this
-arrangement.
+Since the POMDP hidden variables, $\setSym{P}$, are unknown, we can't easily
+define an appropriate set of fluents and the correct \ldl{} temporal
+specifications to reconstruct them. However, suppose our goal is to
+\emph{imitate} the rewards generated by the environment. Let $\fluents$ be a
+set of fluents which can be computed from the available observations $o \in
+\obsS$. If we can define an MDP with \ldl{} specifications, written from the
+atoms in~$\fluents$, that generates the same rewards as the environment, then,
+by applying RL on the equivalent MDP, we can learn the original POMDP. The
+resulting composite state space $\obsS \times Q_1 \times \dots \times Q_m$ of
+the Restraining Bolt is a complete and exhaustive set of observations, in the
+sense that, the additional observation $\vec{q}$ restores the Markov property
+for rewards. We don't even need to supply the additional rewards generated by
+the RB. Figure~\ref{fig:rb-partial-obs} shows this arrangement.
 \begin{figure}
 	\centering
 	\begin{tikzpicture}[
@@ -1038,10 +1025,22 @@ arrangement.
 \end{figure}
 
 \begin{example}
-	We now conclude the Example~\ref{ex:rb-light}, where we've prepared an NMRDP
-	with a single \ldl{} reward associated to the condition~$\formula_1$. The
-	DFA that is associated to this formula is shown in
-	Figure~\ref{fig:rb-light-automa}.
+	Let's extend Example~\ref{ex:light}. An agent can control a light bulb
+	through a switch, but now it can only observe images of the room. Suppose the
+	environment rewards the agent with the same condition of the previous
+	example: the light must have been switched on, then off, only once during
+	the episode.  Our goal is to emulate this reward with a NMRDP with \ldl{}
+	rewards.  First, we define a fluent $\const{LightOn}$, representing the
+	status of the light. The features extractor, from images of the room in
+	which the light is on, would produce $\const{LightOn} = \true$ (or $l =
+	\set{\const{LightOn}}$), and false otherwise. Now we state the following
+	\ldl{} goal:
+	\[
+		\formula_1 \coloneqq \ldiamond{(\lnot \const{LightOn})^*;
+		\const{LightOn}^+; (\lnot \const{LightOn})^+} \lend
+	\]
+	where $\resym^+$ is an abbreviation of $\resym; \resym^*$.  The DFA that is
+	associated to this formula is shown in Figure~\ref{fig:rb-light-automa}.
 	\begin{figure}
 			\centering
 			\begin{tikzpicture}
@@ -1069,46 +1068,24 @@ arrangement.
 	view about the missing steps to achieve the reward; something that it
 	wouldn't know from the current image or the current value of
 	$\const{LightOn}$.
-	\label{ex:light-rb-automa}
+	\label{ex:rb-light}
 \end{example}
 
-We've previously mentioned that this solution may not be feasible for every
-problem. In fact, we must first exclude all environments in which the
-observations are not meaningful enough. More precisely, those in which we
-cannot accurately predict the next reward~$r_t$ from the sequence of
-observations $\langle o_1, \dots, o_t \rangle$. However, these problems would
-be problematic for any learning algorithm, due to their weak observation
-function. A second group of environments may define reward functions which are
-difficult to express in temporal logic. Expressing these goals in \ldl{} would
-generate a large number of fluents and obscure temporal specifications
-(example: the game of Chess with partial observations of
-Example~\ref{ex:chess-partial-obs}). However, this last limitation is not as
-strong as it may seem: often, it is possible to greatly simplify the temporal
-specification by simply selecting a different set of fluents.
+We might argue that the previous example mostly resembles an MDP with
+restraining specifications, rather than a POMDP. This is partially true.
+However, it all depends on whether we consider this environment to have some
+unobservable dynamics, or not. In fact, if we assume these rewards to be
+generated by the environment, there must be an unobservable component which
+counts how many times the switch has been touched.
 
-We might think that reproducing the environment's reward function is
-impossible if it is unknown. This is not necessarily true, because we are
-those that define the agent's goal and would generate those ``environment's''
-rewards. For an unknown function, we mean that a precise model of that
-function is not available and cannot be exploited, not that the rewarded goal
-is obscure. For example, the rewards of Example~\ref{ex:rb-light} are unknown,
-because we don't know the function that maps \emph{images} to rewards.
-\end{comment}
-
-
-\subsubsection*{Conclusion}
-
-In this Chapter, we've shown that our construction for NMRDP with \ldl{}
-rewards, that we call ``Restraining Bolt'', is a valid solution for many
-problems: temporally-extended tasks, restraining specifications and partial
-observations. A very interesting aspect is that it can be applied as an
-additional module, added to the agent's original design. This is possible,
-because the extended MDPs only augment the original state spaces with
-additional informations. As we will see in the next section, in practice, the
-agent requires few modification in order to properly handle these additional
-informations. However, the Restraining Bolt is a first important step toward
-modularity and explainablility of (Deep) RL agents designed for complex
-goals.
+Another possible objection could be that reproducing the environment's reward
+function is impossible if it is unknown. This is not necessarily true, because
+we are those that define the agent's goal and would generate those
+``environment's'' rewards. For an unknown function, we mean that a precise
+model of that function is not available and cannot be exploited, not that the
+rewarded goal is obscure. For example, the rewards of
+Example~\ref{ex:rb-light} are unknown, because we don't know the function that
+maps \emph{images} to rewards.
 
 
 \section{Restrained Deep RL agents}
@@ -1208,7 +1185,7 @@ parametrization over value functions because, to different automaton states,
 there may correspond dramatically different value functions over inputs.
 
 \begin{example}
-	Let's consider again the light bulb of Example~\ref{ex:light-rb-automa} and
+	Let's consider again the light bulb of Example~\ref{ex:rb-light} and
 	the automaton of Figure~\ref{fig:rb-light-automa}. Suppose the initial MDP
 	state is $s_0 = (o_0, 0)$, where $o_0$ is an image of a dark room. In this
 	case, the model should learn an high state-action value for the action
