@@ -785,77 +785,181 @@ similar way? As we'll now discuss, for a class of these problems, the answer
 is yes. Although this may not be practical for all of them.
 
 Partially observable stochastic environments are properly modelled with POMDPs
-$\langle S, A, T, R, \obsS, O\rangle$, because they are able to correctly
-distinguish between the world state space $S$ and the observations $\obsS$
-that the agent receives. POMDPs are a large class of problems of greater
-complexity with respect to MDPs. As we've discussed in
-Section~\ref{sec:partial-obs}, we can't simply apply RL algorithm from the
+$\modelsym_p = \langle S, A, T, R, \obsS, O\rangle$, because they are able to
+correctly distinguish between the world state space $S$ and the observations
+$\obsS$ that the agent receives. POMDPs are a large class of problems with a
+greater complexity with respect to MDPs. As we've discussed in
+Section~\ref{sec:partial-obs}, we can't simply apply a RL algorithm from the
 visible quantities.  Instead, the classic solution method for POMDPs is to
 transform them to fully observable models over a different state space. In
 this section, we'll translate a class of POMDPs to MDPs over an extended state
 space, following a similar solution as that for \ldl{} rewards in the previous
 sections.
 
-% Factored POMDP
-The first restriction is that we'll only consider environments whose dynamic
-can be modelled with Factored POMDPs. A \emph{Factored POMDP} is a POMDP whose
-state and observation spaces are composed of Boolean assignments for a set of
-propositions~$\mathcal{P}$. They are defined as tuples $\langle \mathcal{P},
-S, A, T, R, \mathcal{P}_O\rangle$, where $\mathcal{P}$ is a set of
-propositions, $S = 2^\mathcal{P}$ is the state space of all assignments for
-$\mathcal{P}$, and $\mathcal{P}_O \subset \mathcal{P}$ is a set of observable
-variables. $T$ and $R$ are respectively the transition and reward function
-over the state space~$S$. The resulting observation space is:
-$2^{\mathcal{P}_O}$.
+% Factored hidden dynamics
+The first restriction is that we'll only consider POMDPs whose hidden dynamics
+can be modelled by a factored Boolean representation. More precisely, we
+assume that the environment can be defined as follows.
+\begin{definition}
+	We define a POMDP $\modelsym_p \coloneqq \langle \setSym{P}, S, A, T, R,
+	\obsS, O\rangle$, where:
+	\begin{itemize}
+		\item $\setSym{P}$ is a finite set of atomic propositions.
+		\item $S \coloneqq \obsS \times \setSym{I}_\setSym{P}$ is a state space
+			that is composed by an observable part, $\obsS$, and a hidden
+			part,~$\setSym{I}_\setSym{P}$. Furthermore, the unobservable component
+			is $\setSym{I}_\setSym{P} \coloneqq 2^\setSym{P}$, the set of Boolean
+			configurations for~$\setSym{P}$.
+		\item $A$ is the space of discrete actions, as usual.
+		\item $T$ and $R$ are the transition and reward functions, defined over the
+			composite state space~$S$.
+		\item $O: S \to \obsS$ is the observation function that just extracts the
+			observable component.
+	\end{itemize}
+	\label{def:pomdp-factored}
+\end{definition}
 
-In order to apply the solution that we'll discuss here, there must exists a
-Factored POMDP that generates the same distribution of rewards as those
-produced by the environment. Not all aspects of the system need to be
-modelled, just those influencing future rewards. This means that there must
-exist a relatively small set of propositions that governs the rewards
-produced, regardless of whether the agent is able to verify those conditions
-at each instant. This restriction excludes, for instance, all the environments
-whose rewards are inherently dependent of some continuous quantity. We won't
-be able to solve them with this technique.
+The class of partially observable environments that can be modelled as a POMDP
+of this definition have a relatively simple hidden dynamic, that can
+be represented as an assignment for a set of propositions. Usually, when the
+decomposition above is not possible or not feasible, it means that either the
+observable component is way too limited or that there is some continuous
+hidden dynamics that cannot be abstracted this way. Still, many environments
+can be modelled with such POMDP, because there exist a small set of hidden
+conditions in the environment that complete the explanation for future
+observations.  Consider, for instance, the Atari games. In many cases, there
+exists a small set of discrete simulator variables, representing the current
+hidden state of the game, which influences the result of the agent's actions.
 
+The solution proposed proceeds as follows. First, we observe that any POMDP
+can be expressed as a non-Markovian Decision Process over the space of
+observations. Then, we exploit the decomposition above to reconstruct the
+hidden configuration $\setSym{I}_\setSym{P}$ from the history of observations.
+This will leave us with a NMRDP with \ldl{} rewards, which we already know how
+to solve. This is a similar procedure to that presented in~\cite{bib:rdp}.
 
-% TODO: RDP
+A non-Markovian Decision Process is identical to a NMRDP except that also the
+transition function can depend on the entire history of configurations.
+\begin{definition}
+	A \emph{Non-Markovian Decision Process}
+	(NMDP)\nomenclature{NMDP}{Non-Markovian Decision Process} is a tuple
+	$\modelsym_n \coloneqq \langle S, A, T, R \rangle$, where $S$ and $A$ are
+	the state and action spaces, just like in MDPs, and:
+	\begin{itemize}
+		\item $T: S^+ \times A \times S \to \R$ is the transition function that
+			maps non-empty sequences of states to the probability of the next state.
+		\item $R: S^+ \to \R$ is the reward function.
+	\end{itemize}
+\end{definition}
 
-% TODO: MDP
+Any POMDP~$\modelsym_p$ can be formulated as a NMDP~$\modelsym_n \coloneqq
+\langle \obsS, A, T_\obsS, R_\obsS \rangle$, where rewards and transitions are
+defined over the history of observations. This is a general result for POMDPs.
+The advantage of this model is that it only considers the visible quantities.
+Still, computing transitions and rewards from $\obsS^+$ is unfeasible.
+Instead, we want to restrict this dependency on the past as much as possible.
 
-% TODO: said which, not how
-% TODO: practical imit rewards
+For this purpose, we introduce a new set~$\fluents$ of atomic propositions.
+The set of fluents~$\fluents$ is composed of propositions that can be decided
+from our observation space, i.e. we assume $\fluents$ to be such that there
+exists an $f: \obsS \to 2^\fluents$, in all the following definitions. We've
+previously called $f$ ``valuation function'' or ``features extractor''. We now
+use the variables~$\fluents$ to represent the ``essential'' information about
+the observations. More precisely, we'll formulate the following NMRDP:
+\begin{definition}
+	We define a class of NMDPs, $\modelsym_f \coloneqq \langle \fluents, S, A,
+	T, R \rangle$, with the following structure:
+	\begin{itemize}
+		\item $\fluents$ is a finite set of atomic propositions.
+		\item $S \coloneqq \obsS \times \setSym{I}_\fluents$ is the state space
+			composed by a set $\obsS$ and $\setSym{I}_\fluents \coloneqq
+			2^\fluents$, the set of all configurations for the fluents~$\fluents$.
+		\item $T: \obsS \times \setSym{I}_\fluents^+ \to \R$ is a transition
+			function where the dependency on the past history is restricted just to
+			the trace of valuations produced for~$\fluents$.
+		\item $R: \obsS \times \setSym{I}_\fluents^+ \to \R$ is the reward
+			function, which follows a similar restriction.
+	\end{itemize}
+	\label{def:nmdp-fluents}
+\end{definition}
+Some, but not all POMDPs, can be expressed as the NMDPs of this definition. In
+fact, it is not always possible to find a sufficient set of fluents~$\fluents$
+(sufficient in the sense of the definition). We argue that many factored POMDP
+of Definition~\ref{def:pomdp-factored} can be formulated this way.
+
+We've reduced the relevant informations about history from an intractable
+$\obsS^+$ to $\setSym{I}_\fluents^+$ which is a trace of Boolean valuations.
+The next step is to exploit regularities in the functions $T$ and $R$ to
+express this NMDP in a even simpler formalism.
+
+The model that we want to introduce is a small variant of a \emph{Regular
+Decision Process} (RDP)\nomenclature{RDP}{Regular Decision Process}. The
+reader can refer to~\cite{bib:rdp} for a complete definition of RDPs.
+Essentially, they are particular NMDPs with a completely factored state space
+$S = \setSym{I}_\fluents$, whose transition and reward functions are defined
+through \ldl{} formulae over the symbols~$\fluents$. The model we define here
+is the analogue of a RDP, but with a composite state space.
+
+We informally define a class of NMDPs (composite RDPs) defined as a tuples
+$\modelsym_r \coloneqq \langle \fluents, S, A, T, R \rangle$ where:
+\begin{itemize}
+	\item $\fluents$ is a finite set of atomic propositions.
+	\item $S: \obsS \times \setSym{I}_\fluents$ is the composite state space.
+	\item $T$ is the transition function, specified as a finite set of tuples,
+		$(\formula_i, a, T_i)$. Each $\formula_i$ is an \ldl{} formula over the
+		set of atoms $\fluents$ that indicates for which traces this tuple is
+		active. When the $i$-th tuple is active, and action $a$ is performed, the
+		probability of the next state $s \in S$, given the current $o \in \obsS$,
+		is returned by the function $T_i: \obsS \times S \to \R$.
+	\item $R$ is the reward function, defined as a finite set of pairs
+		$(\formula_j, r_j)$, which associate the reward $r_j$ when $\formula_j$
+		is satisfied by the trace produced for~$\fluents$.
+\end{itemize}
+This is just an informal definition because the formulae must obey additional
+constraints, in order to guarantee that each trace activates a single formula
+in the set~$T$. RDPs are defined in~\cite{bib:rdp}.
+
+Until this point, we've just defined some models with more and more
+restrictions. We'll now link the class of POMDPs we're interested in to
+composite RDPs. Since, RDPs can be solved as MDPs over a compact state space,
+this will be considered as a solution.
+
+Inspired by Lemma 3 of~\cite{bib:rdp}, we state the following
+\begin{proposition}
+	Let $\modelsym_p \coloneqq \langle \setSym{P}, S, A, T, R, \obsS, O\rangle$
+	be a POMDP of Definition~\ref{def:pomdp-factored}. If there exists a set of
+	fluents~$\fluents$ such that in all reachable states, the value of every $p
+	\in \setSym{P}$ can be computed through a function $f_p: \obsS \times
+	\setSym{I}_\fluents^+$, with a regular dependency on
+	$\setSym{I}_\fluents^+$, then, there exists a (composite) RDP $\modelsym_r
+	\coloneqq \langle \fluents, S', A', T', R' \rangle$ that generates the same
+	rewards as~$\modelsym_p$.
+\end{proposition}
+
+This is important because RDPs can be learnt by transforming them to
+equivalent MDPs. As shown in~\cite{bib:rdp}, an RDP with a fully
+factored state space, $S = 2^\fluents$, can be transformed to an MDP with a
+state space $S \times Q_1 \times \dots \times Q_n$. Also, each component $Q_i$
+is the set of states associated to an automaton $\automa_i$ generated from the
+\ldl{} formula $\formula_i$ that appear in the RDP transition and reward
+functions.
+
+In a similar way, we can show that a composite RDP can be transformed to an
+MDP with a state space $\obsS \times Q_1 \times \dots \times Q_n$.  In fact,
+there are many analogies both between RDPs and NMRDPs with \ldl{} rewards, and
+between composite RDPs and MDPs with restraining specifications. However, the
+purpose of this section is not to provide complete proofs, but only to suggest
+how to leverage the results in~\cite{bib:rdp} in presence of a composite state
+space. 
+
+This discussion served to say that it is indeed possible to lean a restricted
+group of POMDPs by performing RL on an equivalent MDP. We said what is
+necessary, but not how to do it in a practical way. We conclude this section
+by suggesting how we might address partially observable environments. Clearly,
+we can't provide guarantees here, as much depends on the nature of the
+environments dynamics and observations.
 
 \begin{comment}
-Now, let's define a set of fluents~$\fluents$ that represent Boolean
-conditions whose truth can be valuated from the observations~$\obsS$.
-Similarly to the previous section, to each hidden environment state
-corresponds a low-level feature $o \in \obsS$ and a high-level symbol $l \in
-2^\fluents$.  In Figure~\ref{fig:symbols-partial-obs}, the environment is
-assumed to generate the observation~$o$, on which we have no control. Instead,
-the feature extractor indicates that we're free to choose and generate our
-high-level alphabet.
-\begin{figure}
-	\centering
-	\begin{tikzpicture}[
-			arrow/.style={->, semithick},
-		]
-		\matrix [
-			 column sep=1.2cm, row sep=0.5cm,
-			] {
-			\node (w) [block, minimum height=1cm, minimum width=1cm] {World}; \& \&
-			\node (o) [pin=right:observed features] {$o \in \obsS$}; \\ \& 
-			\node (f) [block] {Features\\extractor}; \&
-			\node (l) [pin=right:fluents configuration] {$l \in \highlevelS$}; \\
-		};
-		\draw [arrow] (w) -- coordinate [pos=0.15] (inters) (o);
-		\draw [arrow] (inters) |- (f);
-		\draw [arrow] (f) -- (l);
-	\end{tikzpicture}
-	\caption{Fluents configurations are computed from observations of the
-	environment.}
-	\label{fig:symbols-partial-obs}
-\end{figure}
 
 Suppose our goal is to define a function that generates the same rewards as
 the environment. Since the rewards are non-Markovian with respect to the
