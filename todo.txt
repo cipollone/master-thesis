@@ -14,3 +14,19 @@
 + Solve section name same as chapter
 + Solve references to modified chapters
 + Rileggi e unifica capitolo partialobs
+- Togli le definizione e usa i finite transducer
+
+- Def 14 Q_1 è per t, Q_r per R
+- Definizione con RDP
+- Sii preciso ma attieniti al paper
+- Transducer devono avere input e output finito
+- Non dire features ma fluenti
+- Definizione 15  RDP ma con T e R finite transducer
+		"nel paper 3 si definivano T and R con logica, qui useremo transducer"
+- Teorema RDP si possono tradurre in MDP
+- Corollario POMDP to MDP
+- Sposta la dichiarazione 
+- Dì che sono regolari
+- Rimuovi tutti i riferimenti a LDL specification, solo che LDL può rigenerare i linguaggi regolari
+
+- Ask no cite for transducer, right?

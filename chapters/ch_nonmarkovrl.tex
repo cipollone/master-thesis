@@ -1,4 +1,4 @@
-\chapter{Non-Markovian Reinforcement Learning}
+\chapter{Reinforcement Learning for non-Markovian rewards}
 
 \label{ch:nonmarkovrl}
 
@@ -36,8 +36,8 @@ POMDPs are a generalization of MDPs for partial observations. From now on, we
 will denote with $\stateS$ the environment state space and with $\obsS$ the
 observation space. Formally, a discrete-time POMDP is a 7-tuple ${\langle
 \stateS, A, T, R, \obsS, O, \discount \rangle}$, where $\stateS, A, T, R$ are
-defined as in MDPs, $\obsS$ is the observation space, and $O$ is the
-observation function ${O: S \to \obsS}$.
+defined as in MDPs, $\obsS$ is the observation space, and $O$ is the (possibly
+stochastic) observation function ${O: S \times \obsS \to \R}$.
 
 The graphical model of a POMDP is shown in Figure~\ref{fig:pomdp}.
 \begin{figure}
@@ -793,11 +793,109 @@ correctly distinguish between the world state space $S$ and the observations
 $\obsS$ that the agent receives. POMDPs are a large class of problems with a
 greater complexity with respect to MDPs. As we've discussed in
 Section~\ref{sec:partial-obs}, we can't simply apply a RL algorithm from the
-visible quantities.  Instead, the classic solution method for POMDPs is to
-transform them to fully observable models over a different state space. In
-this section, we'll translate a class of POMDPs to MDPs over an extended state
-space, following a similar solution as that for \ldl{} rewards in the previous
-sections.
+visible quantities. The classic learning method for POMDPs is to transform
+them to MDPs over the belief-state for $S$. As already noted, we assume
+unknown transition and observation functions, and we can't apply classic
+estimation algorithms. In this section, we'll show that a class of POMDPs can
+be learnt by performing RL on MDPs, defined over a extended, but compact,
+state space. This idea is very similar to that of the previous sections, but
+applied to a different class of problems.
+
+First we state a general result for POMDPs: learning over a POMDP can be
+equivalently formulated as a learning problem over a non-Markovian Decision
+Process. These models are identical to NMRDPs, except that, in addition to
+rewards, also the transition function can depend on the entire history of
+configurations.
+\begin{definition}
+	A \emph{Non-Markovian Decision Process}
+	(NMDP)\nomenclature{NMDP}{Non-Markovian Decision Process} is a tuple
+	$\modelsym_n \coloneqq \langle S, A, T, R \rangle$, where $S$ and $A$ are
+	the state and action spaces, just like in MDPs, and:
+	\begin{itemize}
+		\item $T: S^+ \times A \times S \to \R$ is the transition function that
+			maps non-empty sequences of states to the probability of the next state.
+		\item $R: S^+ \to \R$ is the reward function.
+	\end{itemize}
+	\label{def:nmdp-general}
+\end{definition}
+
+We now consider POMDPs with a finite state space. These can be represented
+with a factored state space, composed of assignments for a finite set of
+propositions~$\setSym{P}$.
+\begin{definition}
+	A factored POMDP is a tuple $\modelsym_p \coloneqq \langle \setSym{P}, S, A,
+	T, R, \obsS, O, \setSym{P}_O \rangle$, where $A$, $T$, $R$ are defined as
+	in generic POMDPs, $\setSym{P}$ is a finite set of propositions, $S$
+	contains assignments to $\setSym{P} \subset \setSym{P}$, denoted with
+	$\setSym{I}_\setSym{P} = 2^\setSym{P}$, and $\setSym{P}_O$ is the set of
+	observable propositions. In a factored POMDP, the observation space $\obsS$
+	is implicitly defined as the assignment for $\setSym{P}_O$.
+\end{definition}
+
+Factored POMDPs can clearly be formulated as NMDPs, but we can be even more
+specific. Let's define a NMDP with a factored state space:
+\begin{definition}
+	A factored Non-Markovian Decision Process (NMDP) is a tuple $\modelsym_n
+	\coloneqq \langle \setSym{P}, A, S, T, R \rangle$, where $\setSym{P}$ is a
+	finite set of propositions, $S = 2^\setSym{P}$ is the set of assignments for
+	$\setSym{P}$, and $A$, $T$, $R$ are defined as in
+	Definition~\ref{def:nmdp-general}
+	\label{def:nmdp-factored}
+\end{definition}
+So, it is possible to state the following result:
+\begin{lemma}
+	\cite{bib:rdp} For every factored POMDP, $\modelsym_p \coloneqq \langle
+	\setSym{P}, S, A, T, R, \obsS, O, \setSym{P}_O \rangle$, there exists a
+	factored NMDP $\modelsym_n \coloneqq \langle \setSym{P}_O, A,
+	2^{\setSym{P}_O}, T', R' \rangle$, where $T'$ and $R'$ are defined based on
+	$T$, $R$, and $\setSym{P}_O$, such that $\modelsym_p$ and $\modelsym_n$ are
+	equivalent\,\footnote{More precisely, we mean that the two models produce
+	computation trees which are isomorphic. However, we won't formally define
+	the respective computation trees and isomorphism.}.
+\end{lemma}
+
+As we've already discussed, in a POMDP, it is possible to compute the optimal
+action from the entire history of observations. This lemma is the first step
+in order to reduce the minimal informations about the past that that the agent
+must take into consideration. In fact, for Boolean features, we can assume
+some regularities on the functions $T$ and $R$ which will allows us to define
+a compact representation of the past trace. In particular, we assume that all
+the POMDP states and rewards can be generated from a finite state transducer,
+a regular language essentially. Let's formalize this model more precisely.
+
+\begin{definition}
+	We define a \emph{Regular Decision Process}
+	(RDP)\nomenclature{RDP}{Regular Decision Process} to be a factored NMDP
+	$\modelsym_r \coloneqq \langle \setSym{P}, A, S, T, R \rangle$, with
+	functions $T$ and $R$ that are generated by a finite state transition
+	transducer $\setSym{T} = \langle Q, q_0, \delta, \varrho, \eta \rangle$,
+	where:
+	\begin{itemize}
+		\item $Q$ is the finite set of transducer states.
+		\item $q_0 \in Q$ is the initial state.
+		\item $\delta: Q \times S \to Q$ is the deterministic transition function
+			of the transducer; we extend $\delta$ to sequences in the natural
+			manner: $\delta(q, \langle s_1, s_2 \rangle) = \delta(\delta(q, s_1),
+			s_2)$.
+		\item $\varrho: Q \times A \times S \to \R$ is the transition output
+			function of the transducer, such that: $T(\langle s_1, \dots, s_k
+			\rangle, a, s') = \varrho(\delta(q_0, \langle s_1, \dots, s_k \rangle),
+			a, s')$.
+		\item $\eta: Q \to \R$ is the reward output function of the transducer,
+			such that: $R(\langle s_1, \dots, s_k \rangle) = \eta(\delta(q_0, \langle
+			s_1, \dots, s_k \rangle))$.
+	\end{itemize}
+\end{definition}
+The RDP model has been introduced in~\cite{bib:rdp}, where the authors have
+defined $T$ and $R$ using formulae of \ldl{}. The definition we see here,
+doesn't precise the formalism in which these functions are defined, but
+only the general properties they need to respect: it must be possible to
+generate states and rewards from a finite state transition transducer. Since
+\ldl{} exactly capture the class of regular properties on the trace $S^+$,
+this definition and the original in~\cite{bib:rdp} are completely equivalent}.
+
+
+\begin{comment}
 
 % Factored hidden dynamics
 The first restriction is that we'll only consider POMDPs whose hidden dynamics
@@ -843,22 +941,6 @@ Assuming regular properties on this hidden dynamics, we'll be able to use
 also the rewards. This will leave us with a model almost equivalent to a MDP
 with \ldl{} restraining specifications, which we already know how to solve.
 This procedure mostly follows the ideas presented in~\cite{bib:rdp}.
-
-A non-Markovian Decision Process is identical to a NMRDP except that, in
-addition to rewards, also the transition function can depend on the entire
-history of configurations.
-\begin{definition}
-	A \emph{Non-Markovian Decision Process}
-	(NMDP)\nomenclature{NMDP}{Non-Markovian Decision Process} is a tuple
-	$\modelsym_n \coloneqq \langle S, A, T, R \rangle$, where $S$ and $A$ are
-	the state and action spaces, just like in MDPs, and:
-	\begin{itemize}
-		\item $T: S^+ \times A \times S \to \R$ is the transition function that
-			maps non-empty sequences of states to the probability of the next state.
-		\item $R: S^+ \to \R$ is the reward function.
-	\end{itemize}
-	\label{def:nmdp-general}
-\end{definition}
 
 Any POMDP~$\modelsym_p$ can be formulated as a NMDP~$\modelsym_n \coloneqq
 \langle \obsS, A, T_\obsS, R_\obsS \rangle$, where rewards and transitions are
@@ -1086,6 +1168,8 @@ model of that function is not available and cannot be exploited, not that the
 rewarded goal is obscure. For example, the rewards of
 Example~\ref{ex:rb-light} are unknown, because we don't know the function that
 maps \emph{images} to rewards.
+
+\end{comment}
 
 
 \section{Restrained Deep RL agents}

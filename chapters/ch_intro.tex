@@ -195,30 +195,50 @@ The rest of this thesis is structured as follows:
 		thesis. We introduce the fundamental concepts of RL, Deep RL, and we
 		define Double DQN, the Deep RL algorithm that we'll use.
 	\item[\ref{ch:nonmarkovrl}~--~\nameref{ch:nonmarkovrl}]
+		% TODO: new build on recent solution methods and propose some original
+		% view
 		This chapter describes how to design RL agents able to achieve
 		non-Markovian goals. Here, we'll see an in-depth description of the
-		problem, we'll present recent solution methods and also propose some
+		problem, we'll present recent solution methods and some
 		original ideas. In Section~\ref{sec:non-markov}, we will analyze what
 		happens when the most common assumptions of RL, and of Deep RL, are
 		falsified. A recent solution for these complex RL problems will be
 		presented in Section~\ref{sec:non-markov-solutions}, where we explain the
-		Restraining Bolt method. This section also aims to illustrate two sources
+		Restraining Bolt method.
+		% TODO: in this section we also illustrate our original view, which is two
+		% sources of non-Markovian in the rewards, in particular the standard one
+		% coming from RB and a secondary one coming incomplete partial
+		% obaservability of the environment 
+		% TODO: in addition, in 4.3 we propose an original model that allows us to
+		% apply RB method in the context of Deep RL
+		This section also aims to illustrate two sources
 		of non-Markovian rewards in a unified discussion, and to formalize the
-		concept of Restraining Bolt applied to a class of POMDPs. The chapter ends
+		concept of Restraining Bolt applied to a class of POMDPs.
+		The chapter ends
 		with Section~\ref{sec:rb-deep-model}, where we propose an original model
 		that allows to apply the Restraining Bolt method also in the context of
 		Deep RL.
 	\item[\ref{ch:fluents}~--~\nameref{ch:fluents}]
+		% TODO: non dire important
 		In this important chapter, we illustrate the proposed training method for
 		the fluents valuation functions. We also define a specific model that
 		encodes a portion of the input frame to generate the fluent Boolean
 		valuations.  We'll also formulate the appropriate training algorithm for
 		this model.
+		% TODO: not we illustrate, but we propose.
+		% TODO: we propose a training method that grounds fluents evaluation to
+		% the features of the environments
+		% TODO: non dire also
+		% TODO: finally, we formulate an appropriate training algorithm
 	\item[\ref{ch:atarieyes}~--~\nameref{ch:atarieyes}]
+		% TODO: the software that we've developed which implement.
+		% TODO: present tense
 		This chapter presents the software that implements all the concepts
 		presented in the previous chapters. We will first review its features and
 		its functionality from a user perspective. Then, the most interesting
 		implementation details will follow.
+		% TODO: then we illustrate some interesting implement
+		% TODO: rimuovi will
 	\item[\ref{ch:experiments}~--~\nameref{ch:experiments}]
 		This chapter contains experiments and training outcomes in two Atari
 		games. The experiments will be finalized to test: the effectiveness of the
