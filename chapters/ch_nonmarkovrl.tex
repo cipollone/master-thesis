@@ -794,17 +794,17 @@ $\obsS$ that the agent receives. POMDPs are a large class of problems with a
 greater complexity with respect to MDPs. As we've discussed in
 Section~\ref{sec:partial-obs}, we can't simply apply a RL algorithm from the
 visible quantities. The classic learning method for POMDPs is to transform
-them to MDPs over the belief-state for $S$. As already noted, we assume
-unknown transition and observation functions, and we can't apply classic
-estimation algorithms. In this section, we'll show that a class of POMDPs can
-be learnt by performing RL on MDPs, defined over a extended, but compact,
-state space. This idea is very similar to that of the previous sections, but
-applied to a different class of problems.
+them to MDPs over the belief-state for $S$. However, since we assume that
+transition and observation functions can be unknown, we won't be able to apply
+classic estimation algorithms. In this section, we'll show that a class of
+POMDPs can be learnt by performing RL on MDPs, defined over a extended, but
+compact, state space. This idea is very similar to that of the previous
+sections, but we're facing a different class of problems.
 
 First we state a general result for POMDPs: learning over a POMDP can be
 equivalently formulated as a learning problem over a non-Markovian Decision
-Process. These models are identical to NMRDPs, except that, in addition to
-rewards, also the transition function can depend on the entire history of
+Process. The latter model is identical to an NMRDP, except that, in addition
+to rewards, also the transition function can depend on the entire history of
 configurations.
 \begin{definition}
 	A \emph{Non-Markovian Decision Process}
@@ -813,55 +813,57 @@ configurations.
 	the state and action spaces, just like in MDPs, and:
 	\begin{itemize}
 		\item $T: S^+ \times A \times S \to \R$ is the transition function that
-			maps non-empty sequences of states to the probability of the next state.
+			maps non-empty sequences of states and the current action to the
+			probability of the next state.
 		\item $R: S^+ \to \R$ is the reward function.
 	\end{itemize}
 	\label{def:nmdp-general}
 \end{definition}
 
-We now consider POMDPs with a finite state space. These can be represented
-with a factored state space, composed of assignments for a finite set of
-propositions~$\setSym{P}$.
+We now consider POMDPs whose set of states, $S$, is finite. These can be
+represented with a factored state space, composed of assignments for a finite
+set of propositions~$\setSym{P}$.
 \begin{definition}
 	A factored POMDP is a tuple $\modelsym_p \coloneqq \langle \setSym{P}, S, A,
-	T, R, \obsS, O, \setSym{P}_O \rangle$, where $A$, $T$, $R$ are defined as
-	in generic POMDPs, $\setSym{P}$ is a finite set of propositions, $S$
-	contains assignments to $\setSym{P} \subset \setSym{P}$, denoted with
-	$\setSym{I}_\setSym{P} = 2^\setSym{P}$, and $\setSym{P}_O$ is the set of
-	observable propositions. In a factored POMDP, the observation space $\obsS$
-	is implicitly defined as the assignment for $\setSym{P}_O$.
+	T, R, \obsS, O, \setSym{P}_O \rangle$, where $A$, $T$, $R$ are defined as in
+	generic POMDPs, $\setSym{P}$ is a finite set of propositions, the states $S
+	= 2^\setSym{P}$ are the assignments for the variables $\setSym{P}$,
+	$\setSym{P}_O \subset \setSym{P}$ is the set of observable propositions. In
+	a factored POMDP, the observation space $\obsS$ is implicitly defined as the
+	assignment for $\setSym{P}_O$.
 \end{definition}
 
-Factored POMDPs can clearly be formulated as NMDPs, but we can be even more
+Factored POMDPs can clearly be formulated as NMDPs, but we can even be more
 specific. Let's define a NMDP with a factored state space:
 \begin{definition}
 	A factored Non-Markovian Decision Process (NMDP) is a tuple $\modelsym_n
 	\coloneqq \langle \setSym{P}, A, S, T, R \rangle$, where $\setSym{P}$ is a
 	finite set of propositions, $S = 2^\setSym{P}$ is the set of assignments for
 	$\setSym{P}$, and $A$, $T$, $R$ are defined as in
-	Definition~\ref{def:nmdp-general}
+	Definition~\ref{def:nmdp-general}.
 	\label{def:nmdp-factored}
 \end{definition}
 So, it is possible to state the following result:
 \begin{lemma}
 	\cite{bib:rdp} For every factored POMDP, $\modelsym_p \coloneqq \langle
 	\setSym{P}, S, A, T, R, \obsS, O, \setSym{P}_O \rangle$, there exists a
-	factored NMDP $\modelsym_n \coloneqq \langle \setSym{P}_O, A,
+	factored NMDP as $\modelsym_n \coloneqq \langle \setSym{P}_O, A,
 	2^{\setSym{P}_O}, T', R' \rangle$, where $T'$ and $R'$ are defined based on
 	$T$, $R$, and $\setSym{P}_O$, such that $\modelsym_p$ and $\modelsym_n$ are
 	equivalent\,\footnote{More precisely, we mean that the two models produce
 	computation trees which are isomorphic. However, we won't formally define
-	the respective computation trees and isomorphism.}.
+	isomorphism and the computation trees of the respective models.}.
 \end{lemma}
 
-As we've already discussed, in a POMDP, it is possible to compute the optimal
-action from the entire history of observations. This lemma is the first step
-in order to reduce the minimal informations about the past that that the agent
-must take into consideration. In fact, for Boolean features, we can assume
-some regularities on the functions $T$ and $R$ which will allows us to define
-a compact representation of the past trace. In particular, we assume that all
-the POMDP states and rewards can be generated from a finite state transducer,
-a regular language essentially. Let's formalize this model more precisely.
+In every POMDP, it is possible to compute the optimal action from the entire
+history of observations. This lemma is the first step in order to reduce the
+minimal informations about the past that the agent must take into
+consideration. In fact, for Boolean features, we can assume some regularities
+on the functions $T$ and $R$, which will allows us to define a compact
+representation of the past trace. In particular, we assume that all the POMDP
+states and rewards can be generated from a finite state transducer (a machine
+that operates on regular input languages). Let's formalize this model more
+precisely.
 
 \begin{definition}
 	We define a \emph{Regular Decision Process}
@@ -885,69 +887,75 @@ a regular language essentially. Let's formalize this model more precisely.
 			such that: $R(\langle s_1, \dots, s_k \rangle) = \eta(\delta(q_0, \langle
 			s_1, \dots, s_k \rangle))$.
 	\end{itemize}
+	\label{def:rdp}
 \end{definition}
 The RDP model has been introduced in~\cite{bib:rdp}, where the authors have
 defined $T$ and $R$ using formulae of \ldl{}. The definition we see here,
-doesn't precise the formalism in which these functions are defined, but
-only the general properties they need to respect: it must be possible to
+doesn't specify the formalism in which these functions are defined, it only
+expresses the general properties they need to respect: it must be possible to
 generate states and rewards from a finite state transition transducer. Since
-\ldl{} exactly capture the class of regular properties on the trace $S^+$,
-this definition and the original in~\cite{bib:rdp} are completely equivalent}.
+\ldl{} exactly captures the class of regular properties on the trace $S^+$,
+this definition and the original, in~\cite{bib:rdp}, are completely
+equivalent.
+
+RDPs are a more restricted class of models with respect to factored NMDPs:
+not all factored POMDPs can be expressed as RDPs. We can more precisely state
+for which of those it is possible to do so. Closely following~\cite{bib:rdp},
+we obtain:
+\begin{theorem}
+	For every factored POMDP, $\modelsym_p \coloneqq \langle
+	\setSym{P}, S, A, T, R, \obsS, O, \setSym{P}_O \rangle$, if, in all
+	reachable states, the value of every $p \in \setSym{P}$ is a regular
+	function of the past and current values of~$\setSym{P}_O$ (i.e. $p$ is true
+	if some \re{} is satisfied), there exists an equivalent RDP $\modelsym_r
+	\coloneqq \langle \setSym{P}_O, A, 2^{\setSym{P}_O}, T', R' \rangle$, for
+	some transducer~$\setSym{T}$.
+	\label{th:pomdp-rdp}
+\end{theorem}
+
+We've shown that a class of factored POMDPs can be translated to equivalent
+RDPs. This is important, because, as we can see from Definition~\ref{def:rdp},
+an RDP doesn't have any direct dependency from the past observations. Instead,
+all the necessary informations needed to predict the next states and rewards
+are contained in the transducer state~$Q$. This allows us to forget about
+complete trace of observations $2^{\setSym{P}_O}$, which may be any
+high-dimensional space.
+
+The final result that we need is that RDPs can be transformed to MDPs. As a
+consequence of Lemma~1, in~\cite{bib:rdp}, we can state the following:
+\begin{theorem}
+	For any RDP $\modelsym_r \coloneqq \langle \setSym{P}, A, S, T, R \rangle$,
+	and finite state transition transducer $\setSym{T} = \langle Q, q_0, \delta,
+	\varrho, \eta \rangle$, there exists an MDP, with state space $S \times Q$,
+	that is equivalent to~$\modelsym_r$.
+	\label{th:rdp-mdp}
+\end{theorem}
+
+We've now reached the desired result. By combining Theorems~\ref{th:pomdp-rdp}
+and~\ref{th:rdp-mdp} we obtain:
+\begin{corollary}
+	For every factored POMDP, $\modelsym_p \coloneqq \langle
+	\setSym{P}, S, A, T, R, \obsS, O, \setSym{P}_O \rangle$, if, in all
+	reachable states, the value of every $p \in \setSym{P}$ is a regular
+	function of the past and current values of~$\setSym{P}_O$, then,
+	there exists an MDP~$\modelsym$ that is equivalent to~$\modelsym_p$.
+\end{corollary}
+
+This corollary states \emph{when} a factored POMDP admits an equivalent MDP.
+However, if the original transition and reward functions are unknown, as
+usually is in RL, we won't be able to define the appropriate transducer for
+this derivation.  Although the existence is guaranteed, we didn't say how to
+find it.
+
+% TODO: continue here
+\dots La parte con le derivazioni finisce qui. Vorrei concludere con una breve
+parte discorsiva per dire che il Restraining Bolt, anche se non può
+ricostruire le features nascoste, potrebbe essere in grado di ripristinare le
+assunzioni markoviane sui reward.
+
 
 
 \begin{comment}
-
-% Factored hidden dynamics
-The first restriction is that we'll only consider POMDPs whose hidden dynamics
-can be modelled by a factored Boolean representation. More precisely, we
-assume that the environment can be defined as follows.
-\begin{definition}
-	We define a POMDP $\modelsym_p \coloneqq \langle \setSym{P}, S, A, T, R,
-	\obsS, O\rangle$, where:
-	\begin{itemize}
-		\item $\setSym{P}$ is a finite set of atomic propositions.
-		\item $S \coloneqq \obsS \times \setSym{I}_\setSym{P}$ is a state space
-			that is composed by an observable part, $\obsS$, and a hidden
-			part,~$\setSym{I}_\setSym{P}$. Furthermore, the unobservable component
-			is $\setSym{I}_\setSym{P} \coloneqq 2^\setSym{P}$, the set of Boolean
-			configurations for~$\setSym{P}$.
-		\item $A$ is the space of discrete actions, as usual.
-		\item $T: S \times A \times S$ is the transition function.
-		\item $R: \setSym{I}_\setSym{P} \to \R$ is the reward function, whose
-			domain is restricted to the current configuration of~$\setSym{P}$.
-		\item $O: S \to \obsS$ is the observation function that just extracts the
-			observable component.
-	\end{itemize}
-	\label{def:pomdp-factored}
-\end{definition}
-
-The class of partially observable environments that can be modelled as a POMDP
-of this definition have a relatively simple hidden dynamic, that can be
-represented by the state of the Boolean variables~$\setSym{P}$. This set of
-propositions completely explains the rewards generated and, together with
-$\obsS$, also allow to predict future observations. As an example to explain
-this concept, we can consider the Atari games. In many of those, it is
-possible to define some (possibly unobservable) propositions, like
-$\const{EnemyDead}$ and $\const{DoorOpen}$, that are sufficient to produce the
-environment rewards and, together with the frame of the game, can be used to
-predict the next observation.
-
-The solution we propose proceeds as follows. First, we observe that any POMDP
-can be expressed as a non-Markovian Decision Process over the space of
-observations. Then, we exploit the decomposition above to reconstruct the
-hidden configuration $\setSym{I}_\setSym{P}$ from the history of observations.
-Assuming regular properties on this hidden dynamics, we'll be able to use
-\ldl{} formulae to reconstruct $\setSym{I}_\setSym{P}$, and as a consequence
-also the rewards. This will leave us with a model almost equivalent to a MDP
-with \ldl{} restraining specifications, which we already know how to solve.
-This procedure mostly follows the ideas presented in~\cite{bib:rdp}.
-
-Any POMDP~$\modelsym_p$ can be formulated as a NMDP~$\modelsym_n \coloneqq
-\langle \obsS, A, T_\obsS, R_\obsS \rangle$, where rewards and transitions are
-defined over the history of observations. This is a general result for POMDPs.
-The advantage of this model is that it only considers the visible quantities.
-Still, computing transitions and rewards from $\obsS^+$ is unfeasible.
-Instead, we want to restrict this dependency on the past as much as possible.
 
 For this purpose, we introduce a new set~$\fluents$ of atomic propositions.
 The set of fluents, $\fluents$, is composed of propositions that can be
@@ -957,89 +965,6 @@ We've previously called $f$ a ``valuation function'' or ``features
 extractor''.  We now use the variables~$\fluents$ to represent the
 ``essential'' information about the observations. More precisely, we'll
 formulate the following NMRDP:
-\begin{definition}
-	We define a class of NMDPs, $\modelsym_f \coloneqq \langle \fluents, S, A,
-	T, R \rangle$, with the following structure:
-	\begin{itemize}
-		\item $\fluents$ is a finite set of atomic propositions.
-		\item $S \coloneqq \obsS \times \setSym{I}_\fluents$ is the state space
-			composed by a set $\obsS$ and $\setSym{I}_\fluents \coloneqq
-			2^\fluents$, the set of configurations for the fluents~$\fluents$.
-		\item $T: \obsS \times \setSym{I}_\fluents^+ \times S\to \R$ is the
-			transition function, where the dependency on the past history is
-			restricted just to $\setSym{I}_\fluents$, the trace of valuations
-			produced for~$\fluents$.
-		\item $R: \setSym{I}_\fluents^+ \to \R$ is the reward function.
-	\end{itemize}
-	\label{def:nmdp-fluents}
-\end{definition}
-While every POMDP can be expressed as the general NMDP of
-Definition~\ref{def:nmdp-general}, not all of them can be formulated as the
-class of NMDPs defined here. However, we argue that many factored POMDP of
-Definition~\ref{def:pomdp-factored} can be formulated this way. Still,
-without further assumptions on the nature of the observations $\obsS$, we
-can't guarantee whether it is possible to extract a sufficient set of
-fluents~$\fluents$ for this translation (sufficient in the sense of
-Definition~\ref{def:nmdp-fluents}). 
-
-We've now reduced the relevant informations about the history of observations,
-from an intractable $\obsS^+$, to $\setSym{I}_\fluents^+$, which is a trace of
-Boolean valuations.  The next step is to assume some regularities in the
-functions $T$ and $R$, to express a large group of such NMDPs in a even
-simpler formalism.
-
-The model that we want to introduce is a small variant of a \emph{Regular
-Decision Process} (RDP)\nomenclature{RDP}{Regular Decision Process}. The
-reader can refer to~\cite{bib:rdp} for a complete definition of RDPs.
-Essentially, they are particular NMDPs with a completely factored state space
-$S = \setSym{I}_\fluents$, whose transition and reward functions are defined
-through \ldl{} formulae over the symbols~$\fluents$. The model we define here
-is the analogue of a RDP, but with a composite state space.
-
-We informally define a class of NMDPs (composite RDPs) defined as a tuples
-$\modelsym_r \coloneqq \langle \fluents, S, A, T, R \rangle$ where:
-\begin{itemize}
-	\item $\fluents$ is a finite set of atomic propositions.
-	\item $S: \obsS \times \setSym{I}_\fluents$ is the composite state space.
-	\item $T$ is the transition function, specified as a finite set of tuples,
-		$(\formula_i, a, T_i)$. Each $\formula_i$ is an \ldl{} formula over the
-		set of atoms $\fluents$ that indicates for which traces this tuple is
-		active. When the $i$-th tuple is active, and action $a$ is performed, the
-		probability of the next state $s \in S$, given the current observation $o
-		\in \obsS$, is returned by the function $T_i: \obsS \times S \to \R$.
-	\item $R$ is the reward function, defined as a finite set of pairs
-		$(\formula_j, r_j)$, which associate the reward $r_j$ when $\formula_j$
-		is satisfied by the trace produced for~$\fluents$.
-\end{itemize}
-This is just an informal definition because the formulae must obey additional
-constraints, in order to guarantee that each trace activates a single formula
-in the set~$T$ (refer to the complete definition for RDPs in \cite{bib:rdp}).
-
-Until this point, we've just defined some models with more and more
-restrictions. We'll now link the class of POMDPs we're interested in, to
-composite RDPs. Since, RDPs can be solved through MDPs over a compact state
-space, this will be considered as a solution.
-
-Inspired by Lemma 3 of~\cite{bib:rdp}, we state the following:
-\begin{proposition}
-	Let $\modelsym_p \coloneqq \langle \setSym{P}, S, A, T, R, \obsS, O\rangle$
-	be a POMDP of Definition~\ref{def:pomdp-factored}. If there exists a set of
-	fluents~$\fluents$ such that in all reachable states, the value of every $p
-	\in \setSym{P}$ can be computed through a function $f_p: \obsS \times
-	\setSym{I}_\fluents^+$, with a regular dependency on
-	$\setSym{I}_\fluents^+$, then, there exists a (composite) RDP $\modelsym_r
-	\coloneqq \langle \fluents, \obsS \times \setSym{I}_\fluents, A, T', R'
-	\rangle$ that generates the same rewards as~$\modelsym_p$.
-\end{proposition}
-This is important, because RDPs can be learnt by transforming them to
-equivalent MDPs. As shown in~\cite{bib:rdp}, an RDP with a fully
-factored state space, $S = 2^\fluents$, can be transformed to an MDP with a
-state space $S \times Q_1 \times \dots \times Q_n$. Also, each component $Q_i$
-is the set of states associated to an automaton $\automa_i$ generated from the
-\ldl{} formula $\formula_i$ that appears in the RDP's transition and reward
-functions. Similarly, we can show that a composite RDP can be transformed to
-an MDP with the following state space $\obsS \times S \times Q_1 \times \dots
-\times Q_n$.
 
 There is an evident similarity between each of these two MDP state spaces and
 those appearing in Definition~\ref{def:ldlf-eq-mdp} at
