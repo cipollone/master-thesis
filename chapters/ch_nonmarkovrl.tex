@@ -774,6 +774,59 @@ states, and the observed symbols~$s_t$. The symbols $\highlevelS$ don't need
 to be passed to the learning agent. Refer to Figure~\ref{fig:rb-schema}, once
 again.
 
+\begin{example}
+	Let's extend Example~\vref{ex:light}. An agent can control a light bulb
+	through a switch, but now it can only observe images of the room. Suppose we
+	want to reward the agent with the same condition of the previous example:
+	the light must have been switched on, then off, only once during the
+	episode. To do so, we can define a single fluent, $\fluents \coloneqq
+	\set{\const{LightOn}}$, representing the status of the light. The states $S$
+	are the low-level symbols, which in this case are images. $\highlevelS$, the
+	high-level symbols, are composed just by the valuation for
+	$\const{LightOn}$, which we can compute from~$S$ (it is true, when the light
+	is on in the image). Now we state the following \ldl{} restraining
+	specification:
+	\[
+		\formula_1 \coloneqq \ldiamond{(\lnot \const{LightOn})^*;
+		\const{LightOn}^+; (\lnot \const{LightOn})^+} \lend
+	\]
+	where $\resym^+$ is an abbreviation of $\resym; \resym^*$.  The DFA that is
+	associated to this formula is shown in Figure~\ref{fig:rb-light-automa}.
+	\begin{figure}
+			\centering
+			\begin{tikzpicture}
+			\graph [
+				automaton, grow right=3cm,
+			]{
+				0 ->
+					1 [>"$\const{LightOn}$"] ->
+					2 [accept,>"$\lnot\const{LightOn}$"] -> ["$\const{LightOn}$"] 3;
+				0 -> [self loop above, "$\lnot\const{LightOn}$"] 0;
+				1 -> [self loop above] 1;
+				2 -> [self loop above] 2;
+				3 -> [self loop above, "$\true$"] 3;
+			}; 
+			\draw [init path] (0.west) +(-0.5,0) -- (0.west);
+			\end{tikzpicture} 
+			\caption{The DFA associated to the formula~$\formula_1$, in
+			Example~\ref{ex:rb-light}.}
+			\label{fig:rb-light-automa}
+	\end{figure}
+	The MDP associated to this simple problem is: $\langle Q \times \obsS, A, T,
+	\set{(\formula_1, r')} \rangle$, where the actions are $A \coloneqq
+	\set{\const{Toggle}, \const{NoOp}}$, $\obsS$ is an image, and $Q \coloneqq
+	\set{0, 1, 2, 3}$. With this composite state space, the agent has a complete
+	view about the missing steps that are needed, in order to achieve the
+	reward; something that it wouldn't know just from the current image or the
+	current value of $\const{LightOn}$.
+
+	Since, in this extremely simple example, we didn't define any environment
+	reward, this mostly resemble a problem of RL with \ldl{} reward. However,
+	the setup with the two groups of symbols, $S$ and $\fluents$, are more
+	precisely modelled with a RB. In this case, $\const{LightOn}$ is enough, but
+	usually rewards will also depend from~$S$.
+	\label{ex:rb-light}
+\end{example}
 
 \subsection{Restraining Bolt for partial observations}
 
@@ -1031,52 +1084,6 @@ the RB. Figure~\ref{fig:rb-partial-obs} shows this arrangement.
 	\label{fig:rb-partial-obs}
 \end{figure}
 
-\begin{example}
-	Let's extend Example~\ref{ex:light}. An agent can control a light bulb
-	through a switch, but now it can only observe images of the room. Suppose the
-	environment rewards the agent with the same condition of the previous
-	example: the light must have been switched on, then off, only once during
-	the episode.  Our goal is to emulate this reward with a NMRDP with \ldl{}
-	rewards.  First, we define a fluent $\const{LightOn}$, representing the
-	status of the light. The features extractor, from images of the room in
-	which the light is on, would produce $\const{LightOn} = \true$ (or $l =
-	\set{\const{LightOn}}$), and false otherwise. Now we state the following
-	\ldl{} goal:
-	\[
-		\formula_1 \coloneqq \ldiamond{(\lnot \const{LightOn})^*;
-		\const{LightOn}^+; (\lnot \const{LightOn})^+} \lend
-	\]
-	where $\resym^+$ is an abbreviation of $\resym; \resym^*$.  The DFA that is
-	associated to this formula is shown in Figure~\ref{fig:rb-light-automa}.
-	\begin{figure}
-			\centering
-			\begin{tikzpicture}
-			\graph [
-				automaton, grow right=3cm,
-			]{
-				0 ->
-					1 [>"$\const{LightOn}$"] ->
-					2 [accept,>"$\lnot\const{LightOn}$"] -> ["$\const{LightOn}$"] 3;
-				0 -> [self loop above, "$\lnot\const{LightOn}$"] 0;
-				1 -> [self loop above] 1;
-				2 -> [self loop above] 2;
-				3 -> [self loop above, "$\true$"] 3;
-			}; 
-			\draw [init path] (0.west) +(-0.5,0) -- (0.west);
-			\end{tikzpicture} 
-			\caption{The DFA associated to the formula~$\formula_1$, in
-			Example~\ref{ex:rb-light}.}
-			\label{fig:rb-light-automa}
-	\end{figure}
-	The MDP associated to this simple problem is: $\langle Q \times \obsS, A, T,
-	\set{(\formula_1, r')} \rangle$, where the actions are $A \coloneqq
-	\set{\const{Toggle}, \const{NoOp}}$, $\obsS$ is an image, and $Q \coloneqq
-	\set{0, 1, 2, 3}$. With this composite state space, the agent has a complete
-	view about the missing steps to achieve the reward; something that it
-	wouldn't know from the current image or the current value of
-	$\const{LightOn}$.
-	\label{ex:rb-light}
-\end{example}
 
 We might argue that the previous example mostly resembles an MDP with
 restraining specifications, rather than a POMDP. This is partially true.
